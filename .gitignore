@@ -1,3 +1,13 @@
+# Mac OS Files
+**/*.DS_Store
+.vscode/
+
+# Ubuntu's editor temp files
+**/*.*~
+
+# Logs
+recogners.log.*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
