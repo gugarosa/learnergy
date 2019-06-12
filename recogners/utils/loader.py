@@ -4,6 +4,7 @@ import recogners.utils.logging as l
 
 logger = l.get_logger(__name__)
 
+
 def load_opf(path):
     """Loads a file in OPF format.
 
@@ -38,5 +39,5 @@ def load_opf(path):
 
     logger.info('File loaded.')
     logger.info(f'X: {X.shape} | Y: {Y.shape}.')
-    
+
     return X, Y
