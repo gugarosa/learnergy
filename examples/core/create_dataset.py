@@ -1,5 +1,5 @@
 import numpy as np
-from torch.utils import data
+from torch.utils.data import DataLoader
 
 from recogners.core.dataset import Dataset
 
@@ -9,12 +9,13 @@ X = np.asarray([[1, 2], [2, 4]])
 # Declaring labels
 Y = np.asarray([1, 2])
 
-# Creating dataset
+# Creating the dataset object
 d = Dataset(X, Y)
 
-#
-g = data.DataLoader(d, batch_size=1, shuffle=True, num_workers=1)
+# Creating a PyTorch's generator
+g = DataLoader(d, batch_size=1, shuffle=True, num_workers=1)
 
-
-for input_batch, label_batch in g:
-    print(input_batch, label_batch)
+# For every batch in the generator
+for samples, labels in g:
+    # Check if its correct
+    print(samples, labels)

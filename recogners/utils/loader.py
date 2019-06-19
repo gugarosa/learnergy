@@ -38,6 +38,5 @@ def load_opf(path):
     X = opf.iloc[:, 2:].values
 
     logger.info('File loaded.')
-    logger.info(f'X: {X.shape} | Y: {Y.shape}.')
 
     return X, Y
