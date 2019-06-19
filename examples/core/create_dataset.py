@@ -13,7 +13,7 @@ Y = np.asarray([1, 2])
 d = Dataset(X, Y)
 
 #
-g = data.DataLoader(d, batch_size=2, shuffle=True, num_workers=1)
+g = data.DataLoader(d, batch_size=1, shuffle=True, num_workers=1)
 
 
 for input_batch, label_batch in g:
