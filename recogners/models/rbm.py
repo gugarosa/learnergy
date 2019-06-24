@@ -27,6 +27,9 @@ class RBM:
 
         logger.info('Creating model: RBM.')
 
+        # Setting default tensor type to Double
+        torch.set_default_tensor_type(torch.DoubleTensor)
+
         # Amount of visible units
         self._n_visible = n_visible
 
@@ -131,13 +134,31 @@ class RBM:
     def b(self, b):
         self._b = b
 
+    def hidden_sampling(self, v):
+        """
+        """
+        
+        #
+        activations = torch.mm(v, self.W) + self.b
+
+        #
+        probs = torch.sigmoid(activations)
+
+        return probs
+
+
     def fit(self, batches, epochs=10):
         """
         """
 
-        #
+        # For every epoch
         for e in range(epochs):
             logger.info(f'Epoch {e+1}/{epochs}')
-            #
+
+            # For every batch
             for samples, _ in batches:
-                pass
+                # Calculating positive phase hidden probabilities
+                pos_hidden_probs = self.hidden_sampling(samples)
+
+                #
+                print(pos_hidden_probs.numpy().shape)
