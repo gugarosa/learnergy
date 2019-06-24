@@ -13,13 +13,12 @@ class RBM:
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, batch_size=64, learning_rate=0.1, steps=1, temperature=1):
+    def __init__(self, n_visible=128, n_hidden=128, learning_rate=0.1, steps=1, temperature=1):
         """Initialization method.
 
         Args:
             n_visible (int): Amount of visible units.
             n_hidden (int): Amount of hidden units.
-            batch_size (int): The size of the mini-batches.
             learning_rate (float): Learning rate.
             steps (int): Number of Gibbs' sampling steps.
             temperature (float): Temperature factor.
@@ -33,9 +32,6 @@ class RBM:
 
         # Amount of hidden units
         self._n_hidden = n_hidden
-
-        # Mini-batch size
-        self._batch_size = batch_size
 
         # Learning rate
         self._lr = learning_rate
@@ -56,6 +52,8 @@ class RBM:
         self._b = torch.zeros(n_hidden)
 
         logger.info('Model created.')
+        logger.debug(
+            f'Size: ({self._n_visible}, {self._n_hidden}) | Hyperparameters: lr = {self._lr}, steps = {self._steps}, T = {self._T}.')
 
     @property
     def n_visible(self):
@@ -72,14 +70,6 @@ class RBM:
         """
 
         return self._n_hidden
-
-    @property
-    def batch_size(self):
-        """int: The size of the mini-batches.
-
-        """
-
-        return self._batch_size
 
     @property
     def lr(self):
@@ -140,3 +130,14 @@ class RBM:
     @b.setter
     def b(self, b):
         self._b = b
+
+    def fit(self, batches, epochs=10):
+        """
+        """
+
+        #
+        for e in range(epochs):
+            logger.info(f'Epoch {e+1}/{epochs}')
+            #
+            for samples, _ in batches:
+                pass

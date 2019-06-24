@@ -18,7 +18,7 @@ def load_opf(path):
 
     """
 
-    logger.info(f'Loading OPF text file: {path}.')
+    logger.debug(f'Loading OPF text file: {path}.')
 
     # Tries to read .txt file into a dataframe
     try:
@@ -37,6 +37,6 @@ def load_opf(path):
     # Gathering the features
     X = opf.iloc[:, 2:].values
 
-    logger.info('File loaded.')
+    logger.debug('File loaded.')
 
     return X, Y

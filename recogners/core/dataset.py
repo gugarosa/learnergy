@@ -29,7 +29,7 @@ class Dataset(data.Dataset):
         self._Y = Y
 
         logger.info('Class created.')
-        logger.info(f'X: {X.shape} | Y: {Y.shape}.')
+        logger.debug(f'X: {X.shape} | Y: {Y.shape}.')
 
     @property
     def X(self):
