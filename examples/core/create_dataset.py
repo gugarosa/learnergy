@@ -10,12 +10,12 @@ X = np.asarray([[1, 2], [2, 4]])
 Y = np.asarray([1, 2])
 
 # Creating the dataset object
-d = Dataset(X, Y)
+dataset = Dataset(X, Y)
 
-# Creating a PyTorch's generator
-g = DataLoader(d, batch_size=1, shuffle=True, num_workers=1)
+# Creating PyTorch's batches
+batches = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
 
 # For every batch in the generator
-for samples, labels in g:
+for samples, labels in batches:
     # Check if its correct
     print(samples, labels)

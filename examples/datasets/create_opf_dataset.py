@@ -6,7 +6,7 @@ from recogners.datasets.opf import OPFDataset
 opf_file = ''
 
 # Creating the OPF dataset object
-d = OPFDataset(path=opf_file)
+dataset = OPFDataset(path=opf_file)
 
 # Creating a PyTorch's generator
-g = DataLoader(d, batch_size=16, shuffle=True, num_workers=1)
+batches = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=1)
