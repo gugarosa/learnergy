@@ -180,7 +180,7 @@ class RBM:
                 pos_hidden_probs = self.hidden_sampling(samples)
 
                 #
-                pos_hidden_states = (pos_hidden_probs >= torch.rand(self.n_hidden)).float()
+                pos_hidden_states = (pos_hidden_probs > torch.rand(self.n_hidden)).float()
 
                 #
                 pos_gradient = torch.mm(samples.t(), pos_hidden_probs)
@@ -189,7 +189,7 @@ class RBM:
                 visible_probs = self.visible_sampling(pos_hidden_states)
 
                 #
-                visible_states = (visible_probs >= torch.rand(self.n_visible)).float()
+                visible_states = (visible_probs > torch.rand(self.n_visible)).float()
 
                 for _ in range(self.steps):
                     #
@@ -222,8 +222,8 @@ class RBM:
                 #
                 batch_error = torch.sum((samples - visible_states) ** 2) / batch_size
 
-            #
-            error += batch_error
+                #
+                error += batch_error
 
             logger.info(f'Reconstruction error: {error}')
 
