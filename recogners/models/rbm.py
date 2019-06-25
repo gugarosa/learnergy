@@ -146,6 +146,19 @@ class RBM:
 
         return probs
 
+    def visible_sampling(self, h):
+        """
+        """
+        
+        #
+        activations = torch.mm(h, self.W.t()) + self.a
+
+        #
+        probs = torch.sigmoid(activations)
+
+        return probs
+
+
 
     def fit(self, batches, epochs=10):
         """
@@ -154,6 +167,9 @@ class RBM:
         # For every epoch
         for e in range(epochs):
             logger.info(f'Epoch {e+1}/{epochs}')
+            
+            #
+            error = 0
 
             # For every batch
             for samples, _ in batches:
@@ -161,4 +177,51 @@ class RBM:
                 pos_hidden_probs = self.hidden_sampling(samples)
 
                 #
-                print(pos_hidden_probs.numpy().shape)
+                pos_hidden_states = (pos_hidden_probs >= torch.rand(self.n_hidden)).double()
+
+                #
+                pos_gradient = torch.mm(samples.t(), pos_hidden_probs)
+
+                #
+                visible_probs = self.visible_sampling(pos_hidden_states)
+
+                #
+                visible_states = (visible_probs >= torch.rand(self.n_visible)).double()
+
+                for _ in range(self.steps):
+                    #
+                    hidden_probs = self.hidden_sampling(visible_states)
+
+                    #
+                    hidden_states = (hidden_probs >= torch.rand(self.n_hidden)).double()
+
+                    #
+                    visible_probs = self.visible_sampling(hidden_states)
+
+                    #
+                    visible_states = (visible_probs >= torch.rand(self.n_visible)).double()
+
+                #
+                neg_gradient = torch.mm(visible_probs.t(), hidden_probs)
+
+                #
+                batch_size = samples.size(0)
+
+                #
+                self.W += self.lr * (pos_gradient - neg_gradient) / batch_size
+
+                #
+                self.a += self.lr * torch.sum((samples - visible_probs), dim=0) / batch_size
+
+                #
+                self.b += self.lr * torch.sum((pos_hidden_probs - hidden_probs), dim=0) / batch_size
+
+                #
+                batch_error = torch.sum((samples - visible_states) ** 2)
+
+            #
+            error += batch_error
+
+            logger.info(f'Reconstruction error: {error}')
+
+
