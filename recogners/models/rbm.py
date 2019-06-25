@@ -46,7 +46,7 @@ class RBM:
         self._T = temperature
 
         # Weights matrix
-        self._W = torch.randn(n_visible, n_hidden)
+        self._W = torch.randn(n_visible, n_hidden) * 0.01
 
         # Visible units bias
         self._a = torch.zeros(n_visible)
@@ -196,13 +196,13 @@ class RBM:
                     hidden_probs = self.hidden_sampling(visible_states)
 
                     #
-                    hidden_states = (hidden_probs >= torch.rand(self.n_hidden)).float()
+                    hidden_states = (hidden_probs > torch.rand(self.n_hidden)).float()
 
                     #
                     visible_probs = self.visible_sampling(hidden_states)
 
                     #
-                    visible_states = (visible_probs >= torch.rand(self.n_visible)).float()
+                    visible_states = (visible_probs > torch.rand(self.n_visible)).float()
 
                 #
                 neg_gradient = torch.mm(visible_probs.t(), hidden_probs)
