@@ -28,7 +28,7 @@ class RBM:
         logger.info('Creating model: RBM.')
 
         # Setting default tensor type to Double
-        torch.set_default_tensor_type(torch.DoubleTensor)
+        torch.set_default_tensor_type(torch.FloatTensor)
 
         # Amount of visible units
         self._n_visible = n_visible
@@ -173,11 +173,14 @@ class RBM:
 
             # For every batch
             for samples, _ in batches:
+                #
+                samples = samples.view(len(samples), self.n_visible)
+
                 # Calculating positive phase hidden probabilities
                 pos_hidden_probs = self.hidden_sampling(samples)
 
                 #
-                pos_hidden_states = (pos_hidden_probs >= torch.rand(self.n_hidden)).double()
+                pos_hidden_states = (pos_hidden_probs >= torch.rand(self.n_hidden)).float()
 
                 #
                 pos_gradient = torch.mm(samples.t(), pos_hidden_probs)
@@ -186,20 +189,20 @@ class RBM:
                 visible_probs = self.visible_sampling(pos_hidden_states)
 
                 #
-                visible_states = (visible_probs >= torch.rand(self.n_visible)).double()
+                visible_states = (visible_probs >= torch.rand(self.n_visible)).float()
 
                 for _ in range(self.steps):
                     #
                     hidden_probs = self.hidden_sampling(visible_states)
 
                     #
-                    hidden_states = (hidden_probs >= torch.rand(self.n_hidden)).double()
+                    hidden_states = (hidden_probs >= torch.rand(self.n_hidden)).float()
 
                     #
                     visible_probs = self.visible_sampling(hidden_states)
 
                     #
-                    visible_states = (visible_probs >= torch.rand(self.n_visible)).double()
+                    visible_states = (visible_probs >= torch.rand(self.n_visible)).float()
 
                 #
                 neg_gradient = torch.mm(visible_probs.t(), hidden_probs)
@@ -217,7 +220,7 @@ class RBM:
                 self.b += self.lr * torch.sum((pos_hidden_probs - hidden_probs), dim=0) / batch_size
 
                 #
-                batch_error = torch.sum((samples - visible_states) ** 2)
+                batch_error = torch.sum((samples - visible_states) ** 2) / batch_size
 
             #
             error += batch_error
