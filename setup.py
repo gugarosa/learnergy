@@ -16,7 +16,8 @@ setup(name='recogners',
                         'pandas>=0.24.2',
                         'pylint>=1.7.4',
                         'pytest>=3.2.3',
-                        'torch>=1.1.0'
+                        'torch>=1.1.0',
+                        'torchvision>=0.3.0'
                        ],
       extras_require={
           'tests': ['coverage',
