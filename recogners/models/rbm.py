@@ -46,7 +46,7 @@ class RBM:
         self._T = temperature
 
         # Weights matrix
-        self._W = torch.randn(n_visible, n_hidden) * 0.01
+        self._W = torch.randn(n_visible, n_hidden)
 
         # Visible units bias
         self._a = torch.zeros(n_visible)
@@ -135,99 +135,117 @@ class RBM:
         self._b = b
 
     def hidden_sampling(self, v):
+        """Performs the hidden layer sampling, i.e., P(h|v).
+
+        Args:
+            v (tensor): A tensor incoming from the visible layer.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling.
+
         """
-        """
-        
-        #
+
+        # Calculating neurons' activations
         activations = torch.mm(v, self.W) + self.b
 
-        #
+        # Transforming into probabilites
         probs = torch.sigmoid(activations)
 
-        return probs
+        # Sampling current states
+        states = (probs > torch.rand(self.n_hidden)).float()
+
+        return probs, states
 
     def visible_sampling(self, h):
+        """Performs the visible layer sampling, i.e., P(v|h).
+
+        Args:
+            h (tensor): A tensor incoming from the hidden layer.
+
+        Returns:
+            The probabilities and states of the visible layer sampling.
+
         """
-        """
-        
-        #
+
+        # Calculating neurons' activations
         activations = torch.mm(h, self.W.t()) + self.a
 
-        #
+        # Transforming into probabilites
         probs = torch.sigmoid(activations)
 
-        return probs
+        # Sampling current states
+        states = (probs > torch.rand(self.n_visible)).float()
 
-
+        return probs, states
 
     def fit(self, batches, epochs=10):
-        """
+        """Fits a new RBM model.
+
+        Args:
+            batches (DataLoader): A DataLoader object containing the training batches.
+            epochs (int): Number of training epochs.
+
         """
 
         # For every epoch
         for e in range(epochs):
             logger.info(f'Epoch {e+1}/{epochs}')
-            
-            #
+
+            # Resetting epoch's error to zero
             error = 0
 
             # For every batch
             for i, (samples, _) in enumerate(batches):
-                #
+                # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible)
 
-                # Calculating positive phase hidden probabilities
-                pos_hidden_probs = self.hidden_sampling(samples)
+                # Calculating positive phase hidden probabilities and states
+                pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
+                    samples)
 
-                #
-                pos_hidden_states = (pos_hidden_probs > torch.rand(self.n_hidden)).float()
+                # Calculating visible probabilities and states
+                visible_probs, visible_states = self.visible_sampling(
+                    pos_hidden_states)
 
-                #
+                # Performing the Contrastive Divergence
+                for _ in range(self.steps):
+                    # Calculating negative phase hidden probabilities and states
+                    neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
+                        visible_states)
+
+                    # Calculating visible probabilities and states
+                    visible_probs, visible_states = self.visible_sampling(
+                        neg_hidden_states)
+
+                # Building the positive gradient
                 pos_gradient = torch.mm(samples.t(), pos_hidden_probs)
 
-                #
-                visible_probs = self.visible_sampling(pos_hidden_states)
+                # Building the negative gradient
+                neg_gradient = torch.mm(visible_probs.t(), neg_hidden_probs)
 
-                #
-                visible_states = (visible_probs > torch.rand(self.n_visible)).float()
-
-                for _ in range(self.steps):
-                    #
-                    hidden_probs = self.hidden_sampling(visible_states)
-
-                    #
-                    hidden_states = (hidden_probs > torch.rand(self.n_hidden)).float()
-
-                    #
-                    visible_probs = self.visible_sampling(hidden_states)
-
-                    #
-                    visible_states = (visible_probs > torch.rand(self.n_visible)).float()
-
-                #
-                neg_gradient = torch.mm(visible_probs.t(), hidden_probs)
-
-                #
+                # Gathering the size of the batch
                 batch_size = samples.size(0)
 
-                #
+                # Updating weights matrix
                 self.W += self.lr * (pos_gradient - neg_gradient) / batch_size
 
-                #
-                self.a += self.lr * torch.sum((samples - visible_probs), dim=0) / batch_size
+                # Updating visible units biases
+                self.a += self.lr * \
+                    torch.sum((samples - visible_probs), dim=0) / batch_size
 
-                #
-                self.b += self.lr * torch.sum((pos_hidden_probs - hidden_probs), dim=0) / batch_size
+                # Updating hidden units biases
+                self.b += self.lr * \
+                    torch.sum((pos_hidden_probs - neg_hidden_probs),
+                              dim=0) / batch_size
 
-                #
-                batch_error = torch.sum((samples - visible_states) ** 2) / batch_size
+                # Calculating current's batch error
+                batch_error = torch.sum(
+                    (samples - visible_states) ** 2) / batch_size
 
-                #
+                # Summing up to epochs' error
                 error += batch_error
 
-            #
+            # Normalizing the error with the number of batches
             error /= i
 
             logger.info(f'Reconstruction error: {error}')
-
-
