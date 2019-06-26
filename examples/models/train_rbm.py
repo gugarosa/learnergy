@@ -6,7 +6,6 @@ from recogners.models.rbm import RBM
 
 # Creating training dataset
 train = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
-#train = OPFDataset(path='data/boat.txt')
 
 # Creating training batches
 train_batches = DataLoader(train, batch_size=128, shuffle=True, num_workers=1)

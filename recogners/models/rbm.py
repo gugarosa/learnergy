@@ -172,7 +172,7 @@ class RBM:
             error = 0
 
             # For every batch
-            for samples, _ in batches:
+            for i, (samples, _) in enumerate(batches):
                 #
                 samples = samples.view(len(samples), self.n_visible)
 
@@ -224,6 +224,9 @@ class RBM:
 
                 #
                 error += batch_error
+
+            #
+            error /= i
 
             logger.info(f'Reconstruction error: {error}')
 
