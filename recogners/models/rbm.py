@@ -13,14 +13,16 @@ class RBM:
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, learning_rate=0.1, steps=1, temperature=1):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1):
         """Initialization method.
 
         Args:
             n_visible (int): Amount of visible units.
             n_hidden (int): Amount of hidden units.
-            learning_rate (float): Learning rate.
             steps (int): Number of Gibbs' sampling steps.
+            learning_rate (float): Learning rate.
+            momentum (float): Momentum parameter.
+            decay (float): Weight decay used for penalization.
             temperature (float): Temperature factor.
 
         """
@@ -36,11 +38,17 @@ class RBM:
         # Amount of hidden units
         self._n_hidden = n_hidden
 
+        # Number of steps Gibbs' sampling steps
+        self._steps = steps
+
         # Learning rate
         self._lr = learning_rate
 
-        # Number of steps Gibbs' sampling steps
-        self._steps = steps
+        # Momentum parameter
+        self._momentum = momentum
+
+        # Weight decay
+        self._decay = decay
 
         # Temperature factor
         self._T = temperature
@@ -56,7 +64,7 @@ class RBM:
 
         logger.info('Model created.')
         logger.debug(
-            f'Size: ({self._n_visible}, {self._n_hidden}) | Hyperparameters: lr = {self._lr}, steps = {self._steps}, T = {self._T}.')
+            f'Size: ({self._n_visible}, {self._n_hidden}) | Learning: CD-{self.steps} | Hyperparameters: lr = {self._lr}, momentum = {self._momentum}, decay = {self._decay}, T = {self._T}.')
 
     @property
     def n_visible(self):
@@ -75,6 +83,14 @@ class RBM:
         return self._n_hidden
 
     @property
+    def steps(self):
+        """int: Number of Gibbs' sampling steps.
+
+        """
+
+        return self._steps
+
+    @property
     def lr(self):
         """float: The model's learning rate.
 
@@ -83,12 +99,20 @@ class RBM:
         return self._lr
 
     @property
-    def steps(self):
-        """int: Number of Gibbs' sampling steps.
+    def momentum(self):
+        """float: Momentum parameter.
 
         """
 
-        return self._steps
+        return self._momentum
+
+    @property
+    def decay(self):
+        """float: Weight decay used for penalization.
+
+        """
+
+        return self._decay
 
     @property
     def T(self):
@@ -134,11 +158,12 @@ class RBM:
     def b(self, b):
         self._b = b
 
-    def hidden_sampling(self, v):
+    def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
             v (tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
             The probabilities and states of the hidden layer sampling.
@@ -148,19 +173,27 @@ class RBM:
         # Calculating neurons' activations
         activations = torch.mm(v, self.W) + self.b
 
-        # Transforming into probabilites
-        probs = torch.sigmoid(activations)
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = torch.sigmoid(activations / self.T)
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = torch.sigmoid(activations)
 
         # Sampling current states
         states = (probs > torch.rand(self.n_hidden)).float()
 
         return probs, states
 
-    def visible_sampling(self, h):
+    def visible_sampling(self, h, scale=False):
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
             h (tensor): A tensor incoming from the hidden layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
             The probabilities and states of the visible layer sampling.
@@ -170,8 +203,15 @@ class RBM:
         # Calculating neurons' activations
         activations = torch.mm(h, self.W.t()) + self.a
 
-        # Transforming into probabilites
-        probs = torch.sigmoid(activations)
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = torch.sigmoid(activations / self.T)
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = torch.sigmoid(activations)
 
         # Sampling current states
         states = (probs > torch.rand(self.n_visible)).float()
@@ -186,6 +226,11 @@ class RBM:
             epochs (int): Number of training epochs.
 
         """
+
+        # Creating weights, visible and hidden biases momentums
+        w_momentum = torch.zeros(self.n_visible, self.n_hidden)
+        a_momentum = torch.zeros(self.n_visible)
+        b_momentum = torch.zeros(self.n_hidden)
 
         # For every epoch
         for e in range(epochs):
@@ -211,36 +256,36 @@ class RBM:
                 for _ in range(self.steps):
                     # Calculating negative phase hidden probabilities and states
                     neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                        visible_states)
+                        visible_states, scale=True)
 
                     # Calculating visible probabilities and states
                     visible_probs, visible_states = self.visible_sampling(
-                        neg_hidden_states)
+                        neg_hidden_states, scale=True)
 
-                # Building the positive gradient
+                # Building the positive and negative gradients
                 pos_gradient = torch.mm(samples.t(), pos_hidden_probs)
-
-                # Building the negative gradient
                 neg_gradient = torch.mm(visible_probs.t(), neg_hidden_probs)
 
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
 
-                # Updating weights matrix
-                self.W += self.lr * (pos_gradient - neg_gradient) / batch_size
+                # Calculating weights, visible and hidden biases momentums
+                w_momentum = (w_momentum * self.momentum) + \
+                    (self.lr * (pos_gradient - neg_gradient) / batch_size)
 
-                # Updating visible units biases
-                self.a += self.lr * \
-                    torch.sum((samples - visible_probs), dim=0) / batch_size
+                a_momentum = (a_momentum * self.momentum) + \
+                    (self.lr * torch.sum((samples - visible_probs), dim=0) / batch_size)
 
-                # Updating hidden units biases
-                self.b += self.lr * \
-                    torch.sum((pos_hidden_probs - neg_hidden_probs),
-                              dim=0) / batch_size
+                b_momentum = (b_momentum * self.momentum) + \
+                    (self.lr * torch.sum((pos_hidden_probs - neg_hidden_probs), dim=0) / batch_size)
+
+                # Updating weights matrix, visible and hidden biases
+                self.W += w_momentum - (self.W * self.decay)
+                self.a += a_momentum
+                self.b += b_momentum
 
                 # Calculating current's batch error
-                batch_error = torch.sum(
-                    (samples - visible_states) ** 2) / batch_size
+                batch_error = torch.sum((samples - visible_states) ** 2) / batch_size
 
                 # Summing up to epochs' error
                 error += batch_error
