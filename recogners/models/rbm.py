@@ -358,3 +358,43 @@ class RBM:
             pl /= i
 
             logger.info(f'Error: {error} | log-PL: {pl}')
+
+    def reconstruct(self, batches):
+        """Reconstruct batches of new samples.
+
+        Args:
+            batches (DataLoader): A DataLoader object containing batches to be reconstructed.
+
+        """
+
+        logger.info(f'Reconstructing new samples ...')
+
+        # Resetting error to zero
+        error = 0
+
+        # For every batch
+        for i, (samples, _) in enumerate(batches):
+            # Flattening the samples' batch
+            samples = samples.view(len(samples), self.n_visible).double()
+
+            # Calculating positive phase hidden probabilities and states
+            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
+                samples)
+
+            # Calculating visible probabilities and states
+            visible_probs, visible_states = self.visible_sampling(
+                pos_hidden_states)
+
+            # Gathering the size of the batch
+            batch_size = samples.size(0)
+
+            # Calculating current's batch reconstruction error
+            batch_error = torch.sum((samples - visible_states) ** 2) / batch_size
+
+            # Summing up to reconstruction's error
+            error += batch_error
+
+        # Normalizing the error with the number of batches
+        error /= i
+
+        logger.info(f'Error: {error}')
