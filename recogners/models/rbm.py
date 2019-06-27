@@ -30,7 +30,7 @@ class RBM:
         logger.info('Creating model: RBM.')
 
         # Setting default tensor type to Double
-        torch.set_default_tensor_type(torch.FloatTensor)
+        torch.set_default_tensor_type(torch.DoubleTensor)
 
         # Amount of visible units
         self._n_visible = n_visible
@@ -57,10 +57,10 @@ class RBM:
         self._W = torch.randn(n_visible, n_hidden)
 
         # Visible units bias
-        self._a = torch.zeros(n_visible)
+        self._a = torch.zeros(1, n_visible)
 
         # Hidden units bias
-        self._b = torch.zeros(n_hidden)
+        self._b = torch.zeros(1, n_hidden)
 
         logger.info('Model created.')
         logger.debug(
@@ -184,7 +184,7 @@ class RBM:
             probs = torch.sigmoid(activations)
 
         # Sampling current states
-        states = (probs > torch.rand(self.n_hidden)).float()
+        states = (probs > torch.rand(self.n_hidden)).double()
 
         return probs, states
 
@@ -214,9 +214,67 @@ class RBM:
             probs = torch.sigmoid(activations)
 
         # Sampling current states
-        states = (probs > torch.rand(self.n_visible)).float()
+        states = (probs > torch.rand(self.n_visible)).double()
 
         return probs, states
+
+    def energy(self, samples):
+        """Calculates and frees the system's energy.
+
+        Args:
+            samples (tensor): Samples to be energy-freed.
+
+        Returns:
+            The system's energy based on input samples.
+
+        """
+
+        # Calculate samples' activations
+        activations = torch.mm(samples, self.W) + self.b
+
+        # Calculate the visible term
+        v = torch.mm(samples, self.a.t())
+
+        # Calculate the hidden term
+        h = torch.sum(torch.log(1 + torch.exp(activations)), dim=1)
+
+        # Finally, gathers the system's energy
+        energy = -h - v
+
+        return energy
+
+    def pseudo_likelihood(self, samples):
+        """Calculates the logarithm of the pseudo-likelihood.
+
+        Args:
+            samples (tensor): Samples to be calculated.
+
+        Returns:
+            The logarithm of the pseudo-likelihood based on input samples.
+
+        """
+
+        # Gathering a new array to hold the rounded samples
+        samples_binary = torch.round(samples)
+
+        # Calculates the energy of samples before flipping the bits
+        e = self.energy(samples_binary)
+
+        # Samples an array of indexes to flip the bits
+        bits = torch.randint(0, self.n_visible, size=(samples.size(0), 1))
+
+        # Iterate through all samples in the batch
+        for i in range(samples.size(0)):
+            # Flips the bit on corresponding index
+            samples_binary[i][bits[i]] = 1 - samples_binary[i][bits[i]]
+
+        # Calculates the energy after flipping the bits
+        e1 = self.energy(samples_binary)
+        
+        # Calculate the logarithm of the pseudo-likelihood
+        pl = torch.mean(self.n_visible * torch.log(torch.sigmoid(e1 - e)))
+
+        return pl
 
     def fit(self, batches, epochs=10):
         """Fits a new RBM model.
@@ -236,13 +294,14 @@ class RBM:
         for e in range(epochs):
             logger.info(f'Epoch {e+1}/{epochs}')
 
-            # Resetting epoch's error to zero
+            # Resetting epoch's error and pseudo-likelihood to zero
             error = 0
+            pl = 0
 
             # For every batch
             for i, (samples, _) in enumerate(batches):
                 # Flattening the samples' batch
-                samples = samples.view(len(samples), self.n_visible)
+                samples = samples.view(len(samples), self.n_visible).double()
 
                 # Calculating positive phase hidden probabilities and states
                 pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
@@ -287,10 +346,15 @@ class RBM:
                 # Calculating current's batch error
                 batch_error = torch.sum((samples - visible_states) ** 2) / batch_size
 
-                # Summing up to epochs' error
+                # Calculating the logarithm of current's batch pseudo-likelihood
+                batch_pl = self.pseudo_likelihood(samples)
+
+                # Summing up to epochs' error and pseudo-likelihood
                 error += batch_error
+                pl += batch_pl
 
-            # Normalizing the error with the number of batches
+            # Normalizing the error and pseudo-likelihood with the number of batches
             error /= i
+            pl /= i
 
-            logger.info(f'Reconstruction error: {error}')
+            logger.info(f'Error: {error} | log-PL: {pl}')
