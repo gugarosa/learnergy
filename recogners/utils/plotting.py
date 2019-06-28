@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-def showTensor(aTensor):
+def show(tensor):
     plt.figure()
-    plt.imshow(aTensor.numpy(), cmap=plt.cm.gray)
+    plt.imshow(tensor.numpy(), cmap=plt.cm.gray)
     plt.show()

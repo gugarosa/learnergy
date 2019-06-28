@@ -299,7 +299,7 @@ class RBM:
             pl = 0
 
             # For every batch
-            for i, (samples, _) in enumerate(batches):
+            for samples, _ in batches:
                 # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible).double()
 
@@ -354,8 +354,8 @@ class RBM:
                 pl += batch_pl
 
             # Normalizing the error and pseudo-likelihood with the number of batches
-            error /= i
-            pl /= i
+            error /= len(batches)
+            pl /= len(batches)
 
             logger.info(f'Error: {error} | log-PL: {pl}')
 
@@ -373,7 +373,7 @@ class RBM:
         error = 0
 
         # For every batch
-        for i, (samples, _) in enumerate(batches):
+        for samples, _ in batches:
             # Flattening the samples' batch
             samples = samples.view(len(samples), self.n_visible).double()
 
@@ -395,6 +395,8 @@ class RBM:
             error += batch_error
 
         # Normalizing the error with the number of batches
-        error /= i
+        error /= len(batches)
 
         logger.info(f'Error: {error}')
+
+        return visible_probs

@@ -16,8 +16,10 @@ test_batches = DataLoader(test, batch_size=128, shuffle=True, num_workers=1)
 model = RBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1)
 
 # Training an RBM
-model.fit(train_batches, epochs=30)
+model.fit(train_batches, epochs=1)
 
 # Reconstructing test set
-#model.reconstruct(test_batches)
-plot.showTensor(model.W)
+v = model.reconstruct(test_batches)
+
+#
+plot.show(v[0].view(28, 28))
