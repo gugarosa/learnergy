@@ -23,3 +23,4 @@ v = model.reconstruct(test_batches)
 
 #
 plot.show(v[0].view(28, 28))
+plot.weights_visualize(model.W)
