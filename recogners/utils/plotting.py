@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from PIL import Image
-
+import recogners.utils.wv as wv
 
 def show(tensor):
     plt.figure()
