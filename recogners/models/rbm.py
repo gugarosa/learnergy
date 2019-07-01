@@ -54,7 +54,7 @@ class RBM:
         self._T = temperature
 
         # Weights matrix
-        self._W = torch.randn(n_visible, n_hidden)
+        self._W = torch.randn(n_visible, n_hidden) * 0.01
 
         # Visible units bias
         self._a = torch.zeros(1, n_visible)
