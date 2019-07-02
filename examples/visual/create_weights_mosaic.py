@@ -16,5 +16,5 @@ model = RBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1, momentum=0,
 # Training an RBM
 model.fit(train_batches, epochs=1)
 
-# Creates a weights mosaic image
+# Creating weights' mosaic
 plot.create_mosaic(model.W)

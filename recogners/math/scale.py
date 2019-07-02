@@ -1,18 +1,22 @@
 def unitary(x, eps=1e-8):
+    """Scales an array between 0 and 1.
+
+    Args:
+        x (array): A numpy array to be scaled.
+        eps (float): An epsilon value to avoid division by zero.
+
+    Returns:
+        The scaled array.
+
     """
-    """
 
-    print(x)
+    # Makes sure the array is double typed
+    x = x.astype('float64')
 
-    #
-    x1 = x.copy()
+    # Gathers array minimum and subtract
+    x -= x.min()
 
-    #
-    x1 -= x.min()
+    # Normalizes the array using its maximum
+    x *= 1.0 / (x.max() + eps)
 
-    #
-    x1 *= 1.0 / (x.max() + eps)
-
-    print(f'\n{x1}')
-
-    return x1
+    return x

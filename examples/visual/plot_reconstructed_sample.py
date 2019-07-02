@@ -21,5 +21,5 @@ model.fit(train_batches, epochs=1)
 # Reconstructing test set
 v = model.reconstruct(test_batches)
 
-# Plots a reconstructed sample
+# Plotting a reconstructed sample
 plot.show(v[0].view(28, 28))
