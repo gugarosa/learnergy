@@ -1,7 +1,7 @@
 import torchvision
 from torch.utils.data import DataLoader
 
-import recogners.visual.plot as plot
+import recogners.visual.image as im
 from recogners.models.rbm import RBM
 
 # Creating training and testing dataset
@@ -21,5 +21,5 @@ model.fit(train_batches, epochs=1)
 # Reconstructing test set
 v = model.reconstruct(test_batches)
 
-# Plotting a reconstructed sample
-plot.show(v[0].view(28, 28))
+# Showing a reconstructed sample
+im.show(v[0].view(28, 28))

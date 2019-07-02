@@ -1,6 +1,8 @@
+import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
-import recogners.math.scale as scale
+import recogners.math.scale as s
 
 
 def rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=True):
@@ -18,81 +20,150 @@ def rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=
         An output array containing the rasterized version of input array.
 
     """
-                       
+
+    # Asserts if tuple lengths are equal to 2
     assert len(img_shape) == 2
     assert len(tile_shape) == 2
     assert len(tile_spacing) == 2
 
-    out_shape = [
-        (ishp + tsp) * tshp - tsp
-        for ishp, tshp, tsp in zip(img_shape, tile_shape, tile_spacing)
-    ]
+    # Creates an output shape
+    out_shape = [(ishp + tsp) * tshp - tsp for ishp, tshp,
+                 tsp in zip(img_shape, tile_shape, tile_spacing)]
 
+    # Asserts if input array is a tuple
     if isinstance(x, tuple):
+        # Checks if its length is equal to 4
         assert len(x) == 4
-        # Create an output numpy ndarray to store the image
-        if output:
-            out_array = np.zeros((out_shape[0], out_shape[1], 4),
-                                    dtype='uint8')
-        else:
-            out_array = np.zeros((out_shape[0], out_shape[1], 4),
-                                    dtype=x.dtype)
 
-        #colors default to 0, alpha defaults to 1 (opaque)
+        # If output boolean is true
         if output:
+            # Output values as pixels
+            out_array = np.zeros(
+                (out_shape[0], out_shape[1], 4), dtype='uint8')
+
+            # Apply the default channels
             channel_defaults = [0, 0, 0, 255]
+
+        # If output boolean is false
         else:
+            # Output values as its input type
+            out_array = np.zeros(
+                (out_shape[0], out_shape[1], 4), dtype=x.dtype)
+
+            # Apply the default channels
             channel_defaults = [0., 0., 0., 1.]
 
+        # For every possible item in tuple
         for i in range(4):
+            # If there is no channel
             if x[i] is None:
-                # if channel is None, fill it with zeros of the correct
-                # dtype
-                dt = out_array.dtype
-                if output:
-                    dt = 'uint8'
+                # Fill it with zeros of the correct dtype
                 out_array[:, :, i] = np.zeros(
-                    out_shape,
-                    dtype=dt
-                ) + channel_defaults[i]
+                    out_shape, dtype=out_array.dtype) + channel_defaults[i]
+
+            # If there is a channel
             else:
-                # use a recurrent call to compute the channel and store it
-                # in the output
+                # Use a recurrent call to compute the channel and store it
                 out_array[:, :, i] = rasterize(
-                    x[i], img_shape, tile_shape, tile_spacing,
-                    scale, output)
+                    x[i], img_shape, tile_shape, tile_spacing, scale, output)
+
         return out_array
 
+    # Asserts if input array is not a tuple
     else:
-        # if we are dealing with only one channel
+        # Gathers the image shape
         H, W = img_shape
+
+        # Also gathers the tile spacing
         Hs, Ws = tile_spacing
 
-        # generate a matrix to store the output
+        # Checks the current input dtype
         dt = x.dtype
+
+        # If output boolean is true
         if output:
+            # Output type should be an unsigned integer
             dt = 'uint8'
+
+        # Creates a zeros array based on output shape
         out_array = np.zeros(out_shape, dtype=dt)
 
+        # For every row of tiles
         for tile_row in range(tile_shape[0]):
+            # For every column of tiles
             for tile_col in range(tile_shape[1]):
+                # Checks if belongs to an specific row
                 if tile_row * tile_shape[1] + tile_col < x.shape[0]:
-                    this_x = x[tile_row * tile_shape[1] + tile_col]
+                    # Replace its value
+                    x1 = x[tile_row * tile_shape[1] + tile_col]
+
+                    # If scale boolean is true
                     if scale:
-                        # if we should scale values to be between 0 and 1
-                        # do this by calling the `scale_to_unit_interval`
-                        # function
-                        this_img = scale.unitary(
-                            this_x.reshape(img_shape))
+                        # We should scale values to be between 0 and 1
+                        img = s.unitary(x1.reshape(img_shape))
+
+                    # If not
                     else:
-                        this_img = this_x.reshape(img_shape)
-                    # add the slice to the corresponding position in the
-                    # output array
+                        # We just reshape the image to the input shape
+                        img = x1.reshape(img_shape)
+
+                    # Add the slice to the corresponding position in the output array
                     c = 1
+
+                    # If output boolean is true
                     if output:
+                        # The slice should be a maximum pixel value
                         c = 255
+
+                    # Creates the output array
                     out_array[
                         tile_row * (H + Hs): tile_row * (H + Hs) + H,
                         tile_col * (W + Ws): tile_col * (W + Ws) + W
-                    ] = this_img * c
+                    ] = img * c
+
         return out_array
+
+
+def create_mosaic(tensor):
+    """Creates a mosaic from a tensor using Pillow.
+
+    Args:
+        tensor (tensor): An input tensor to have its mosaic created.
+
+    """
+
+    # Gets the numpy array from the tensor
+    array = tensor.numpy()
+
+    # Calculate their maximum possible squared dimension
+    d = int(np.sqrt(array.shape[0]))
+    s = int(np.sqrt(array.shape[1]))
+
+    # Creates a Pillow image from the array's rasterized version
+    img = Image.fromarray(rasterize(array.T, img_shape=(
+        d, d), tile_shape=(s, s), tile_spacing=(1, 1)))
+
+    # Shows the image
+    img.show()
+
+
+def show(tensor):
+    """Plots a tensor in grayscale mode using Matplotlib.
+
+    Args:
+        tensor (tensor): An input tensor to be plotted.
+
+    """
+
+    # Creates a matplotlib figure
+    plt.figure()
+
+    # Plots the numpy version of the tensor (grayscale)
+    plt.imshow(tensor.numpy(), cmap=plt.cm.gray)
+
+    # Disables all axis' ticks
+    plt.xticks([])
+    plt.yticks([])
+
+    # Shows the plot
+    plt.show()
