@@ -1,11 +1,12 @@
 import torch
 
 import recogners.utils.logging as l
+from recogners.core.model import Model
 
 logger = l.get_logger(__name__)
 
 
-class RBM:
+class RBM(Model):
     """An RBM class provides the basic implementation for Restricted Boltzmann Machines.
 
     References:
@@ -27,10 +28,10 @@ class RBM:
 
         """
 
-        logger.info('Creating model: RBM.')
+        logger.info('Overriding class: Model -> RBM.')
 
-        # Setting default tensor type to Double
-        torch.set_default_tensor_type(torch.DoubleTensor)
+        # Override its parent class
+        super(RBM, self).__init__()
 
         # Amount of visible units
         self._n_visible = n_visible
@@ -62,7 +63,7 @@ class RBM:
         # Hidden units bias
         self._b = torch.zeros(1, n_hidden)
 
-        logger.info('Model created.')
+        logger.info('Class overrided.')
         logger.debug(
             f'Size: ({self._n_visible}, {self._n_hidden}) | Learning: CD-{self.steps} | Hyperparameters: lr = {self._lr}, momentum = {self._momentum}, decay = {self._decay}, T = {self._T}.')
 

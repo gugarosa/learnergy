@@ -19,3 +19,6 @@ model.fit(train_batches, epochs=1)
 
 # Reconstructing test set
 v = model.reconstruct(test_batches)
+
+# Saving model to an output file
+model.save('rbm.pkl')

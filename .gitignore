@@ -8,6 +8,9 @@
 # Logs
 recogners.log.*
 
+# Saved pickles
+**/*.pkl
+
 # Data folder
 data/**
 
