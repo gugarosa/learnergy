@@ -3,6 +3,9 @@ import numpy as np
 from PIL import Image
 
 import recogners.math.scale as s
+import recogners.utils.logging as l
+
+logger = l.get_logger(__name__)
 
 
 def rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=True):
@@ -132,6 +135,8 @@ def create_mosaic(tensor):
 
     """
 
+    logger.debug(f'Creating mosaic ...')
+
     # Gets the numpy array from the tensor
     array = tensor.numpy()
 
@@ -146,6 +151,8 @@ def create_mosaic(tensor):
     # Shows the image
     img.show()
 
+    logger.debug('Mosaic created.')
+
 
 def show(tensor):
     """Plots a tensor in grayscale mode using Matplotlib.
@@ -154,6 +161,8 @@ def show(tensor):
         tensor (tensor): An input tensor to be plotted.
 
     """
+
+    logger.debug(f'Showing tensor ...')
 
     # Creates a matplotlib figure
     plt.figure()
@@ -167,3 +176,5 @@ def show(tensor):
 
     # Shows the plot
     plt.show()
+
+    logger.debug('Tensor showed.')
