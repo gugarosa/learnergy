@@ -16,7 +16,7 @@ Use Recogners if you need a library or wish to:
 
 Read the docs at [recogners.readthedocs.io](https://recogners.readthedocs.io).
 
-Recogners is compatible with: **Python 3.6+** and **PyPy 3.5**.
+Recogners is compatible with: **Python 3.6+**.
 
 ---
 
