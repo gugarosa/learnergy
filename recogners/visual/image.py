@@ -103,7 +103,7 @@ def rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=
                     # If scale boolean is true
                     if scale:
                         # We should scale values to be between 0 and 1
-                        img = s.unitary(x1.reshape(img_shape))
+                        img = s.unitary_scale(x1.reshape(img_shape))
 
                     # If not
                     else:

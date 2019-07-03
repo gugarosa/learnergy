@@ -1,4 +1,4 @@
-def unitary(x, eps=1e-8):
+def unitary_scale(x, eps=1e-8):
     """Scales an array between 0 and 1.
 
     Args:
