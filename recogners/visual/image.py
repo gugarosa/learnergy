@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
@@ -152,29 +151,3 @@ def create_mosaic(tensor):
     img.show()
 
     logger.debug('Mosaic created.')
-
-
-def show(tensor):
-    """Plots a tensor in grayscale mode using Matplotlib.
-
-    Args:
-        tensor (tensor): An input tensor to be plotted.
-
-    """
-
-    logger.debug(f'Showing tensor ...')
-
-    # Creates a matplotlib figure
-    plt.figure()
-
-    # Plots the numpy version of the tensor (grayscale)
-    plt.imshow(tensor.numpy(), cmap=plt.cm.gray)
-
-    # Disables all axis' ticks
-    plt.xticks([])
-    plt.yticks([])
-
-    # Shows the plot
-    plt.show()
-
-    logger.debug('Tensor showed.')

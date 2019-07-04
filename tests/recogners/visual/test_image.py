@@ -16,14 +16,13 @@ def test_rasterize():
 
     assert rasterized_array.shape == (71, 71)
 
+    rasterized_array = image.rasterize(array.T, img_shape=(
+        d, d), tile_shape=(s, s), tile_spacing=(1, 1), scale=False)
+
+    assert rasterized_array.shape == (71, 71)
+
 
 def test_create_mosaic():
     t = torch.zeros(64, 64)
 
     image.create_mosaic(t)
-
-
-def test_show():
-    t = torch.zeros(28, 28)
-
-    image.show(t)
