@@ -50,7 +50,7 @@ def rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=
         else:
             # Output values as its input type
             out_array = np.zeros(
-                (out_shape[0], out_shape[1], 4), dtype=x.dtype)
+                (out_shape[0], out_shape[1], 4), dtype=x[0].dtype)
 
             # Apply the default channels
             channel_defaults = [0., 0., 0., 1.]

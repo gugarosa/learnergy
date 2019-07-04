@@ -21,6 +21,18 @@ def test_rasterize():
 
     assert rasterized_array.shape == (71, 71)
 
+    tuple = (np.zeros((64, 64)), np.zeros((64, 64)), np.zeros((64, 64)), None)
+
+    rasterized_tuple = image.rasterize(tuple, img_shape=(
+        d, d), tile_shape=(s, s), tile_spacing=(1, 1))
+
+    assert rasterized_tuple.shape == (71, 71, 4)
+
+    rasterized_tuple = image.rasterize(tuple, img_shape=(
+        d, d), tile_shape=(s, s), tile_spacing=(1, 1), output=False)
+
+    assert rasterized_tuple.shape == (71, 71, 4)
+
 
 def test_create_mosaic():
     t = torch.zeros(64, 64)
