@@ -6,7 +6,7 @@ from recogners.datasets import opf
 
 
 def test_opf_dataset():
-    opf_file = os.path.abspath('./tests/recogners/datasets/opf_data.txt')
+    opf_file = os.path.abspath('./tests/data/opf_format.txt')
 
     new_opf_dataset = opf.OPFDataset(path=opf_file)
 
