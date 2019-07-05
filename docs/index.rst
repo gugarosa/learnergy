@@ -1,9 +1,10 @@
-Welcome to Recogners's documentation!
+Welcome to Recogners' documentation!
 =======================================
 
 Did you ever reach a bottleneck in your computational experiments? Are you tired of implementing your own techniques? If yes, Recogners is the real deal! This package provides an easy-to-go implementation of machine learning algorithms. From datasets to fully-customizable models, from internal functions to external communication, we will foster all research related to machine learning.
 
 Use Recogners if you need a library or wish to:
+
 * Create your own machine learning algorithm.
 * Design or use pre-loaded learners.
 * Mix-and-match different strategies to solve your problem.
