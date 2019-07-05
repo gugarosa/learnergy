@@ -7,6 +7,6 @@ This is an utilities package. Common things shared across the application should
     recogners.utils.loader
     recogners.utils.logging
 
-.. automodule:: recogners.utils
+.. autoapimodule:: recogners.utils
    :members:
    :show-inheritance:

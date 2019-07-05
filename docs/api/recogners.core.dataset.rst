@@ -1,7 +1,7 @@
 recogners.core.dataset
 ==========================
 
-.. automodule:: recogners.core.dataset
+.. autoapimodule:: recogners.core.dataset
     :members:
     :private-members:
     :special-members:

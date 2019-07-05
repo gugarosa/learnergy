@@ -6,6 +6,6 @@ Just because we are computing stuff, it does not means that we do not need math.
 .. toctree::
     recogners.math.scale
 
-.. automodule:: recogners.math
+.. autoapimodule:: recogners.math
    :members:
    :show-inheritance:

@@ -7,6 +7,6 @@ Core is the core. Essentially, it is the parent of everything. You should find p
     recogners.core.dataset
     recogners.core.model
 
-.. automodule:: recogners.core
+.. autoapimodule:: recogners.core
    :members:
    :show-inheritance:

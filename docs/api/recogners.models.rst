@@ -6,6 +6,6 @@ This is the heart, basically. All models are declared and implemented here. We w
 .. toctree::
     recogners.models.rbm
 
-.. automodule:: recogners.models
+.. autoapimodule:: recogners.models
    :members:
    :show-inheritance:

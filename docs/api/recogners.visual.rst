@@ -7,6 +7,6 @@ Every one needs images and plots to help visualize what is happening, correct? T
     recogners.visual.image
     recogners.visual.plot
 
-.. automodule:: recogners.visual
+.. autoapimodule:: recogners.visual
    :members:
    :show-inheritance:

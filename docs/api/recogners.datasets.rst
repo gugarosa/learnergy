@@ -6,6 +6,6 @@ As we are build over PyTorch, we will also provide some integrations with anothe
 .. toctree::
     recogners.datasets.opf
 
-.. automodule:: recogners.datasets
+.. autoapimodule:: recogners.datasets
    :members:
    :show-inheritance:

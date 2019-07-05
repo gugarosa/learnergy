@@ -15,7 +15,6 @@
 import os
 import sys
 
-import opytimizer
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath('.'))
@@ -28,10 +27,10 @@ copyright = '2019, Recogna Laboratory'
 author = 'Recogna Laboratory'
 
 # The short X.Y version
-version = recogners.__version__
+version = '1.0.0'
 
 # The full version, including alpha/beta/rc tags
-release = recogners.__version__
+release = '1.0.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -46,7 +45,11 @@ release = recogners.__version__
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'autoapi.extension'
 ]
+
+autoapi_dirs = ['../recogners']
+autoapi_generate_api_docs = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

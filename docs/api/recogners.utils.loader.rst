@@ -1,7 +1,7 @@
 recogners.utils.loader
 ==========================
 
-.. automodule:: recogners.utils.loader
+.. autoapimodule:: recogners.utils.loader
     :members:
     :private-members:
     :special-members:
