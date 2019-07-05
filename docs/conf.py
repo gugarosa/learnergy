@@ -198,4 +198,4 @@ autodoc_default_options = {
     'exclude-members': '__weakref__'
 }
 
-autodoc_member_order = 'bysource'
+autodoc_member_order = 'groupwise'

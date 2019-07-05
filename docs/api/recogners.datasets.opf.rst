@@ -1,7 +1,7 @@
 recogners.datasets.opf
 ==========================
 
-.. autoapimodule:: recogners.datasets.opf
+.. autoapiclass:: recogners.datasets.opf.OPFDataset
     :members:
     :private-members:
     :special-members:
