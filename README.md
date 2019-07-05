@@ -47,6 +47,7 @@ Recogners is based on the following structure, and you should pay attention to i
     - math
         - scale
     - models
+        - dropout_rbm
         - rbm
     - utils
         - loader
