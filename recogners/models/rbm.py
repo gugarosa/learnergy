@@ -284,6 +284,9 @@ class RBM(Model):
             batches (DataLoader): A DataLoader object containing the training batches.
             epochs (int): Number of training epochs.
 
+        Returns:
+            Error and log pseudo-likelihood from the training step.
+
         """
 
         # Creating weights, visible and hidden biases momentums
@@ -367,6 +370,9 @@ class RBM(Model):
 
         Args:
             batches (DataLoader): A DataLoader object containing batches to be reconstructed.
+
+        Returns:
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 

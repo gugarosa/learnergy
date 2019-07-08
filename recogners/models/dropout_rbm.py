@@ -95,6 +95,9 @@ class DropoutRBM(RBM):
         Args:
             batches (DataLoader): A DataLoader object containing batches to be reconstructed.
 
+        Returns:
+            Reconstruction error and visible probabilities, i.e., P(v|h).
+
         """
 
         logger.info(f'Reconstructing new samples ...')
