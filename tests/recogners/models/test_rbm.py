@@ -75,7 +75,10 @@ def test_rbm_fit():
     new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
                       learning_rate=0.1, momentum=0, decay=0, temperature=1)
 
-    new_rbm.fit(train_batches, epochs=1)
+    e, pl = new_rbm.fit(train_batches, epochs=1)
+
+    assert e >= 0
+    assert pl <= 0
 
 
 def test_rbm_reconstruct():
@@ -88,6 +91,7 @@ def test_rbm_reconstruct():
     new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
                       learning_rate=0.1, momentum=0, decay=0, temperature=1)
 
-    v = new_rbm.reconstruct(test_batches)
+    e, v = new_rbm.reconstruct(test_batches)
 
+    assert e >= 0
     assert v.size(1) == 784
