@@ -360,6 +360,8 @@ class RBM(Model):
 
             logger.info(f'Error: {error} | log-PL: {pl}')
 
+        return error, pl
+
     def reconstruct(self, batches):
         """Reconstruct batches of new samples.
 
@@ -400,4 +402,4 @@ class RBM(Model):
 
         logger.info(f'Error: {error}')
 
-        return visible_probs
+        return error, visible_probs

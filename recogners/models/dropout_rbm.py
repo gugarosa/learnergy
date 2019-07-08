@@ -142,4 +142,4 @@ class DropoutRBM(RBM):
 
         logger.info(f'Error: {error}')
 
-        return visible_probs
+        return error, visible_probs

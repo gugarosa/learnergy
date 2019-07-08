@@ -22,7 +22,7 @@ model = RBM(n_visible=784, n_hidden=128, steps=1,
 model.fit(train_batches, epochs=1)
 
 # Reconstructing test set
-v = model.reconstruct(test_batches)
+_, v = model.reconstruct(test_batches)
 
 # Showing a reconstructed sample
 plot.show_tensor(v[0].view(28, 28))

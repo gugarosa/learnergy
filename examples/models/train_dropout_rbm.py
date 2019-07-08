@@ -18,10 +18,10 @@ model = DropoutRBM(n_visible=784, n_hidden=256, steps=1,
             learning_rate=0.1, momentum=0, decay=0, temperature=1, dropout=0.25)
 
 # Training an RBM
-model.fit(train_batches, epochs=10)
+error, pl = model.fit(train_batches, epochs=10)
 
 # Reconstructing test set
-v = model.reconstruct(test_batches)
+rec_error, v = model.reconstruct(test_batches)
 
 # Saving model to an output file
 model.save('dropout_rbm.pkl')
