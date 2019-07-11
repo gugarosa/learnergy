@@ -361,6 +361,9 @@ class RBM(Model):
             error /= len(batches)
             pl /= len(batches)
 
+            # Dumps the desired variables to the model's history
+            self.dump(error=error, pl=pl)
+
             logger.info(f'Error: {error} | log-PL: {pl}')
 
         return error, pl

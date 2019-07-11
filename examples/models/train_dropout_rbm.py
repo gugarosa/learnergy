@@ -25,3 +25,6 @@ rec_error, v = model.reconstruct(test_batches)
 
 # Saving model to an output file
 model.save('dropout_rbm.pkl')
+
+# Checking the model's history
+# print(model.history)

@@ -23,6 +23,36 @@ class Model:
         # Setting default tensor type to Double
         torch.set_default_tensor_type(torch.DoubleTensor)
 
+        # Creating an empty dictionary to hold historical values
+        self._history = {}
+
+    @property
+    def history(self):
+        """dict: Dictionary containing historical values.
+
+        """
+
+        return self._history
+
+    @history.setter
+    def history(self, history):
+        self._history = history
+
+    def dump(self, **kwargs):
+        """Dumps any amount of keyword documents to lists in the history property.
+
+        """
+
+        # Iterate through key-word arguments
+        for k, v in kwargs.items():
+            # Check if there is already an instance of current
+            if k not in self.history.keys():
+                # If not, creates an empty list
+                self.history[k] = []
+
+            # Appends the new value to the list
+            self.history[k].append(v)
+
     def save(self, file_name):
         """Saves the object to a pickle encoding.
 
