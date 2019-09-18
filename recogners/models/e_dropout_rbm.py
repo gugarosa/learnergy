@@ -11,7 +11,7 @@ class EDropoutRBM(RBM):
     along with a energy-based Dropout regularization.
 
     References:
-        Still to publish ...
+        Publication pending...
 
     """
 
