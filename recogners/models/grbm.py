@@ -1,20 +1,20 @@
 import torch
 
 import recogners.utils.logging as l
-from recogners.core.model import Model
+from recogners.models.rbm import RBM
 
 logger = l.get_logger(__name__)
 
 
-class GBRBM(Model):
-    """An Gaussian-Bernoulli RBM class provides the basic implementation for Restricted Boltzmann Machines.
+class GRBM(RBM):
+    """A Gaussian-Bernoulli RBM class provides the basic implementation for Restricted Boltzmann Machines.
 
     References:
         G. Hinton. A practical guide to training restricted Boltzmann machines. Neural networks: Tricks of the trade (2012).
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=256, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1):
         """Initialization method.
 
         Args:
@@ -28,166 +28,14 @@ class GBRBM(Model):
 
         """
 
-        logger.info('Overriding class: Model -> RBM.')
+        logger.info('Overriding class: RBM -> GRBM.')
 
         # Override its parent class
-        super(RBM, self).__init__()
-
-        # Amount of visible units
-        self._n_visible = n_visible
-
-        # Amount of hidden units
-        self._n_hidden = n_hidden
-
-        # Number of steps Gibbs' sampling steps
-        self._steps = steps
-
-        # Learning rate
-        self._lr = learning_rate
-
-        # Momentum parameter
-        self._momentum = momentum
-
-        # Weight decay
-        self._decay = decay
-
-        # Temperature factor
-        self._T = temperature
-
-        # Weights matrix
-        self._W = torch.randn(n_visible, n_hidden) * 0.01
-
-        # Visible units bias
-        self._a = torch.zeros(1, n_visible)
-
-        # Hidden units bias
-        self._b = torch.zeros(1, n_hidden)
+        super(GRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
+                                         learning_rate=learning_rate, momentum=momentum,
+                                         decay=decay, temperature=temperature)
 
         logger.info('Class overrided.')
-        logger.debug(
-            f'Size: ({self._n_visible}, {self._n_hidden}) | Learning: CD-{self.steps} | Hyperparameters: lr = {self._lr}, momentum = {self._momentum}, decay = {self._decay}, T = {self._T}.')
-
-    @property
-    def n_visible(self):
-        """int: Amount of visible units.
-
-        """
-
-        return self._n_visible
-
-    @property
-    def n_hidden(self):
-        """int: Amount of hidden units.
-
-        """
-
-        return self._n_hidden
-
-    @property
-    def steps(self):
-        """int: Number of Gibbs' sampling steps.
-
-        """
-
-        return self._steps
-
-    @property
-    def lr(self):
-        """float: The model's learning rate.
-
-        """
-
-        return self._lr
-
-    @property
-    def momentum(self):
-        """float: Momentum parameter.
-
-        """
-
-        return self._momentum
-
-    @property
-    def decay(self):
-        """float: Weight decay used for penalization.
-
-        """
-
-        return self._decay
-
-    @property
-    def T(self):
-        """float: Temperature factor.
-
-        """
-
-        return self._T
-
-    @property
-    def W(self):
-        """tensor: Weights matrix [n_visible x n_hidden].
-
-        """
-
-        return self._W
-
-    @W.setter
-    def W(self, W):
-        self._W = W
-
-    @property
-    def a(self):
-        """tensor: Visible units bias [1 x n_visible].
-
-        """
-
-        return self._a
-
-    @a.setter
-    def a(self, a):
-        self._a = a
-
-    @property
-    def b(self):
-        """tensor: Hidden units bias [1 x n_hidden].
-
-        """
-
-        return self._b
-
-    @b.setter
-    def b(self, b):
-        self._b = b
-
-    def hidden_sampling(self, v, scale=False):
-        """Performs the hidden layer sampling, i.e., P(h|v).
-
-        Args:
-            v (tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
-
-        Returns:
-            The probabilities and states of the hidden layer sampling.
-
-        """
-
-        # Calculating neurons' activations
-        activations = torch.mm(v, self.W) + self.b
-
-        # If scaling is true
-        if scale:
-            # Calculate probabilities with temperature
-            probs = torch.sigmoid(activations / self.T)
-
-        # If scaling is false
-        else:
-            # Calculate probabilities as usual
-            probs = torch.sigmoid(activations)
-
-        # Sampling current states
-        states = (probs > torch.rand(self.n_hidden)).double()
-
-        return probs, states
 
     def visible_sampling(self, h, scale=False):
         """Performs the visible layer sampling, i.e., P(v|h).
@@ -216,8 +64,10 @@ class GBRBM(Model):
         
         return probs
 
-    def energy(self, samples): # TO REWRITE THE ENERGY FOR GAUSSIAN INPUT #
+    def energy(self, samples):
         """Calculates and frees the system's energy.
+
+        TO-DO: REWRITE THE ENERGY FOR GAUSSIAN INPUT!
 
         Args:
             samples (tensor): Samples to be energy-freed.
@@ -242,7 +92,9 @@ class GBRBM(Model):
         return energy
 
     def pseudo_likelihood(self, samples):
-        """Calculates the logarithm of the pseudo-likelihood. *NOT OPTIMAL FOR CONTINUOS INPUT!*
+        """Calculates the logarithm of the pseudo-likelihood.
+        
+        TO-DO: NOT OPTIMAL FOR CONTINUOuS INPUT!
 
         Args:
             samples (tensor): Samples to be calculated.
@@ -275,8 +127,9 @@ class GBRBM(Model):
         return pl
 
     def fit(self, batches, epochs=10):
-        ## ** INPUT MUST BE COLUMN-WISE NORMALIZED [0,1] ** ##
         """Fits a new GBRBM model. 
+
+        TO-DO: INPUT MUST BE COLUMN-WISE NORMALIZED [0,1]!
 
         Args:
             batches (DataLoader): A DataLoader object containing the training batches.
