@@ -1,5 +1,6 @@
-import recogners.math.scale as s
 import numpy as np
+
+import recogners.math.scale as s
 
 # Creates an input array
 a = np.array([1, 2, 3, 4, 5])

@@ -1,6 +1,6 @@
-import torchvision
 from torch.utils.data import DataLoader
 
+import torchvision
 from recogners.models.dropout_rbm import DropoutRBM
 
 # Creating training and testing dataset
@@ -13,11 +13,11 @@ test = torchvision.datasets.MNIST(
 train_batches = DataLoader(train, batch_size=128, shuffle=True, num_workers=1)
 test_batches = DataLoader(test, batch_size=10000, shuffle=True, num_workers=1)
 
-# Creating an RBM
+# Creating a DropoutRBM
 model = DropoutRBM(n_visible=784, n_hidden=256, steps=1,
             learning_rate=0.1, momentum=0, decay=0, temperature=1, dropout=0.25)
 
-# Training an RBM
+# Training a DropoutRBM
 error, pl = model.fit(train_batches, epochs=10)
 
 # Reconstructing test set

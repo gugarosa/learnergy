@@ -1,7 +1,7 @@
-import torchvision
 from torch.utils.data import DataLoader
 
 import recogners.visual.plot as plot
+import torchvision
 from recogners.models.rbm import RBM
 
 # Creating training and testing dataset
