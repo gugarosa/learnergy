@@ -33,7 +33,64 @@ class EDropoutRBM(RBM):
 
         # Override its parent class
         super(EDropoutRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                         learning_rate=learning_rate, momentum=momentum,
-                                         decay=decay, temperature=temperature)
+                                          learning_rate=learning_rate, momentum=momentum,
+                                          decay=decay, temperature=temperature)
+
+        # Hidden units importance level
+        self._I = torch.zeros(1, n_hidden)
 
         logger.info('Class overrided.')
+
+    @property
+    def I(self):
+        """tensor: Hidden units Importance level [1 x n_hidden].
+
+        """
+
+        return self._I
+
+    @I.setter
+    def I(self, I):
+        self._I = I
+
+    def hidden_sampling(self, v, scale=False):
+        """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).
+
+        Args:
+            v (tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling.
+
+        """
+
+        # Calculating neurons' activations
+        activations = torch.mm(v, self.W) + self.b
+
+        # Calculating the Importance level
+        self.I = (activations / torch.mean(self.energy(v)))
+
+        # Re-scaling it with its maximum value
+        self.I = self.I / torch.max(self.I)
+
+        # Calculating its mean over the batches
+        self.I = torch.mean(self.I, axis=0)
+
+        # Sampling the e-dropout mask
+        mask = (self.I < torch.rand(self.n_hidden)).double()
+
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = torch.sigmoid(activations / self.T) * mask
+
+        # If scaling is false
+        else:
+            # Calculate probabilities
+            probs = torch.sigmoid(activations) * mask
+
+        # Sampling current states
+        states = (probs > torch.rand(self.n_hidden)).double()
+
+        return probs, states
