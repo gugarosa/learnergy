@@ -95,7 +95,7 @@ Everyone needs images and plots to help visualize what is happening, correct? Th
 
 ## Installation
 
-We believe that everything has to be easy. Not tricky or daunting, Opytimizer will be the one-to-go package that you will need, from the very first installation to the daily-tasks implementing needs. If you may just run the following under your most preferred Python environment (raw, conda, virtualenv, whatever):
+We believe that everything has to be easy. Not tricky or daunting, Learnergy will be the one-to-go package that you will need, from the very first installation to the daily-tasks implementing needs. If you may just run the following under your most preferred Python environment (raw, conda, virtualenv, whatever):
 
 ```Python
 pip install learnergy
