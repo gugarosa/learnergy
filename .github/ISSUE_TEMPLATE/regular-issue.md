@@ -1,3 +1,12 @@
+---
+name: Regular Issue
+about: If your issue is not a bug nor a feature request
+title: "[REG]"
+labels: general
+assignees: ''
+
+---
+
 ## Template when making a new issue
 
 Please, make sure that the following boxes are checked before submitting a new issue. There is a small chance that you can solve it by your own or even that it was already addressed by someone.
@@ -7,9 +16,9 @@ Thank you!
 ### Pre-checkings
 
 - [ ] Check that you are up-to-date with the master branch of Learnergy. You can update with:
-pip install git+git://github.com/recogna-lab/learnergy.git --upgrade --no-deps
+pip install git+git://github.com/gugarosa/learnergy.git --upgrade --no-deps
 
-- [ ] Check that you have read all of our [README](https://github.com/recogna-lab/learnergy/blob/master/README.md).
+- [ ] Check that you have read all of our [README](https://github.com/gugarosa/learnergy/blob/master/README.md).
 
 ### Description
 
