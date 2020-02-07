@@ -6,17 +6,17 @@
 [![License](https://img.shields.io/github/license/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/blob/master/LICENSE)
 
 ## Welcome to Learnergy.
-Did you ever reach a bottleneck in your computational experiments? Are you tired of implementing your techniques? If yes, Learnergy is the real deal! This package provides an easy-to-go implementation of machine learning algorithms. From datasets to fully-customizable models, from internal functions to external communication, we will foster all research related to machine learning.
+Did you ever reach a bottleneck in your computational experiments? Are you tired of implementing your own techniques? If yes, Learnergy is the real deal! This package provides an easy-to-go implementation of energy-based machine learning algorithms. From datasets to fully-customizable models, from internal functions to external communication, we will foster all research related to energy-based machine learning.
 
 Use Learnergy if you need a library or wish to:
-* Create your machine learning algorithm.
+* Create your energy-based machine learning algorithm.
 * Design or use pre-loaded learners.
 * Mix-and-match different strategies to solve your problem.
 * Because it is incredible to learn things.
 
 Read the docs at [learnergy.readthedocs.io](https://learnergy.readthedocs.io).
 
-Learnergy is compatible with: **Python 3.6 and 3.7**.
+Learnergy is compatible with: **Python 3.6+**.
 
 ---
 
@@ -29,9 +29,18 @@ Learnergy is compatible with: **Python 3.6 and 3.7**.
 
 ---
 
-## Getting started: 60 seconds with learnergy
+## Citation
 
-First of all. We have examples. Yes, they are commented. Just browse to `examples/`, chose your subpackage, and follow the example. We have high-level examples for most tasks we could think of.
+If you use Learnergy to fulfill any of your needs, please cite us:
+
+```
+```
+
+---
+
+## Getting started: 60 seconds with Learnergy
+
+First of all. We have examples. Yes, they are commented. Just browse to `examples/`, choose your subpackage, and follow the example. We have high-level examples for most of the tasks we could think.
 
 Alternatively, if you wish to learn even more, please take a minute:
 
@@ -79,13 +88,13 @@ This is a utility package. Common things shared across the application should be
 
 ### Visual
 
-Everyone needs images and plots to help visualize what is happening, correct? This package will provide every visual-related method for you. Check a specific image, your fitness function convergence, plot reconstructions, weights, and much more!
+Everyone needs images and plots to help visualize what is happening, correct? This package will provide every visual-related method for you. Check a specific image, your fitness function convergence, plot reconstructions, weights, and much more.
 
 ---
 
 ## Installation
 
-We believe that everything has to be easy. Not tricky or daunting, Learnergy will be the one-to-go package that you will need, from the very first installation to the daily-tasks implementing needs. If you may just run the following under your most preferred Python environment (raw, conda, virtualenv, whatever):
+We believe that everything has to be easy. Not tricky or daunting, Opytimizer will be the one-to-go package that you will need, from the very first installation to the daily-tasks implementing needs. If you may just run the following under your most preferred Python environment (raw, conda, virtualenv, whatever):
 
 ```Python
 pip install learnergy
@@ -101,7 +110,7 @@ pip install .
 
 ## Environment configuration
 
-Note that sometimes, there is a need for additional implementation. If needed, from here you will be the one to know all of its details.
+Note that sometimes, there is a need for additional implementation. If needed, from here, you will be the one to know all of its details.
 
 ### Ubuntu
 
@@ -119,6 +128,6 @@ No specific additional commands needed.
 
 ## Support
 
-We know that we do our best, but it is inevitable to acknowledge that we make mistakes. If you ever need to report a bug, report a problem, talk to us, please do so! We will be available at our bests at this repository or recogna@fc.unesp.br.
+We know that we do our best, but it is inevitable to acknowledge that we make mistakes. If you ever need to report a bug, report a problem, talk to us, please do so! We will be available at our bests at this repository or mateus.roder@unesp.br and gustavo.rosa@unesp.br.
 
 ---
