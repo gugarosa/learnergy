@@ -1,16 +1,15 @@
-Welcome to Learnergy' documentation!
+Welcome to Learnergy's documentation!
 =======================================
 
-Did you ever reach a bottleneck in your computational experiments? Are you tired of implementing your own techniques? If yes, Learnergy is the real deal! This package provides an easy-to-go implementation of machine learning algorithms. From datasets to fully-customizable models, from internal functions to external communication, we will foster all research related to machine learning.
+Did you ever reach a bottleneck in your computational experiments? Are you tired of implementing your own techniques? If yes, Learnergy is the real deal! This package provides an easy-to-go implementation of energy-based machine learning algorithms. From datasets to fully-customizable models, from internal functions to external communication, we will foster all research related to energy-based machine learning.
 
 Use Learnergy if you need a library or wish to:
-
-* Create your own machine learning algorithm.
+* Create your energy-based machine learning algorithm.
 * Design or use pre-loaded learners.
 * Mix-and-match different strategies to solve your problem.
 * Because it is incredible to learn things.
 
-Learnergy is compatible with: **Python 3.6+** and **PyPy 3.5**.
+Learnergy is compatible with: **Python 3.6+**.
 
 .. toctree::
     :maxdepth: 2

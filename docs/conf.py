@@ -23,14 +23,14 @@ sys.path.insert(0, os.path.abspath('.'))
 # -- Project information -----------------------------------------------------
 
 project = 'learnergy'
-copyright = '2019, Recogna Laboratory'
-author = 'Recogna Laboratory'
+copyright = '2020, Mateus Roder and Gustavo de Rosa'
+author = 'Mateus Roder and Gustavo de Rosa'
 
 # The short X.Y version
-version = '1.0.0'
+version = '1.0.2'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = '1.0.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -149,7 +149,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'learnergy.tex', 'Learnergy Documentation',
-     'Recogna Laboratory', 'manual'),
+     'Mateus Roder and Gustavo de Rosa', 'manual'),
 ]
 
 
@@ -198,4 +198,4 @@ autodoc_default_options = {
     'exclude-members': '__weakref__'
 }
 
-autodoc_member_order = 'groupwise'
+autodoc_member_order = 'bysource'
