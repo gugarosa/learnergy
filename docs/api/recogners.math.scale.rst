@@ -1,7 +1,7 @@
-recogners.math.scale
+learnergy.math.scale
 ==========================
 
-.. autoapimodule:: recogners.math.scale
+.. autoapimodule:: learnergy.math.scale
     :members:
     :private-members:
     :special-members:

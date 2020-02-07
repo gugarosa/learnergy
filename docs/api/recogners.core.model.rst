@@ -1,7 +1,7 @@
-recogners.core.model
+learnergy.core.model
 ==========================
 
-.. autoapimodule:: recogners.core.model
+.. autoapimodule:: learnergy.core.model
     :members:
     :private-members:
     :special-members:

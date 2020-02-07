@@ -6,7 +6,7 @@
 **/*.*~
 
 # Logs
-recogners.log.*
+learnergy.log.*
 
 # Saved pickles
 **/*.pkl

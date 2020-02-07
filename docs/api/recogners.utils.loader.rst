@@ -1,7 +1,7 @@
-recogners.utils.loader
+learnergy.utils.loader
 ==========================
 
-.. autoapimodule:: recogners.utils.loader
+.. autoapimodule:: learnergy.utils.loader
     :members:
     :private-members:
     :special-members:

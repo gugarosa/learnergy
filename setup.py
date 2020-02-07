@@ -3,14 +3,14 @@ from setuptools import find_packages, setup
 with open('README.md', 'r') as f:
     long_description = f.read()
 
-setup(name='recogners',
+setup(name='learnergy',
       version='1.0.2',
-      description='Python-Inspired Machine Learners',
+      description='Energy-based Machine Learners',
       long_description=long_description,
       long_description_content_type='text/markdown',
-      author='Recogna Laboratory',
-      author_email='recogna@fc.unesp.br',
-      url='https://github.com/recogna-lab/recogners',
+      author='Mateus Roder and Gustavo Rosa',
+      author_email='mateus.roder@unesp.br, gustavo.rosa@unesp.br',
+      url='https://github.com/gugarosa/learnergy',
       license='MIT',
       install_requires=['coverage>=4.5.2',
                         'matplotlib>=3.1.0',

@@ -1,7 +1,7 @@
-recogners.models.rbm
+learnergy.models.rbm
 ===========================
 
-.. autoapiclass:: recogners.models.rbm.RBM
+.. autoapiclass:: learnergy.models.rbm.RBM
     :members:
     :private-members:
     :special-members:

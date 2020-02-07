@@ -1,7 +1,7 @@
-recogners.models.grbm
+learnergy.models.grbm
 =================================
 
-.. autoapiclass:: recogners.models.grbm.GRBM
+.. autoapiclass:: learnergy.models.grbm.GRBM
     :members:
     :private-members:
     :special-members:

@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 
-from recogners.datasets.opf import OPFDataset
+from learnergy.datasets.opf import OPFDataset
 
 # Declaring OPF file format to be loaded
 opf_file = ''

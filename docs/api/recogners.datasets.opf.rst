@@ -1,7 +1,7 @@
-recogners.datasets.opf
+learnergy.datasets.opf
 ==========================
 
-.. autoapiclass:: recogners.datasets.opf.OPFDataset
+.. autoapiclass:: learnergy.datasets.opf.OPFDataset
     :members:
     :private-members:
     :special-members:

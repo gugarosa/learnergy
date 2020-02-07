@@ -1,7 +1,7 @@
 import numpy as np
 from torch.utils.data import DataLoader
 
-from recogners.core.dataset import Dataset
+from learnergy.core.dataset import Dataset
 
 # Declaring samples
 X = np.asarray([[1, 2], [2, 4]])

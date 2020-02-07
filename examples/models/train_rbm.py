@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 
 import torchvision
-from recogners.models.rbm import RBM
+from learnergy.models.rbm import RBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(

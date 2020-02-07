@@ -1,22 +1,22 @@
-# Recogners: Python-Inspired Machine Learners
+# Learnergy: Energy-based Machine Learners
 
-[![Latest release](https://img.shields.io/github/release/recogna-lab/recogners.svg)](https://github.com/recogna-lab/recogners/releases)
-[![Build status](https://img.shields.io/travis/com/recogna-lab/recogners/master.svg)](https://github.com/recogna-lab/recogners/releases)
-[![Open issues](https://img.shields.io/github/issues/recogna-lab/recogners.svg)](https://github.com/recogna-lab/recogners/issues)
-[![License](https://img.shields.io/github/license/recogna-lab/recogners.svg)](https://github.com/recogna-lab/recogners/blob/master/LICENSE)
+[![Latest release](https://img.shields.io/github/release/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/releases)
+[![Build status](https://img.shields.io/travis/com/gugarosa/learnergy/master.svg)](https://github.com/gugarosa/learnergy/releases)
+[![Open issues](https://img.shields.io/github/issues/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/issues)
+[![License](https://img.shields.io/github/license/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/blob/master/LICENSE)
 
-## Welcome to Recogners.
-Did you ever reach a bottleneck in your computational experiments? Are you tired of implementing your techniques? If yes, Recogners is the real deal! This package provides an easy-to-go implementation of machine learning algorithms. From datasets to fully-customizable models, from internal functions to external communication, we will foster all research related to machine learning.
+## Welcome to Learnergy.
+Did you ever reach a bottleneck in your computational experiments? Are you tired of implementing your techniques? If yes, Learnergy is the real deal! This package provides an easy-to-go implementation of machine learning algorithms. From datasets to fully-customizable models, from internal functions to external communication, we will foster all research related to machine learning.
 
-Use Recogners if you need a library or wish to:
+Use Learnergy if you need a library or wish to:
 * Create your machine learning algorithm.
 * Design or use pre-loaded learners.
 * Mix-and-match different strategies to solve your problem.
 * Because it is incredible to learn things.
 
-Read the docs at [recogners.readthedocs.io](https://recogners.readthedocs.io).
+Read the docs at [learnergy.readthedocs.io](https://learnergy.readthedocs.io).
 
-Recogners is compatible with: **Python 3.6 and 3.7**.
+Learnergy is compatible with: **Python 3.6 and 3.7**.
 
 ---
 
@@ -29,16 +29,16 @@ Recogners is compatible with: **Python 3.6 and 3.7**.
 
 ---
 
-## Getting started: 60 seconds with recogners
+## Getting started: 60 seconds with learnergy
 
 First of all. We have examples. Yes, they are commented. Just browse to `examples/`, chose your subpackage, and follow the example. We have high-level examples for most tasks we could think of.
 
 Alternatively, if you wish to learn even more, please take a minute:
 
-Recogners is based on the following structure, and you should pay attention to its tree:
+Learnergy is based on the following structure, and you should pay attention to its tree:
 
 ```
-- recogners
+- learnergy
     - core
         - dataset
         - model
@@ -85,10 +85,10 @@ Everyone needs images and plots to help visualize what is happening, correct? Th
 
 ## Installation
 
-We believe that everything has to be easy. Not tricky or daunting, Recogners will be the one-to-go package that you will need, from the very first installation to the daily-tasks implementing needs. If you may just run the following under your most preferred Python environment (raw, conda, virtualenv, whatever):
+We believe that everything has to be easy. Not tricky or daunting, Learnergy will be the one-to-go package that you will need, from the very first installation to the daily-tasks implementing needs. If you may just run the following under your most preferred Python environment (raw, conda, virtualenv, whatever):
 
 ```Python
-pip install recogners
+pip install learnergy
 ```
 
 Alternatively, if you prefer to install the bleeding-edge version, please clone this repository and use:

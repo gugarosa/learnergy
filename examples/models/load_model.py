@@ -1,4 +1,4 @@
-from recogners.models.rbm import RBM
+from learnergy.models.rbm import RBM
 
 # Creating an RBM
 model = RBM()

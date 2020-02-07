@@ -1,7 +1,7 @@
-recogners.visual.image
+learnergy.visual.image
 ==========================
 
-.. autoapimodule:: recogners.visual.image
+.. autoapimodule:: learnergy.visual.image
     :members:
     :private-members:
     :special-members:

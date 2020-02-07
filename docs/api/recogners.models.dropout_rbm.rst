@@ -1,7 +1,7 @@
-recogners.models.dropout_rbm
+learnergy.models.dropout_rbm
 =================================
 
-.. autoapiclass:: recogners.models.dropout_rbm.DropoutRBM
+.. autoapiclass:: learnergy.models.dropout_rbm.DropoutRBM
     :members:
     :private-members:
     :special-members:

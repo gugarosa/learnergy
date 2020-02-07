@@ -1,7 +1,7 @@
-recogners.utils.logging
+learnergy.utils.logging
 ==========================
 
-.. autoapimodule:: recogners.utils.logging
+.. autoapimodule:: learnergy.utils.logging
     :members:
     :private-members:
     :special-members:

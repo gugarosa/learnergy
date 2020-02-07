@@ -1,4 +1,4 @@
-import recogners.utils.loader as l
+import learnergy.utils.loader as l
 
 # Declaring OPF file format to be loaded
 opf_file = ''

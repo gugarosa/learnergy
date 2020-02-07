@@ -1,7 +1,7 @@
-recogners.visual.plot
+learnergy.visual.plot
 ==========================
 
-.. autoapimodule:: recogners.visual.plot
+.. autoapimodule:: learnergy.visual.plot
     :members:
     :private-members:
     :special-members:

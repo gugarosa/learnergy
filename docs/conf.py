@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'recogners'
+project = 'learnergy'
 copyright = '2019, Recogna Laboratory'
 author = 'Recogna Laboratory'
 
@@ -48,7 +48,7 @@ extensions = [
     'autoapi.extension'
 ]
 
-autoapi_dirs = ['../recogners']
+autoapi_dirs = ['../learnergy']
 autoapi_generate_api_docs = False
 
 # Add any paths that contain templates here, relative to this directory.
@@ -121,7 +121,7 @@ html_theme_options = {
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'recogners_doc'
+htmlhelp_basename = 'learnergy_doc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -148,7 +148,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'recogners.tex', 'Recogners Documentation',
+    (master_doc, 'learnergy.tex', 'Learnergy Documentation',
      'Recogna Laboratory', 'manual'),
 ]
 
@@ -158,7 +158,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'recogners', 'Recogners Documentation',
+    (master_doc, 'learnergy', 'Learnergy Documentation',
      [author], 1)
 ]
 
@@ -169,8 +169,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'recogners', 'Recogners Documentation',
-     author, 'recogners', 'One line description of project.',
+    (master_doc, 'learnergy', 'Learnergy Documentation',
+     author, 'learnergy', 'One line description of project.',
      'Miscellaneous'),
 ]
 

@@ -6,10 +6,10 @@ Thank you!
 
 ### Pre-checkings
 
-- [ ] Check that you are up-to-date with the master branch of Recogners. You can update with:
-pip install git+git://github.com/recogna-lab/recogners.git --upgrade --no-deps
+- [ ] Check that you are up-to-date with the master branch of Learnergy. You can update with:
+pip install git+git://github.com/recogna-lab/learnergy.git --upgrade --no-deps
 
-- [ ] Check that you have read all of our [README](https://github.com/recogna-lab/recogners/blob/master/README.md).
+- [ ] Check that you have read all of our [README](https://github.com/recogna-lab/learnergy/blob/master/README.md).
 
 ### Description
 

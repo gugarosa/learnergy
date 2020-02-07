@@ -1,7 +1,7 @@
-recogners.core.dataset
+learnergy.core.dataset
 ==========================
 
-.. autoapimodule:: recogners.core.dataset
+.. autoapimodule:: learnergy.core.dataset
     :members:
     :private-members:
     :special-members:
