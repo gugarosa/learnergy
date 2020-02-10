@@ -42,7 +42,24 @@ class DropoutRBM(RBM):
         self.p = dropout
 
         logger.info('Class overrided.')
-        logger.debug(f'Additional hyperparameters: p = {self.p}')
+        logger.debug(f'Additional hyperparameters: p = {self.p}.')
+
+    @property
+    def p(self):
+        """float: Probability of applying dropout.
+
+        """
+
+        return self._p
+
+    @p.setter
+    def p(self, p):
+        if not (isinstance(p, float) or isinstance(p, int)):
+            raise e.TypeError('`p` should be a float or integer')
+        if p < 0 or p > 1:
+            raise e.ValueError('`p` should be between 0 and 1')
+
+        self._p = p
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).

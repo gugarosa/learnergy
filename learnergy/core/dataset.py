@@ -1,6 +1,8 @@
-import learnergy.utils.logging as l
+import numpy as np
 import torch
 from torch.utils import data
+
+import learnergy.utils.logging as l
 
 logger = l.get_logger(__name__)
 
@@ -22,10 +24,10 @@ class Dataset(data.Dataset):
         logger.info('Creating class: Dataset.')
 
         # Samples array
-        self._X = X
+        self.X = X
 
         # Labels array
-        self._Y = Y
+        self.Y = Y
 
         logger.info('Class created.')
         logger.debug(f'X: {X.shape} | Y: {Y.shape}.')
@@ -38,13 +40,27 @@ class Dataset(data.Dataset):
 
         return self._X
 
+    @X.setter
+    def X(self, X):
+        if not isinstance(X, np.ndarray):
+            raise e.TypeError('`X` should be a numpy array')
+
+        self._X = X
+
     @property
     def Y(self):
         """np.array: An 1-dimensional array containing the data's labels.
-
+        
         """
 
         return self._Y
+
+    @Y.setter
+    def Y(self, Y):
+        if not isinstance(Y, np.ndarray):
+            raise e.TypeError('`Y` should be a numpy array')
+
+        self._Y = Y
 
     def __getitem__(self, index):
         """A private method that will be the base for PyTorch's iterator getting a new sample.
