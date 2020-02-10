@@ -52,15 +52,13 @@ Learnergy is based on the following structure, and you should pay attention to i
     - core
         - dataset
         - model
-    - datasets
-        - opf
     - math
         - scale
     - models
         - dropout_rbm
         - rbm
     - utils
-        - loader
+        - exception
         - logging
     - visual
         - image
@@ -70,10 +68,6 @@ Learnergy is based on the following structure, and you should pay attention to i
 ### Core
 
 Core is the core. Essentially, it is the parent of everything. You should find parent classes defining the basis of our structure. They should provide variables and methods that will help to construct other modules.
-
-### Datasets
-
-As we are building over PyTorch, we will also provide some integrations with other techniques used by our laboratory. Initially, you can load all OPF text files into this library.
 
 ### Math
 

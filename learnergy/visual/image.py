@@ -66,7 +66,7 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
             # If there is a channel
             else:
                 # Use a recurrent call to compute the channel and store it
-                out_array[:, :, i] = rasterize(
+                out_array[:, :, i] = _rasterize(
                     x[i], img_shape, tile_shape, tile_spacing, scale, output)
 
         return out_array

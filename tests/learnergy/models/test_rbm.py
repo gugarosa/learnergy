@@ -1,8 +1,8 @@
 import pytest
 import torch
+import torchvision
 from torch.utils.data import DataLoader
 
-import torchvision
 from learnergy.models import rbm
 
 
@@ -17,10 +17,12 @@ def test_rbm_properties():
     assert new_rbm.decay == 0
     assert new_rbm.T == 1
 
+    assert type(new_rbm.optimizer).__name__ == 'SGD'
+
     assert new_rbm.W.size(0) == 128
     assert new_rbm.W.size(1) == 128
-    assert new_rbm.a.size(1) == 128
-    assert new_rbm.b.size(1) == 128
+    assert new_rbm.a.size(0) == 128
+    assert new_rbm.b.size(0) == 128
 
 
 def test_rbm_hidden_sampling():
@@ -52,7 +54,7 @@ def test_rbm_energy():
 
     energy = new_rbm.energy(samples)
 
-    assert energy.numpy() < 0
+    assert energy.detach().numpy() < 0
 
 
 def test_rbm_pseudo_likelihood():
@@ -62,7 +64,7 @@ def test_rbm_pseudo_likelihood():
 
     pl = new_rbm.pseudo_likelihood(samples)
 
-    assert pl.numpy() < 0
+    assert pl.detach().numpy() < 0
 
 
 def test_rbm_fit():
