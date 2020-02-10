@@ -1,3 +1,4 @@
+import time
 import torch
 
 import learnergy.utils.logging as l
@@ -185,7 +186,7 @@ class RBM(Model):
             probs = torch.sigmoid(activations)
 
         # Sampling current states
-        states = (probs > torch.rand(self.n_hidden)).double()
+        states = (probs > torch.rand(self.n_hidden)).float()
 
         return probs, states
 
@@ -215,7 +216,7 @@ class RBM(Model):
             probs = torch.sigmoid(activations)
 
         # Sampling current states
-        states = (probs > torch.rand(self.n_visible)).double()
+        states = (probs > torch.rand(self.n_visible)).float()
 
         return probs, states
 
@@ -302,10 +303,12 @@ class RBM(Model):
             error = 0
             pl = 0
 
+            s = time.time()
+
             # For every batch
             for samples, _ in batches:
                 # Flattening the samples' batch
-                samples = samples.view(len(samples), self.n_visible).double()
+                samples = samples.view(len(samples), self.n_visible).float()
 
                 # Calculating positive phase hidden probabilities and states
                 pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
@@ -366,6 +369,10 @@ class RBM(Model):
 
             logger.info(f'Error: {error} | log-PL: {pl}')
 
+            e = time.time()
+        
+            print(e - s)
+
         return error, pl
 
     def reconstruct(self, batches):
@@ -387,7 +394,7 @@ class RBM(Model):
         # For every batch
         for samples, _ in batches:
             # Flattening the samples' batch
-            samples = samples.view(len(samples), self.n_visible).double()
+            samples = samples.view(len(samples), self.n_visible).float()
 
             # Calculating positive phase hidden probabilities and states
             pos_hidden_probs, pos_hidden_states = self.hidden_sampling(

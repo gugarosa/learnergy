@@ -37,7 +37,7 @@ class RBM3(Model):
         logger.info('Overriding class: Model -> RBM.')
 
         # Override its parent class
-        super(RBM3, self).__init__()
+        super(RBM3, self).__init__(use_gpu=use_gpu)
 
         # Amount of visible units
         self.n_visible = n_visible
@@ -60,9 +60,6 @@ class RBM3(Model):
         # Temperature factor
         self.T = temperature
 
-        # # Whether GPU should be used or not
-        self.use_gpu = use_gpu
-
         # Weights matrix
         self.W = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01)
 
@@ -73,11 +70,12 @@ class RBM3(Model):
         self.b = nn.Parameter(torch.zeros(n_hidden))
 
         # Creating the optimizer object
-        self.optimizer = opt.SGD(self.parameters(), lr=learning_rate)
+        self.optimizer = opt.SGD(
+            self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
 
-        # Checking whether GPU is avaliable and if it should be used
-        if torch.cuda.is_available() and self.use_gpu:
-            # Applies the GPU usage
+        # Checks if current device is CUDA-based
+        if self.device == 'cuda':
+            # If yes, uses CUDA in the whole class
             self.cuda()
 
         logger.info('Class overrided.')
@@ -113,7 +111,6 @@ class RBM3(Model):
         states = torch.bernoulli(probs)
 
         return probs, states
-
 
     def visible_sampling(self, h, scale=False):
         """Performs the visible layer sampling, i.e., P(v|h).
@@ -157,16 +154,16 @@ class RBM3(Model):
         """
 
         # Calculate samples' activations
-        activations = torch.mm(samples, self.W) + self.b
-
-        # Calculate the visible term
-        v = torch.mm(samples, self.a.t())
+        activations = F.linear(samples, self.W.t(), self.b)
 
         # Calculate the hidden term
         h = torch.sum(torch.log(1 + torch.exp(activations)), dim=1)
 
+        # Calculate the visible term
+        v = torch.mv(samples, self.a)
+
         # Finally, gathers the system's energy
-        energy = -h - v
+        energy = -v - h
 
         return energy
 
@@ -188,28 +185,28 @@ class RBM3(Model):
         e = self.energy(samples_binary)
 
         # Samples an array of indexes to flip the bits
-        bits = torch.randint(0, self.n_visible, size=(samples.size(0), 1))
+        indexes = torch.randint(0, self.n_visible, size=(
+            samples.size(0), 1), device=self.device)
 
-        # Iterate through all samples in the batch
-        for i in range(samples.size(0)):
-            # Flips the bit on corresponding index
-            samples_binary[i][bits[i]] = 1 - samples_binary[i][bits[i]]
+        # Creates an empty vector for filling the indexes
+        bits = torch.zeros(samples.size(
+            0), samples.size(1), device=self.device)
+
+        # Fills the sampled indexes with 1
+        bits = bits.scatter_(1, indexes, 1)
+
+        # Actually flips the bits
+        samples_binary = torch.where(
+            bits == 0, samples_binary, 1 - samples_binary)
 
         # Calculates the energy after flipping the bits
         e1 = self.energy(samples_binary)
-        
+
         # Calculate the logarithm of the pseudo-likelihood
         pl = torch.mean(self.n_visible * torch.log(torch.sigmoid(e1 - e)))
 
         return pl
 
-    def free_energy(self, v):
-        v_bias_term = torch.mv(v, self.a)
-        wx_b = F.linear(v, self.W.t(), self.b)
-        hidden_term = torch.sum(torch.log(1 + torch.exp(wx_b)), dim=1)
-        return -v_bias_term - hidden_term
-    
-    
     def fit(self, batches, epochs=10):
         """Fits a new RBM model.
 
@@ -218,24 +215,20 @@ class RBM3(Model):
             epochs (int): Number of training epochs.
 
         Returns:
-            Error and log pseudo-likelihood from the training step.
+            MSE (minimum squared error), log pseudo-likelihood and time from the training step.
 
         """
-
-        # Creating weights, visible and hidden biases momentums
-        # w_momentum = torch.zeros(self.n_visible, self.n_hidden)
-        # a_momentum = torch.zeros(self.n_visible)
-        # b_momentum = torch.zeros(self.n_hidden)
 
         # For every epoch
         for e in range(epochs):
             logger.info(f'Epoch {e+1}/{epochs}')
 
-            # Resetting epoch's error and pseudo-likelihood to zero
-            error = 0
-            pl = 0
+            # Calculating the time of the epoch's starting
+            start = time.time()
 
-            s = time.time()
+            # Resetting epoch's MSE and pseudo-likelihood to zero
+            mse = 0
+            pl = 0
 
             # For every batch
             for samples, _ in batches:
@@ -243,9 +236,9 @@ class RBM3(Model):
                 samples = samples.view(len(samples), self.n_visible).float()
 
                 # Checking whether GPU is avaliable and if it should be used
-                if torch.cuda.is_available() and self.use_gpu:
-                    # Applies the GPU usage to the data and creates a variable
-                    samples = Variable(samples.cuda())
+                if self.device == 'cuda':
+                    # Applies the GPU usage to the data
+                    samples = samples.cuda()
 
                 # Calculating positive phase hidden probabilities and states
                 pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
@@ -265,60 +258,46 @@ class RBM3(Model):
                     visible_probs, visible_states = self.visible_sampling(
                         neg_hidden_states, scale=True)
 
-                # # Building the positive and negative gradients
-                # pos_gradient = torch.mm(samples.t(), pos_hidden_probs)
-                # neg_gradient = torch.mm(visible_probs.t(), neg_hidden_probs)
-
-                # Gathering the size of the batch
-                # batch_size = samples.size(0)
-
-                # # Calculating weights, visible and hidden biases momentums
-                # w_momentum = (w_momentum * self.momentum) + \
-                #     (self.lr * (pos_gradient - neg_gradient) / batch_size)
-
-                # a_momentum = (a_momentum * self.momentum) + \
-                #     (self.lr * torch.sum((samples - visible_probs), dim=0) / batch_size)
-
-                # b_momentum = (b_momentum * self.momentum) + \
-                #     (self.lr * torch.sum((pos_hidden_probs - neg_hidden_probs), dim=0) / batch_size)
-
-                # # Updating weights matrix, visible and hidden biases
-                # self.W += w_momentum - (self.W * self.decay)
-                # self.a += a_momentum
-                # self.b += b_momentum
-
-                #
+                # Detaching the visible states from GPU for further computation
                 visible_states = visible_states.detach()
 
-                # calculate loss
-                cost = torch.mean(self.free_energy(samples)) - torch.mean(self.free_energy(visible_states))
+                # Calculates the loss for further gradients' computation
+                cost = torch.mean(self.energy(samples)) - \
+                    torch.mean(self.energy(visible_states))
 
-                # calculate gradient & update parameters
+                # Initializing the gradient
                 self.optimizer.zero_grad()
+
+                # Computing the gradients
                 cost.backward()
+
+                # Updating the parameters
                 self.optimizer.step()
 
-            #     # Calculating current's batch error
-            #     batch_error = torch.sum((samples - visible_states) ** 2) / batch_size
+                # Gathering the size of the batch
+                batch_size = samples.size(0)
 
-            #     # Calculating the logarithm of current's batch pseudo-likelihood
-            #     batch_pl = self.pseudo_likelihood(samples)
+                # Calculating current's batch MSE
+                batch_mse = torch.sum(
+                    (samples - visible_states) ** 2) / batch_size
 
-            #     # Summing up to epochs' error and pseudo-likelihood
-            #     error += batch_error
-            #     pl += batch_pl
+                # Calculating the current's batch logarithm pseudo-likelihood
+                batch_pl = self.pseudo_likelihood(samples)
 
-            # # Normalizing the error and pseudo-likelihood with the number of batches
-            # error /= len(batches)
-            # pl /= len(batches)
+                # Summing up to epochs' MSE and pseudo-likelihood
+                mse += batch_mse
+                pl += batch_pl
 
-            # # Dumps the desired variables to the model's history
-            # self.dump(error=error, pl=pl)
+            # Normalizing the MSE and pseudo-likelihood with the number of batches
+            mse /= len(batches)
+            pl /= len(batches)
 
-            # logger.info(f'Error: {error} | log-PL: {pl}')
+            # Calculating the time of the epoch's ending
+            end = time.time()
 
-            e = time.time()
-        
-            print(e - s)
+            # Dumps the desired variables to the model's history
+            self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
 
-        return error, pl
+            logger.info(f'MSE: {mse} | log-PL: {pl}')
+
+        return mse, pl
