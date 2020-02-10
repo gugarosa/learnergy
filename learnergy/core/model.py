@@ -1,13 +1,14 @@
 import pickle
 
 import torch
+from torch.nn import Module
 
 import learnergy.utils.logging as l
 
 logger = l.get_logger(__name__)
 
 
-class Model:
+class Model(Module):
     """The Model class is the basis for any custom model.
 
     One can configure, if necessary, different properties or methods that
@@ -20,8 +21,11 @@ class Model:
 
         """
 
-        # Setting default tensor type to Double
-        torch.set_default_tensor_type(torch.DoubleTensor)
+        # Override its parent class
+        super(Model, self).__init__()
+
+        # Setting default tensor type to Float
+        torch.set_default_tensor_type(torch.FloatTensor)
 
         # Creating an empty dictionary to hold historical values
         self._history = {}
