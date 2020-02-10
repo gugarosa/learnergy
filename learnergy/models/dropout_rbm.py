@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 
 import learnergy.utils.logging as l
 from learnergy.models.rbm import RBM
@@ -15,7 +16,7 @@ class DropoutRBM(RBM):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, dropout=0.5):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, dropout=0.5, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -27,6 +28,7 @@ class DropoutRBM(RBM):
             decay (float): Weight decay used for penalization.
             temperature (float): Temperature factor.
             dropout (float): Dropout rate.
+            use_gpu (boolean): Whether GPU should be used or not.
 
         """
 
@@ -34,26 +36,13 @@ class DropoutRBM(RBM):
 
         # Override its parent class
         super(DropoutRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                         learning_rate=learning_rate, momentum=momentum,
-                                         decay=decay, temperature=temperature)
+                                         learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
 
         # Intensity of dropout
-        self._p = dropout
+        self.p = dropout
 
         logger.info('Class overrided.')
         logger.debug(f'Additional hyperparameters: p = {self.p}')
-
-    @property
-    def p(self):
-        """float: Intensity of dropout rate.
-
-        """
-
-        return self._p
-
-    @p.setter
-    def p(self, p):
-        self._p = p
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).
@@ -68,7 +57,7 @@ class DropoutRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = torch.mm(v, self.W) + self.b
+        activations = F.linear(v, self.W.t(), self.b)
 
         # Sampling a dropout mask from Bernoulli's distribution
         mask = (torch.full((activations.size(0), activations.size(1)),
@@ -76,16 +65,16 @@ class DropoutRBM(RBM):
 
         # If scaling is true
         if scale:
-            # Calculate probabilities with temperature and dropout mask
+            # Calculate probabilities with temperature
             probs = torch.sigmoid(activations / self.T) * mask
 
         # If scaling is false
         else:
-            # Calculate probabilities using a dropout mask
-            probs = torch.sigmoid(activations) * mask
+            # Calculate probabilities as usual
+            probs = torch.sigmoid(activations)
 
         # Sampling current states
-        states = (probs > torch.rand(self.n_hidden)).double()
+        states = torch.bernoulli(probs)
 
         return probs, states
 
@@ -102,8 +91,8 @@ class DropoutRBM(RBM):
 
         logger.info(f'Reconstructing new samples ...')
 
-        # Resetting error to zero
-        error = 0
+        # Resetting mse to zero
+        mse = 0
 
         # Scaling up weights matrix with dropout rate
         # self.W *= (1 - self.p)
@@ -117,11 +106,15 @@ class DropoutRBM(RBM):
         # For every batch
         for samples, _ in batches:
             # Flattening the samples' batch
-            samples = samples.view(len(samples), self.n_visible).double()
+            samples = samples.view(len(samples), self.n_visible).float()
+
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
 
             # Calculating positive phase hidden probabilities and states
-            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
-                samples)
+            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(
@@ -130,19 +123,18 @@ class DropoutRBM(RBM):
             # Gathering the size of the batch
             batch_size = samples.size(0)
 
-            # Calculating current's batch reconstruction error
-            batch_error = torch.sum(
-                (samples - visible_states) ** 2) / batch_size
+            # Calculating current's batch reconstruction MSE
+            batch_mse = torch.sum((samples - visible_states) ** 2) / batch_size
 
-            # Summing up to reconstruction's error
-            error += batch_error
+            # Summing up to reconstruction's MSE
+            mse += batch_mse
 
-        # Normalizing the error with the number of batches
-        error /= len(batches)
+        # Normalizing the MSE with the number of batches
+        mse /= len(batches)
 
         # Recovering initial dropout rate
         self.p = p
 
-        logger.info(f'Error: {error}')
+        logger.info(f'MSE: {mse}')
 
-        return error, visible_probs
+        return mse, visible_probs

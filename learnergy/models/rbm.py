@@ -1,10 +1,11 @@
 import time
 
-import learnergy.utils.logging as l
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
+
+import learnergy.utils.logging as l
 from learnergy.core.model import Model
 
 logger = l.get_logger(__name__)
@@ -328,8 +329,7 @@ class RBM(Model):
                 samples = samples.cuda()
 
             # Calculating positive phase hidden probabilities and states
-            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
-                samples)
+            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(
