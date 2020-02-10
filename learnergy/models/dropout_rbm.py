@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 
+import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.models.rbm import RBM
 

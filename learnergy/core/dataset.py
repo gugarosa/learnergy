@@ -1,13 +1,13 @@
 import numpy as np
 import torch
-from torch.utils import data
 
+import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 
 logger = l.get_logger(__name__)
 
 
-class Dataset(data.Dataset):
+class Dataset(torch.utils.data.Dataset):
     """A custom dataset class, inherited from PyTorch's dataset.
 
     """
