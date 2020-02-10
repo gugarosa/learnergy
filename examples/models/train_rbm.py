@@ -1,7 +1,6 @@
-from torch.utils.data import DataLoader
-
 import torchvision
 from learnergy.models.rbm import RBM
+from torch.utils.data import DataLoader
 
 if __name__ == '__main__':
     # Creating training and testing dataset
@@ -16,8 +15,13 @@ if __name__ == '__main__':
 
     # Creating an RBM
     model = RBM(n_visible=784, n_hidden=4096, steps=1,
-                learning_rate=0.1, momentum=0, decay=0, temperature=1)    
+                learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=True)    
 
     # Training an RBM
-    error, pl = model.fit(train_batches, epochs=10)
+    mse, pl = model.fit(train_batches, epochs=5)
 
+    # Reconstructing test set
+    rec_mse, v = model.reconstruct(test_batches)
+
+    # Checking the model's history
+    # print(model.history)
