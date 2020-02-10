@@ -1,5 +1,4 @@
-import pickle
-
+import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 import torch
 
@@ -34,14 +33,31 @@ class Model(torch.nn.Module):
             self.device = 'cuda'
 
         # Creating an empty dictionary to hold historical values
-        self._history = {}
+        self.history = {}
 
         # Setting default tensor type to float
         torch.set_default_tensor_type(torch.FloatTensor)
 
+        logger.debug(f'Device: {self.device}.')
+
+    @property
+    def device(self):
+        """dict: Indicates which device is being used for computation.
+
+        """
+
+        return self._device
+
+    @device.setter
+    def device(self, device):
+        if device not in ['cpu', 'cuda']:
+            raise e.TypeError('`device` should be `cpu` or `cuda`')
+
+        self._device = device
+
     @property
     def history(self):
-        """dict: Dictionary containing historical values.
+        """dict: Dictionary containing historical values from the model.
 
         """
 
@@ -49,6 +65,9 @@ class Model(torch.nn.Module):
 
     @history.setter
     def history(self, history):
+        if not isinstance(history, dict):
+            raise e.TypeError('`history` should be a dictionary')
+
         self._history = history
 
     def dump(self, **kwargs):
@@ -65,45 +84,3 @@ class Model(torch.nn.Module):
 
             # Appends the new value to the list
             self.history[k].append(v)
-
-    # def save(self, file_name):
-    #     """Saves the object to a pickle encoding.
-
-    #     Args:
-    #         file_name (str): String holding the file's name that will be saved.
-
-    #     """
-
-    #     logger.info(f'Saving model: {file_name}.')
-
-    #     # Opening the file in write mode
-    #     f = open(file_name, 'wb')
-
-    #     # Dumps to a pickle file
-    #     pickle.dump(self, f)
-
-    #     # Close the file
-    #     f.close()
-
-    #     logger.info('Model saved.')
-
-    # def load(self, file_name):
-    #     """Loads the object from a pickle encoding.
-
-    #     Args:
-    #         file_name (str): String containing pickle's file path.
-
-    #     """
-
-    #     logger.info(f'Loading model: {file_name}.')
-
-    #     # Opens the desired file in read mode
-    #     f = open(file_name, 'rb')
-
-    #     # Loads using pickle
-    #     model = pickle.load(f)
-
-    #     # Resetting current object state to loaded state
-    #     self.__dict__.update(model.__dict__)
-
-    #     logger.info('Model loaded.')

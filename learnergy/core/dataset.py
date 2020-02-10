@@ -1,7 +1,6 @@
+import learnergy.utils.logging as l
 import torch
 from torch.utils import data
-
-import learnergy.utils.logging as l
 
 logger = l.get_logger(__name__)
 
@@ -56,7 +55,7 @@ class Dataset(data.Dataset):
         """
 
         # Gets a sample based on its index
-        x = torch.from_numpy(self.X[index]).double()
+        x = torch.from_numpy(self.X[index]).float()
 
         # Gets a sample's label based on its index
         y = torch.from_numpy((self.Y[index]).reshape([1, 1]))

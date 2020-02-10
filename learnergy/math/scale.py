@@ -1,4 +1,4 @@
-def unitary_scale(x, eps=1e-8):
+def unitary_scale(x, eps=1e-10):
     """Scales an array between 0 and 1.
 
     Args:
@@ -10,8 +10,8 @@ def unitary_scale(x, eps=1e-8):
 
     """
 
-    # Makes sure the array is double typed
-    x = x.astype('float64')
+    # Makes sure the array is float typed
+    x = x.astype('float32')
 
     # Gathers array minimum and subtract
     x -= x.min()

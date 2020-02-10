@@ -1,13 +1,13 @@
 import numpy as np
-from PIL import Image
 
 import learnergy.math.scale as s
 import learnergy.utils.logging as l
+from PIL import Image
 
 logger = l.get_logger(__name__)
 
 
-def rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=True):
+def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=True):
     """Rasterizes and prepares an image to be outputted as a mosaic.
 
     Args:
@@ -144,7 +144,7 @@ def create_mosaic(tensor):
     s = int(np.sqrt(array.shape[1]))
 
     # Creates a Pillow image from the array's rasterized version
-    img = Image.fromarray(rasterize(array.T, img_shape=(
+    img = Image.fromarray(_rasterize(array.T, img_shape=(
         d, d), tile_shape=(s, s), tile_spacing=(1, 1)))
 
     # Shows the image

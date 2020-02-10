@@ -8,7 +8,8 @@
 # Logs
 learnergy.log.*
 
-# Saved pickles
+# Saved pytorch models and pickles
+**/*.pth
 **/*.pkl
 
 # Data folder
