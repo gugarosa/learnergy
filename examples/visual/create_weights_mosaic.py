@@ -1,7 +1,7 @@
+import torchvision
 from torch.utils.data import DataLoader
 
 import learnergy.visual.image as im
-import torchvision
 from learnergy.models.rbm import RBM
 
 # Creating training dataset

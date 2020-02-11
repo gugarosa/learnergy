@@ -9,7 +9,7 @@ def show_tensor(tensor):
     """Plots a tensor in grayscale mode using Matplotlib.
 
     Args:
-        tensor (tensor): An input tensor to be plotted.
+        tensor (Tensor): An input tensor to be plotted.
 
     """
 

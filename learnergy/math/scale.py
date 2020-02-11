@@ -1,9 +1,10 @@
-def unitary_scale(x, eps=1e-10):
+import learnergy.utils.constants as c
+
+def unitary_scale(x):
     """Scales an array between 0 and 1.
 
     Args:
         x (array): A numpy array to be scaled.
-        eps (float): An epsilon value to avoid division by zero.
 
     Returns:
         The scaled array.
@@ -17,6 +18,6 @@ def unitary_scale(x, eps=1e-10):
     x -= x.min()
 
     # Normalizes the array using its maximum
-    x *= 1.0 / (x.max() + eps)
+    x *= 1.0 / (x.max() + c.EPSILON)
 
     return x

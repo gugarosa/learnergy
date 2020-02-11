@@ -130,7 +130,7 @@ def create_mosaic(tensor):
     """Creates a mosaic from a tensor using Pillow.
 
     Args:
-        tensor (tensor): An input tensor to have its mosaic created.
+        tensor (Tensor): An input tensor to have its mosaic created.
 
     """
 

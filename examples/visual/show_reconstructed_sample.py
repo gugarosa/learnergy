@@ -1,7 +1,7 @@
+import torchvision
 from torch.utils.data import DataLoader
 
-import learnergy.visual.plot as plot
-import torchvision
+import learnergy.visual.tensor as t
 from learnergy.models.rbm import RBM
 
 # Creating training and testing dataset
@@ -25,4 +25,4 @@ model.fit(train_batches, epochs=1)
 _, v = model.reconstruct(test_batches)
 
 # Showing a reconstructed sample
-plot.show_tensor(v[0].view(28, 28))
+t.show_tensor(v[0].view(28, 28))
