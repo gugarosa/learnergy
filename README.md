@@ -57,6 +57,7 @@ Learnergy is based on the following structure, and you should pay attention to i
     - models
         - dropout_rbm
         - rbm
+        - sigmoid_rbm
     - utils
         - constants
         - exception

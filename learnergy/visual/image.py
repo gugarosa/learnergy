@@ -137,7 +137,7 @@ def create_mosaic(tensor):
     logger.debug(f'Creating mosaic ...')
 
     # Gets the numpy array from the tensor
-    array = tensor.numpy()
+    array = tensor.detach().numpy()
 
     # Calculate their maximum possible squared dimension
     d = int(np.sqrt(array.shape[0]))

@@ -9,7 +9,7 @@ logger = l.get_logger(__name__)
 
 
 class DropoutRBM(RBM):
-    """A DropoutRBM class provides the basic implementation for Restricted Boltzmann Machines
+    """A DropoutRBM class provides the basic implementation for Bernoulli-Bernoulli Restricted Boltzmann Machines
     along with a Dropout regularization.
 
     References:

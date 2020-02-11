@@ -13,7 +13,7 @@ logger = l.get_logger(__name__)
 
 
 class RBM(Model):
-    """An RBM class provides the basic implementation for Restricted Boltzmann Machines.
+    """An RBM class provides the basic implementation for Bernoulli-Bernoulli Restricted Boltzmann Machines.
 
     References:
         G. Hinton. A practical guide to training restricted Boltzmann machines. Neural networks: Tricks of the trade (2012).
