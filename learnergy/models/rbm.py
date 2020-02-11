@@ -202,20 +202,20 @@ class RBM(Model):
 
         self._T = T
 
-    @property
-    def W(self):
-        """torch.nn.Parameter: Weights' matrix.
+    # @property
+    # def W(self):
+    #     """torch.nn.Parameter: Weights' matrix.
 
-        """
+    #     """
 
-        return self._W
+    #     return self._W
 
-    @W.setter
-    def W(self, W):
-        if not isinstance(W, nn.Parameter):
-            raise e.TypeError('`W` should be a PyTorch parameter')
+    # @W.setter
+    # def W(self, W):
+    #     if not isinstance(W, nn.Parameter):
+    #         raise e.TypeError('`W` should be a PyTorch parameter')
 
-        self._W = W
+    #     self._W = W
 
     @property
     def a(self):

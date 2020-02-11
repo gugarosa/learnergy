@@ -130,7 +130,7 @@ class EDropoutRBM(RBM):
         I = n_prob / p_prob / torch.abs(e)
 
         # Normalizes the Importance Level
-        I = I / torch.max(I, 0)[0]
+        # I = I / torch.max(I, 0)[0]
 
         # Samples a probability tensor
         p = torch.rand((I.size(0), I.size(1)), device=self.device)
@@ -167,7 +167,7 @@ class EDropoutRBM(RBM):
                 batch_size = samples.size(0)
 
                 # Returns the Energy-based Dropout mask to one
-                self.M = torch.ones((batch_size, self.n_hidden))
+                self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
                 # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible).float()
@@ -256,7 +256,7 @@ class EDropoutRBM(RBM):
             batch_size = samples.size(0)
 
             # Returns the Energy-based Dropout mask to one
-            self.M = torch.ones((batch_size, self.n_hidden))
+            self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
             # Flattening the samples' batch
             samples = samples.view(len(samples), self.n_visible).float()

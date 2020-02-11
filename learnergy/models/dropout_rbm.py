@@ -79,7 +79,7 @@ class DropoutRBM(RBM):
 
         # Sampling a dropout mask from Bernoulli's distribution
         mask = (torch.full((activations.size(0), activations.size(1)),
-                           1 - self.p)).bernoulli()
+                           1 - self.p, device=self.device)).bernoulli()
 
         # If scaling is true
         if scale:
@@ -111,9 +111,6 @@ class DropoutRBM(RBM):
 
         # Resetting mse to zero
         mse = 0
-
-        # Scaling up weights matrix with dropout rate
-        # self.W *= (1 - self.p)
 
         # Saving dropout rate to an auxiliary variable
         p = self.p
