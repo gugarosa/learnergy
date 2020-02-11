@@ -5,7 +5,7 @@ Every one needs images and plots to help visualize what is happening, correct? T
 
 .. toctree::
     learnergy.visual.image
-    learnergy.visual.plot
+    learnergy.visual.tensor
 
 .. autoapimodule:: learnergy.visual
    :members:

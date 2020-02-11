@@ -1,7 +1,7 @@
-learnergy.visual.plot
+learnergy.visual.tensor
 ==========================
 
-.. autoapimodule:: learnergy.visual.plot
+.. autoapimodule:: learnergy.visual.tensor
     :members:
     :private-members:
     :special-members:

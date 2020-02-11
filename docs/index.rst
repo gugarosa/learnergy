@@ -17,7 +17,6 @@ Learnergy is compatible with: **Python 3.6+**.
     :caption: Package Reference
 
     api/learnergy.core
-    api/learnergy.datasets
     api/learnergy.math
     api/learnergy.models
     api/learnergy.utils
