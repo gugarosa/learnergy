@@ -368,8 +368,11 @@ class RBM(Model):
         # Calculate samples' activations
         activations = F.linear(samples, self.W.t(), self.b)
 
+        # Creating a Softplus function for numerical stability
+        s = nn.Softplus()
+
         # Calculate the hidden term
-        h = torch.sum(torch.log(1 + torch.exp(activations)), dim=1)
+        h = torch.sum(s(activations), dim=1)
 
         # Calculate the visible term
         v = torch.mv(samples, self.a)
