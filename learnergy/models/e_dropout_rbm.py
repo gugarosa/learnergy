@@ -15,7 +15,7 @@ class EDropoutRBM(RBM):
     along with a Energy-based Dropout regularization.
 
     References:
-
+        M. Roder, G. H. de Rosa, A. L. D. Rossi, J. P. Papa. Energy-based Dropout in Restricted Boltzmann Machines: Why Do Not Go Random. Publication pending (2020).
 
     """
 
@@ -40,7 +40,25 @@ class EDropoutRBM(RBM):
         super(EDropoutRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
                                           learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
 
+        # Initializes the Energy-based Dropout mask
+        self.M = torch.Tensor()
+        
         logger.info('Class overrided.')
+
+    @property
+    def M(self):
+        """torch.Tensor: Energy-based Dropout mask.
+
+        """
+
+        return self._M
+
+    @M.setter
+    def M(self, M):
+        if not isinstance(M, torch.Tensor):
+            raise e.TypeError('`M` should be a PyTorch tensor')
+
+        self._M = M
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling, i.e., P(h|v).

@@ -56,6 +56,7 @@ Learnergy is based on the following structure, and you should pay attention to i
         - scale
     - models
         - dropout_rbm
+        - e_dropout_rbm
         - rbm
         - sigmoid_rbm
     - utils
