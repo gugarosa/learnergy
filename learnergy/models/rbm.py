@@ -322,6 +322,38 @@ class RBM(Model):
 
         return probs, states
 
+    def gibbs_sampling(self, v):
+        """Performs the whole Gibbs sampling procedure.
+
+        Args:
+            v (tensor): A tensor incoming from the visible layer.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling (positive),
+            the probabilities and states of the hidden layer sampling (negative)
+            and the states of the visible layer sampling (negative). 
+
+        """
+
+        # Calculating positive phase hidden probabilities and states
+        pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v)
+
+        # Calculating visible probabilities and states
+        visible_probs, visible_states = self.visible_sampling(
+            pos_hidden_states)
+
+        # Performing the Contrastive Divergence
+        for _ in range(self.steps):
+            # Calculating negative phase hidden probabilities and states
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
+                visible_states, scale=True)
+
+            # Calculating visible probabilities and states
+            visible_probs, visible_states = self.visible_sampling(
+                neg_hidden_states, scale=True)
+
+        return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
+
     def energy(self, samples):
         """Calculates and frees the system's energy.
 
@@ -420,23 +452,8 @@ class RBM(Model):
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
-                # Calculating positive phase hidden probabilities and states
-                pos_hidden_probs, pos_hidden_states = self.hidden_sampling(
-                    samples)
-
-                # Calculating visible probabilities and states
-                visible_probs, visible_states = self.visible_sampling(
-                    pos_hidden_states)
-
-                # Performing the Contrastive Divergence
-                for _ in range(self.steps):
-                    # Calculating negative phase hidden probabilities and states
-                    neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                        visible_states, scale=True)
-
-                    # Calculating visible probabilities and states
-                    visible_probs, visible_states = self.visible_sampling(
-                        neg_hidden_states, scale=True)
+                # Performs the Gibbs sampling procedure
+                _, _, _, _, visible_states = self.gibbs_sampling(samples)
 
                 # Detaching the visible states from GPU for further computation
                 visible_states = visible_states.detach()

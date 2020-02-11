@@ -89,7 +89,7 @@ class DropoutRBM(RBM):
         # If scaling is false
         else:
             # Calculate probabilities as usual
-            probs = torch.sigmoid(activations)
+            probs = torch.sigmoid(activations) * mask
 
         # Sampling current states
         states = torch.bernoulli(probs)
