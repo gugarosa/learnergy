@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
 
+import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.core.model import Model
 
@@ -81,6 +82,185 @@ class RBM(Model):
         logger.info('Class overrided.')
         logger.debug(
             f'Size: ({self.n_visible}, {self.n_hidden}) | Learning: CD-{self.steps} | Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
+
+    @property
+    def n_visible(self):
+        """int: Number of visible units.
+
+        """
+
+        return self._n_visible
+
+    @n_visible.setter
+    def n_visible(self, n_visible):
+        if not isinstance(n_visible, int):
+            raise e.TypeError('`n_visible` should be an integer')
+        if n_visible <= 0:
+            raise e.ValueError('`n_visible` should be > 0')
+
+        self._n_visible = n_visible
+
+    @property
+    def n_hidden(self):
+        """int: Number of hidden units.
+
+        """
+
+        return self._n_hidden
+
+    @n_hidden.setter
+    def n_hidden(self, n_hidden):
+        if not isinstance(n_hidden, int):
+            raise e.TypeError('`n_hidden` should be an integer')
+        if n_hidden <= 0:
+            raise e.ValueError('`n_hidden` should be > 0')
+
+        self._n_hidden = n_hidden
+
+    @property
+    def steps(self):
+        """int: Number of steps Gibbs' sampling steps.
+
+        """
+
+        return self._steps
+
+    @steps.setter
+    def steps(self, steps):
+        if not isinstance(steps, int):
+            raise e.TypeError('`steps` should be an integer')
+        if steps <= 0:
+            raise e.ValueError('`steps` should be > 0')
+
+        self._steps = steps
+
+    @property
+    def lr(self):
+        """float: Learning rate.
+
+        """
+
+        return self._lr
+
+    @lr.setter
+    def lr(self, lr):
+        if not (isinstance(lr, float) or isinstance(lr, int)):
+            raise e.TypeError('`lr` should be a float or integer')
+        if lr < 0:
+            raise e.ValueError('`lr` should be >= 0')
+
+        self._lr = lr
+
+    @property
+    def momentum(self):
+        """float: Momentum parameter.
+
+        """
+
+        return self._momentum
+
+    @momentum.setter
+    def momentum(self, momentum):
+        if not (isinstance(momentum, float) or isinstance(momentum, int)):
+            raise e.TypeError('`momentum` should be a float or integer')
+        if momentum < 0:
+            raise e.ValueError('`momentum` should be >= 0')
+
+        self._momentum = momentum
+
+    @property
+    def decay(self):
+        """float: Weight decay.
+
+        """
+
+        return self._decay
+
+    @decay.setter
+    def decay(self, decay):
+        if not (isinstance(decay, float) or isinstance(decay, int)):
+            raise e.TypeError('`decay` should be a float or integer')
+        if decay < 0:
+            raise e.ValueError('`decay` should be >= 0')
+
+        self._decay = decay
+
+    @property
+    def T(self):
+        """float: Temperature factor.
+
+        """
+
+        return self._T
+
+    @T.setter
+    def T(self, T):
+        if not (isinstance(T, float) or isinstance(T, int)):
+            raise e.TypeError('`T` should be a float or integer')
+        if T < 0 or T > 1:
+            raise e.ValueError('`T` should be between 0 and 1')
+
+        self._T = T
+
+    @property
+    def W(self):
+        """torch.nn.Parameter: Weights' matrix.
+
+        """
+
+        return self._W
+
+    @W.setter
+    def W(self, W):
+        if not isinstance(W, nn.Parameter):
+            raise e.TypeError('`W` should be a PyTorch parameter')
+
+        self._W = W
+
+    @property
+    def a(self):
+        """torch.nn.Parameter: Visible units bias.
+
+        """
+
+        return self._a
+
+    @a.setter
+    def a(self, a):
+        if not isinstance(a, nn.Parameter):
+            raise e.TypeError('`a` should be a PyTorch parameter')
+
+        self._a = a
+
+    @property
+    def b(self):
+        """torch.nn.Parameter: Hidden units bias.
+
+        """
+
+        return self._b
+
+    @b.setter
+    def b(self, b):
+        if not isinstance(b, nn.Parameter):
+            raise e.TypeError('`b` should be a PyTorch parameter')
+
+        self._b = b
+
+    @property
+    def optimizer(self):
+        """torch.optim.SGD: Stochastic Gradient Descent object.
+
+        """
+
+        return self._optimizer
+
+    @optimizer.setter
+    def optimizer(self, optimizer):
+        if not isinstance(optimizer, opt.SGD):
+            raise e.TypeError('`optimizer` should be a SGD')
+
+        self._optimizer = optimizer
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling, i.e., P(h|v).
@@ -215,7 +395,7 @@ class RBM(Model):
             epochs (int): Number of training epochs.
 
         Returns:
-            MSE (minimum squared error), log pseudo-likelihood and time from the training step.
+            MSE (mean squared error), log pseudo-likelihood and time from the training step.
 
         """
 

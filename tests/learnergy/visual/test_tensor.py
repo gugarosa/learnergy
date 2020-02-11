@@ -1,10 +1,10 @@
 import pytest
 import torch
 
-from learnergy.visual import plot
+from learnergy.visual import tensor
 
 
 def test_show_tensor():
     t = torch.zeros(28, 28)
 
-    plot.show_tensor(t)
+    tensor.show_tensor(t)
