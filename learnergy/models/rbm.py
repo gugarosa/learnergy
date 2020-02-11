@@ -338,19 +338,18 @@ class RBM(Model):
         # Calculating positive phase hidden probabilities and states
         pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v)
 
-        # Calculating visible probabilities and states
-        visible_probs, visible_states = self.visible_sampling(
-            pos_hidden_states)
+        # Initially defining the negative phase
+        neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
-            # Calculating negative phase hidden probabilities and states
-            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                visible_states, scale=True)
-
             # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(
                 neg_hidden_states, scale=True)
+
+            # Calculating hidden probabilities and states
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
+                visible_states, scale=True)
 
         return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
 
