@@ -21,11 +21,11 @@ train_batches = DataLoader(train, batch_size=128, shuffle=True, num_workers=1)
 test_batches = DataLoader(test, batch_size=10000, shuffle=True, num_workers=1)
 
 # Creating a GaussianRBM
-model = GaussianRBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.005,
+model = GaussianRBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.05,
                     momentum=0, decay=0, temperature=1, use_gpu=True)
 
 # Training a GaussianRBM
-mse, pl = model.fit(train_batches, epochs=25)
+mse, pl = model.fit(train_batches, epochs=5)
 
 # Reconstructing test set
 rec_mse, v = model.reconstruct(test_batches)

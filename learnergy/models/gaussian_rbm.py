@@ -39,6 +39,36 @@ class GaussianRBM(RBM):
 
         logger.info('Class overrided.')
 
+    def hidden_sampling(self, v, scale=False):
+        """Performs the hidden layer sampling, i.e., P(h|v).
+
+        Args:
+            v (tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling.
+
+        """
+
+        # Calculating neurons' activations
+        activations = F.linear(v / 0.5, self.W.t(), self.b)
+
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = torch.sigmoid(activations / self.T)
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = torch.sigmoid(activations)
+
+        # Sampling current states
+        states = torch.bernoulli(probs)
+
+        return probs, states
+
     def visible_sampling(self, h, scale=False):
         """Performs the visible layer sampling, i.e., P(v|h).
 
@@ -47,21 +77,28 @@ class GaussianRBM(RBM):
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The states and probabilities of the visible layer sampling.
+            The probabilities and states of the visible layer sampling.
 
         """
 
-        # Calculating neurons' activations
-        activations = F.linear(h, self.W, self.a)
+        activations = self.a + 0.5 * torch.mm(h, self.W.t())
 
-        # If scaling is true
-        if scale:
-            # Calculate probabilities with temperature
-            states = activations / self.T
+        states = torch.normal(activations, 0.5)
 
-        # If scaling is false
-        else:
-            # Calculate probabilities as usual
-            states = activations
+        # # Calculating neurons' activations
+        # activations = F.linear(h, self.W, self.a)
 
-        return None, states
+        # # If scaling is true
+        # if scale:
+        #     # Calculate probabilities with temperature
+        #     probs = torch.sigmoid(0.5 * activations / self.T)
+
+        # # If scaling is false
+        # else:
+        #     # Calculate probabilities as usual
+        #     probs = torch.sigmoid(0.5 * activations)
+
+        # # Sampling current states
+        # states = torch.bernoulli(probs)
+
+        return states, activations
