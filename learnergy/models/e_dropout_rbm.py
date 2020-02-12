@@ -130,7 +130,7 @@ class EDropoutRBM(RBM):
         I = n_prob / p_prob / torch.abs(e)
 
         # Normalizes the Importance Level
-        # I = I / torch.max(I, 0)[0]
+        I = I / torch.max(I, 0)[0]
 
         # Samples a probability tensor
         p = torch.rand((I.size(0), I.size(1)), device=self.device)

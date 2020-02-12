@@ -70,6 +70,8 @@ class RBM(Model):
         # Hidden units bias
         self.b = nn.Parameter(torch.zeros(n_hidden))
 
+        self.sigma = nn.Parameter(torch.ones(n_visible))
+
         # Creating the optimizer object
         self.optimizer = opt.SGD(
             self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
@@ -472,6 +474,8 @@ class RBM(Model):
 
                 # Updating the parameters
                 self.optimizer.step()
+
+                # print(self.sigma)
 
                 # Gathering the size of the batch
                 batch_size = samples.size(0)

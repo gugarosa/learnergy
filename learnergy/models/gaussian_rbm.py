@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 import learnergy.utils.exception as e
@@ -9,14 +10,14 @@ logger = l.get_logger(__name__)
 
 
 class GaussianRBM(RBM):
-    """A GaussianRBM class provides the basic implementation for Gaussian-Gaussian Restricted Boltzmann Machines.
+    """A GaussianRBM class provides the basic implementation for Gaussian-Bernoulli Restricted Boltzmann Machines.
 
     References:
-        
+
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, sigma=0.5, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -35,9 +36,30 @@ class GaussianRBM(RBM):
 
         # Override its parent class
         super(GaussianRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                         learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+                                          learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+
+        # Variance parameter
+        # self.sigma = nn.Parameter(torch.zeros(n_visible))
 
         logger.info('Class overrided.')
+    #     logger.debug(f'Additional hyperparameters: sigma = {self.sigma}.')
+
+    # @property
+    # def sigma(self):
+    #     """float: Variance parameter.
+
+    #     """
+
+    #     return self._sigma
+
+    # @sigma.setter
+    # def sigma(self, sigma):
+    #     if not (isinstance(sigma, float) or isinstance(sigma, int)):
+    #         raise e.TypeError('`sigma` should be a float or integer')
+    #     if sigma < 0:
+    #         raise e.ValueError('`sigma` should be >= 0')
+
+    #     self._sigma = sigma
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling, i.e., P(h|v).
@@ -52,7 +74,7 @@ class GaussianRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v / 0.5, self.W.t(), self.b)
+        activations = F.linear(v / self.sigma, self.W.t(), self.b)
 
         # If scaling is true
         if scale:
@@ -81,11 +103,21 @@ class GaussianRBM(RBM):
 
         """
 
-        activations = self.a + 0.5 * torch.mm(h, self.W.t())
+        activations = F.linear(h, self.W, self.a)
+        # activations = self.a + self.sigma * torch.mm(h, self.W.t())
 
-        states = torch.normal(activations, 0.5)
+        # print(activations.size())
+        # print(self.sigma.size())
+#
+        sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
 
-        # # Calculating neurons' activations
+        # print(self.sigma)
+
+        # print(sigma.size())
+#
+        states = torch.normal(activations, sigma)
+
+        # Calculating neurons' activations
         # activations = F.linear(h, self.W, self.a)
 
         # # If scaling is true
@@ -102,3 +134,37 @@ class GaussianRBM(RBM):
         # states = torch.bernoulli(probs)
 
         return states, activations
+
+    def energy(self, samples):
+        """Calculates and frees the system's energy.
+
+        Args:
+            samples (tensor): Samples to be energy-freed.
+
+        Returns:
+            The system's energy based on input samples.
+
+        """
+
+        # Calculate samples' activations
+        activations = F.linear(samples / (self.sigma ** 2), self.W.t(), self.b)
+
+        # print(activations.size())
+
+        # Creating a Softplus function for numerical stability
+        s = nn.Softplus()
+
+        # Calculate the hidden term
+        h = torch.sum(s(activations), dim=1)
+
+        # Calculate the visible term
+        # v = torch.mv(samples, self.a)
+        v = ((samples - self.a) ** 2 / (2 * self.sigma ** 2))
+
+        v = torch.sum(v, dim=1)
+
+        # Finally, gathers the system's energy
+        # energy = -v - h
+        energy = -v - h
+
+        return energy

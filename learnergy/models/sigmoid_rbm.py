@@ -9,7 +9,7 @@ logger = l.get_logger(__name__)
 
 
 class SigmoidRBM(RBM):
-    """A SigmoidRBM class provides the basic implementation for Bernoulli-Sigmoid Restricted Boltzmann Machines.
+    """A SigmoidRBM class provides the basic implementation for Sigmoid-Bernoulli Restricted Boltzmann Machines.
 
     References:
         G. Hinton. A practical guide to training restricted Boltzmann machines. Neural networks: Tricks of the trade (2012).
