@@ -109,6 +109,11 @@ class VarianceGaussianRBM(RBM):
         # Updating optimizer's parameters with `sigma`
         self.optimizer.add_param_group({'params': self.sigma})
 
+        # Re-checks if current device is CUDA-based due to new parameter
+        if self.device == 'cuda':
+            # If yes, re-uses CUDA in the whole class
+            self.cuda()
+
         logger.info('Class overrided.')
 
     @property
@@ -169,13 +174,20 @@ class VarianceGaussianRBM(RBM):
 
         """
 
-        #
+        # Calculating neurons' activations
         activations = F.linear(h, self.W, self.a)
 
-        #
-        sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
+        # Checks if device is CPU-based
+        if self.device == 'cpu':
+            # If yes, variance needs to have size equal to (batch_size, n_visible)
+            sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
 
-        #
+        # If it is GPU-based
+        else:
+            # Variance needs to have size equal to (n_visible)
+            sigma = self.sigma
+
+        # Sampling current states from a Gaussian distribution
         states = torch.normal(activations, torch.pow(sigma, 2))
 
         return states, activations
@@ -191,11 +203,11 @@ class VarianceGaussianRBM(RBM):
 
         """
 
-        # Calculate samples' activations
-        activations = F.linear(
-            samples / torch.pow(self.sigma, 2), self.W.t(), self.b)
+        # Calculating the potency of variance
+        sigma = torch.pow(self.sigma, 2)
 
-        # print(activations.size())
+        # Calculate samples' activations
+        activations = F.linear(samples / sigma, self.W.t(), self.b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -204,21 +216,13 @@ class VarianceGaussianRBM(RBM):
         h = torch.sum(s(activations), dim=1)
 
         # Calculate the visible term
-        # v = torch.mv(samples, self.a)
-        # v = ((samples - self.a) ** 2 / (2 * self.sigma ** 2))
-
+        
         a = self.a.expand(1, 784)
 
-        v = torch.sum(torch.mm(samples / torch.pow(2 * self.sigma, 2), samples.t()), dim=1) - torch.mv(
-            samples, self.a / torch.pow(self.sigma, 2)) + torch.mm(a / torch.pow(2 * self.sigma, 2), a.t())
-
-        # print(v.size())
-        # print(v_a.size())
-
-        # v = torch.sum(v, dim=1)
+        # v = torch.sum(torch.mm(samples / 2 * sigma, samples.t()), dim=1) - torch.mv(samples, self.a / sigma) + torch.mm(a / 2 * sigma, a.t())
+        v = torch.sum((torch.pow(samples, 2) + torch.pow(self.a, 2)) / (2 * sigma), dim=1) - torch.mv(samples, self.a / sigma)
 
         # Finally, gathers the system's energy
-        # energy = -v - h
         energy = -v - h
 
         return energy
