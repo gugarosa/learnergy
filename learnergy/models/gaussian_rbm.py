@@ -17,7 +17,7 @@ class GaussianRBM(RBM):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, sigma=0.5, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -39,27 +39,27 @@ class GaussianRBM(RBM):
                                           learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
 
         # Variance parameter
-        # self.sigma = nn.Parameter(torch.zeros(n_visible))
+        self.sigma = nn.Parameter(torch.ones(n_visible))
+
+        # Updating optimizer's parameters with `sigma`
+        self.optimizer.add_param_group({'params': self.sigma})
 
         logger.info('Class overrided.')
-    #     logger.debug(f'Additional hyperparameters: sigma = {self.sigma}.')
 
-    # @property
-    # def sigma(self):
-    #     """float: Variance parameter.
+    @property
+    def sigma(self):
+        """torch.nn.Parameter: Variance parameter.
 
-    #     """
+        """
 
-    #     return self._sigma
+        return self._sigma
 
-    # @sigma.setter
-    # def sigma(self, sigma):
-    #     if not (isinstance(sigma, float) or isinstance(sigma, int)):
-    #         raise e.TypeError('`sigma` should be a float or integer')
-    #     if sigma < 0:
-    #         raise e.ValueError('`sigma` should be >= 0')
+    @sigma.setter
+    def sigma(self, sigma):
+        if not isinstance(sigma, nn.Parameter):
+            raise e.TypeError('`sigma` should be a PyTorch parameter')
 
-    #     self._sigma = sigma
+        self._sigma = sigma
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling, i.e., P(h|v).
@@ -74,7 +74,8 @@ class GaussianRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v / self.sigma, self.W.t(), self.b)
+        activations = F.linear(
+            v / torch.pow(self.sigma, 2), self.W.t(), self.b)
 
         # If scaling is true
         if scale:
@@ -115,7 +116,7 @@ class GaussianRBM(RBM):
 
         # print(sigma.size())
 #
-        states = torch.normal(activations, sigma)
+        states = torch.normal(activations, torch.pow(sigma, 2))
 
         # Calculating neurons' activations
         # activations = F.linear(h, self.W, self.a)
@@ -147,7 +148,8 @@ class GaussianRBM(RBM):
         """
 
         # Calculate samples' activations
-        activations = F.linear(samples / (self.sigma ** 2), self.W.t(), self.b)
+        activations = F.linear(
+            samples / torch.pow(self.sigma, 2), self.W.t(), self.b)
 
         # print(activations.size())
 
@@ -159,9 +161,16 @@ class GaussianRBM(RBM):
 
         # Calculate the visible term
         # v = torch.mv(samples, self.a)
-        v = ((samples - self.a) ** 2 / (2 * self.sigma ** 2))
+        # v = ((samples - self.a) ** 2 / (2 * self.sigma ** 2))
 
-        v = torch.sum(v, dim=1)
+        a = self.a.expand(1, 784)
+
+        v = torch.sum(torch.mm(samples / torch.pow(2 * self.sigma, 2), samples.t()), dim=1) - torch.mv(samples, self.a / torch.pow(self.sigma, 2)) + torch.mm(a / torch.pow(2 * self.sigma, 2), a.t())
+
+        # print(v.size())
+        # print(v_a.size())
+
+        # v = torch.sum(v, dim=1)
 
         # Finally, gathers the system's energy
         # energy = -v - h

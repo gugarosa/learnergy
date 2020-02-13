@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
 
+import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.core.model import Model
@@ -69,8 +70,6 @@ class RBM(Model):
 
         # Hidden units bias
         self.b = nn.Parameter(torch.zeros(n_hidden))
-
-        self.sigma = nn.Parameter(torch.ones(n_visible))
 
         # Creating the optimizer object
         self.optimizer = opt.SGD(
@@ -419,7 +418,7 @@ class RBM(Model):
         e1 = self.energy(samples_binary)
 
         # Calculate the logarithm of the pseudo-likelihood
-        pl = torch.mean(self.n_visible * torch.log(torch.sigmoid(e1 - e)))
+        pl = torch.mean(self.n_visible * torch.log(torch.sigmoid(e1 - e) + c.EPSILON))
 
         return pl
 
@@ -474,8 +473,6 @@ class RBM(Model):
 
                 # Updating the parameters
                 self.optimizer.step()
-
-                # print(self.sigma)
 
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
