@@ -10,10 +10,13 @@ logger = l.get_logger(__name__)
 
 
 class GaussianRBM(RBM):
-    """A GaussianRBM class provides the basic implementation for Gaussian-Bernoulli Restricted Boltzmann Machines.
+    """A GaussianRBM class provides the basic implementation for Gaussian-Bernoulli Restricted Boltzmann Machines (with standardization).
+
+    Note that this classes requires standardization of data as it uses variance equals to one throughout its learning procedure.
+    This is a trick to ease the calculations of the hidden and visible layer samplings, as well as the cost function.
 
     References:
-
+        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines. International conference on artificial neural networks (2011).
 
     """
 
@@ -37,6 +40,68 @@ class GaussianRBM(RBM):
         # Override its parent class
         super(GaussianRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
                                           learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+
+        logger.info('Class overrided.')
+
+    def visible_sampling(self, h, scale=False):
+        """Performs the visible layer sampling, i.e., P(v|h).
+
+        Args:
+            h (tensor): A tensor incoming from the hidden layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the visible layer sampling.
+
+        """
+
+        # Calculating neurons' activations
+        activations = F.linear(h, self.W, self.a)
+
+        # If scaling is true
+        if scale:
+            # Scale with temperature
+            states = activations / self.T
+
+        # If scaling is false
+        else:
+            # Gathers the states as usual
+            states = activations
+
+        return states, activations
+
+
+class VarianceGaussianRBM(RBM):
+    """A VarianceGaussianRBM class provides the basic implementation for Gaussian-Bernoulli Restricted Boltzmann Machines (without standardization).
+
+    Note that this class implements a new cost function that takes in account a new learning parameter: variance (sigma). Therefore,
+    there is no need to standardize the data, as the variance will be trained throughout the learning procedure.
+
+    References:
+        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines. International conference on artificial neural networks (2011).
+
+    """
+
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+        """Initialization method.
+
+        Args:
+            n_visible (int): Amount of visible units.
+            n_hidden (int): Amount of hidden units.
+            steps (int): Number of Gibbs' sampling steps.
+            learning_rate (float): Learning rate.
+            momentum (float): Momentum parameter.
+            decay (float): Weight decay used for penalization.
+            temperature (float): Temperature factor.
+            use_gpu (boolean): Whether GPU should be used or not.
+
+        """
+
+        logger.info('Overriding class: RBM -> VarianceGaussianRBM.')
+
+        # Override its parent class
+        super(VarianceGaussianRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
+                                                  learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
 
         # Variance parameter
         self.sigma = nn.Parameter(torch.ones(n_visible))
@@ -104,35 +169,14 @@ class GaussianRBM(RBM):
 
         """
 
+        #
         activations = F.linear(h, self.W, self.a)
-        # activations = self.a + self.sigma * torch.mm(h, self.W.t())
 
-        # print(activations.size())
-        # print(self.sigma.size())
-#
+        #
         sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
 
-        # print(self.sigma)
-
-        # print(sigma.size())
-#
+        #
         states = torch.normal(activations, torch.pow(sigma, 2))
-
-        # Calculating neurons' activations
-        # activations = F.linear(h, self.W, self.a)
-
-        # # If scaling is true
-        # if scale:
-        #     # Calculate probabilities with temperature
-        #     probs = torch.sigmoid(0.5 * activations / self.T)
-
-        # # If scaling is false
-        # else:
-        #     # Calculate probabilities as usual
-        #     probs = torch.sigmoid(0.5 * activations)
-
-        # # Sampling current states
-        # states = torch.bernoulli(probs)
 
         return states, activations
 
@@ -165,7 +209,8 @@ class GaussianRBM(RBM):
 
         a = self.a.expand(1, 784)
 
-        v = torch.sum(torch.mm(samples / torch.pow(2 * self.sigma, 2), samples.t()), dim=1) - torch.mv(samples, self.a / torch.pow(self.sigma, 2)) + torch.mm(a / torch.pow(2 * self.sigma, 2), a.t())
+        v = torch.sum(torch.mm(samples / torch.pow(2 * self.sigma, 2), samples.t()), dim=1) - torch.mv(
+            samples, self.a / torch.pow(self.sigma, 2)) + torch.mm(a / torch.pow(2 * self.sigma, 2), a.t())
 
         # print(v.size())
         # print(v_a.size())

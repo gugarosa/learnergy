@@ -2,29 +2,27 @@ import torch
 import torchvision
 from torch.utils.data import DataLoader
 
-from learnergy.models.gaussian_rbm import GaussianRBM
+from learnergy.models.gaussian_rbm import VarianceGaussianRBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root='./data', train=True, download=True, transform=torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.1307,), (0.3081,))
+        torchvision.transforms.ToTensor()
     ]))
 test = torchvision.datasets.MNIST(
     root='./data', train=False, download=True, transform=torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.1307,), (0.3081,))
+        torchvision.transforms.ToTensor()
     ]))
 
 # Creating training and testing batches
 train_batches = DataLoader(train, batch_size=128, shuffle=True, num_workers=1)
 test_batches = DataLoader(test, batch_size=10000, shuffle=True, num_workers=1)
 
-# Creating a GaussianRBM
-model = GaussianRBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.005,
-                    momentum=0, decay=0, temperature=1, use_gpu=True)
+# Creating a VarianceGaussianRBM
+model = VarianceGaussianRBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.0005,
+                            momentum=0, decay=0, temperature=1, use_gpu=True)
 
-# Training a GaussianRBM
+# Training a VarianceGaussianRBM
 mse, pl = model.fit(train_batches, epochs=5)
 
 # Reconstructing test set
