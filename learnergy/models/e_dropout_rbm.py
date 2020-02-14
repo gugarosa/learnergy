@@ -42,7 +42,7 @@ class EDropoutRBM(RBM):
 
         # Initializes the Energy-based Dropout mask
         self.M = torch.Tensor()
-        
+
         logger.info('Class overrided.')
 
     @property
@@ -78,12 +78,13 @@ class EDropoutRBM(RBM):
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(activations / self.T) * self.M
+            probs = torch.mul(torch.sigmoid(
+                torch.div(activations, self.T)), self.M)
 
         # If scaling is false
         else:
             # Calculate probabilities as usual
-            probs = torch.sigmoid(activations) * self.M
+            probs = torch.mul(torch.sigmoid(activations), self.M)
 
         # Sampling current states
         states = torch.bernoulli(probs)
@@ -127,10 +128,10 @@ class EDropoutRBM(RBM):
         """
 
         # Calculates the Importance Level
-        I = n_prob / p_prob / torch.abs(e)
+        I = torch.div(torch.div(n_prob, p_prob), torch.abs(e))
 
         # Normalizes the Importance Level
-        I = I / torch.max(I, 0)[0]
+        I = torch.div(I, torch.max(I, 0)[0])
 
         # Samples a probability tensor
         p = torch.rand((I.size(0), I.size(1)), device=self.device)
@@ -167,7 +168,8 @@ class EDropoutRBM(RBM):
                 batch_size = samples.size(0)
 
                 # Returns the Energy-based Dropout mask to one
-                self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
+                self.M = torch.ones(
+                    (batch_size, self.n_hidden), device=self.device)
 
                 # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible).float()
@@ -210,8 +212,8 @@ class EDropoutRBM(RBM):
                 self.optimizer.step()
 
                 # Calculating current's batch MSE
-                batch_mse = torch.sum(
-                    (samples - visible_states) ** 2) / batch_size
+                batch_mse = torch.div(
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
                 # Calculating the current's batch logarithm pseudo-likelihood
                 batch_pl = self.pseudo_likelihood(samples)
@@ -256,7 +258,8 @@ class EDropoutRBM(RBM):
             batch_size = samples.size(0)
 
             # Returns the Energy-based Dropout mask to one
-            self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
+            self.M = torch.ones(
+                (batch_size, self.n_hidden), device=self.device)
 
             # Flattening the samples' batch
             samples = samples.view(len(samples), self.n_visible).float()
@@ -274,7 +277,8 @@ class EDropoutRBM(RBM):
                 pos_hidden_states)
 
             # Calculating current's batch reconstruction MSE
-            batch_mse = torch.sum((samples - visible_states) ** 2) / batch_size
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
             # Summing up to reconstruction's MSE
             mse += batch_mse

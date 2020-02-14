@@ -61,7 +61,7 @@ class GaussianRBM(RBM):
         # If scaling is true
         if scale:
             # Scale with temperature
-            states = activations / self.T
+            states = torch.div(activations, self.T)
 
         # If scaling is false
         else:
@@ -145,12 +145,12 @@ class VarianceGaussianRBM(RBM):
 
         # Calculating neurons' activations
         activations = F.linear(
-            v / torch.pow(self.sigma, 2), self.W.t(), self.b)
+            torch.div(v, torch.pow(self.sigma, 2)), self.W.t(), self.b)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(activations / self.T)
+            probs = torch.sigmoid(torch.div(activations, self.T))
 
         # If scaling is false
         else:
@@ -180,7 +180,8 @@ class VarianceGaussianRBM(RBM):
         # Checks if device is CPU-based
         if self.device == 'cpu':
             # If yes, variance needs to have size equal to (batch_size, n_visible)
-            sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
+            sigma = torch.repeat_interleave(
+                self.sigma, activations.size(0), dim=0)
 
         # If it is GPU-based
         else:
@@ -207,7 +208,7 @@ class VarianceGaussianRBM(RBM):
         sigma = torch.pow(self.sigma, 2)
 
         # Calculate samples' activations
-        activations = F.linear(samples / sigma, self.W.t(), self.b)
+        activations = F.linear(torch.div(samples, sigma), self.W.t(), self.b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -216,11 +217,9 @@ class VarianceGaussianRBM(RBM):
         h = torch.sum(s(activations), dim=1)
 
         # Calculate the visible term
-        
-        a = self.a.expand(1, 784)
-
-        # v = torch.sum(torch.mm(samples / 2 * sigma, samples.t()), dim=1) - torch.mv(samples, self.a / sigma) + torch.mm(a / 2 * sigma, a.t())
-        v = torch.sum((torch.pow(samples, 2) + torch.pow(self.a, 2)) / (2 * sigma), dim=1) - torch.mv(samples, self.a / sigma)
+        # Note that this might be improved
+        v = torch.sum(
+            torch.div(torch.pow(samples - self.a, 2), 2 * sigma), dim=1)
 
         # Finally, gathers the system's energy
         energy = -v - h

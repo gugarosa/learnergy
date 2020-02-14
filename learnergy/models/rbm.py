@@ -281,7 +281,7 @@ class RBM(Model):
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(activations / self.T)
+            probs = torch.sigmoid(torch.div(activations, self.T))
 
         # If scaling is false
         else:
@@ -311,7 +311,7 @@ class RBM(Model):
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(activations / self.T)
+            probs = torch.sigmoid(torch.div(activations, self.T))
 
         # If scaling is false
         else:
@@ -418,7 +418,8 @@ class RBM(Model):
         e1 = self.energy(samples_binary)
 
         # Calculate the logarithm of the pseudo-likelihood
-        pl = torch.mean(self.n_visible * torch.log(torch.sigmoid(e1 - e) + c.EPSILON))
+        pl = torch.mean(self.n_visible *
+                        torch.log(torch.sigmoid(e1 - e) + c.EPSILON))
 
         return pl
 
@@ -478,8 +479,8 @@ class RBM(Model):
                 batch_size = samples.size(0)
 
                 # Calculating current's batch MSE
-                batch_mse = torch.sum(
-                    (samples - visible_states) ** 2) / batch_size
+                batch_mse = torch.div(
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
                 # Calculating the current's batch logarithm pseudo-likelihood
                 batch_pl = self.pseudo_likelihood(samples)
@@ -539,7 +540,8 @@ class RBM(Model):
             batch_size = samples.size(0)
 
             # Calculating current's batch reconstruction MSE
-            batch_mse = torch.sum((samples - visible_states) ** 2) / batch_size
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
             # Summing up to reconstruction's MSE
             mse += batch_mse

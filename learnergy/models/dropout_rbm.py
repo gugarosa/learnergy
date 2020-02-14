@@ -84,12 +84,13 @@ class DropoutRBM(RBM):
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(activations / self.T) * mask
+            probs = torch.mul(torch.sigmoid(
+                torch.div(activations, self.T)), mask)
 
         # If scaling is false
         else:
             # Calculate probabilities as usual
-            probs = torch.sigmoid(activations) * mask
+            probs = torch.mul(torch.sigmoid(activations), mask)
 
         # Sampling current states
         states = torch.bernoulli(probs)
@@ -139,7 +140,8 @@ class DropoutRBM(RBM):
             batch_size = samples.size(0)
 
             # Calculating current's batch reconstruction MSE
-            batch_mse = torch.sum((samples - visible_states) ** 2) / batch_size
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
             # Summing up to reconstruction's MSE
             mse += batch_mse

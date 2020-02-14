@@ -57,7 +57,7 @@ class SigmoidRBM(RBM):
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(activations / self.T)
+            probs = torch.sigmoid(torch.div(activations, self.T))
 
         # If scaling is false
         else:
