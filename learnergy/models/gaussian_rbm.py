@@ -47,7 +47,7 @@ class GaussianRBM(RBM):
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (tensor): A tensor incoming from the hidden layer.
+            h (torch.Tensor): A tensor incoming from the hidden layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -135,7 +135,7 @@ class VarianceGaussianRBM(RBM):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (tensor): A tensor incoming from the visible layer.
+            v (torch.Tensor): A tensor incoming from the visible layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -166,7 +166,7 @@ class VarianceGaussianRBM(RBM):
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (tensor): A tensor incoming from the hidden layer.
+            h (torch.Tensor): A tensor incoming from the hidden layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -197,7 +197,7 @@ class VarianceGaussianRBM(RBM):
         """Calculates and frees the system's energy.
 
         Args:
-            samples (tensor): Samples to be energy-freed.
+            samples (torch.Tensor): Samples to be energy-freed.
 
         Returns:
             The system's energy based on input samples.

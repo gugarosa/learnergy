@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
+from torch.utils.data import DataLoader
 
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
@@ -267,7 +268,7 @@ class RBM(Model):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (tensor): A tensor incoming from the visible layer.
+            v (torch.Tensor): A tensor incoming from the visible layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -297,7 +298,7 @@ class RBM(Model):
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (tensor): A tensor incoming from the hidden layer.
+            h (torch.Tensor): A tensor incoming from the hidden layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -327,7 +328,7 @@ class RBM(Model):
         """Performs the whole Gibbs sampling procedure.
 
         Args:
-            v (tensor): A tensor incoming from the visible layer.
+            v (torch.Tensor): A tensor incoming from the visible layer.
 
         Returns:
             The probabilities and states of the hidden layer sampling (positive),
@@ -358,7 +359,7 @@ class RBM(Model):
         """Calculates and frees the system's energy.
 
         Args:
-            samples (tensor): Samples to be energy-freed.
+            samples (torch.Tensor): Samples to be energy-freed.
 
         Returns:
             The system's energy based on input samples.
@@ -386,7 +387,7 @@ class RBM(Model):
         """Calculates the logarithm of the pseudo-likelihood.
 
         Args:
-            samples (tensor): Samples to be calculated.
+            samples (torch.Tensor): Samples to be calculated.
 
         Returns:
             The logarithm of the pseudo-likelihood based on input samples.
@@ -423,17 +424,21 @@ class RBM(Model):
 
         return pl
 
-    def fit(self, batches, epochs=10):
+    def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
 
         Args:
-            batches (DataLoader): A DataLoader object containing the training batches.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            batch_size (int): Amount of samples per batch.
             epochs (int): Number of training epochs.
 
         Returns:
             MSE (mean squared error), log pseudo-likelihood and time from the training step.
 
         """
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every epoch
         for e in range(epochs):
@@ -503,11 +508,12 @@ class RBM(Model):
 
         return mse, pl
 
-    def reconstruct(self, batches):
+    def reconstruct(self, dataset, batch_size=128):
         """Reconstruct batches of new samples.
 
         Args:
-            batches (DataLoader): A DataLoader object containing batches to be reconstructed.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            batch_size (int): Amount of samples per batch.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).
@@ -518,6 +524,9 @@ class RBM(Model):
 
         # Resetting MSE to zero
         mse = 0
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every batch
         for samples, _ in batches:

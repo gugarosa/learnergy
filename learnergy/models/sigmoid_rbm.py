@@ -43,7 +43,7 @@ class SigmoidRBM(RBM):
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (tensor): A tensor incoming from the hidden layer.
+            h (torch.Tensor): A tensor incoming from the hidden layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
