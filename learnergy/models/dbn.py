@@ -88,34 +88,32 @@ class DBN(Model):
             f'Size: ({self.n_visible}, {self.n_hidden}) | Layers: {self.n_layers} | Learning: CD-{self.steps} | Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
     
     
-    def fit(self, train, epochs=10):
+    def fit(self, dataset, batch_size=128, epochs=10):
         """
         """
 
-        data = train.data
+        data = dataset.data
 
         if isinstance (data[0], torch.ByteTensor):
             data = torch.div(data.float(), 255)
-        print(data[0])
-        targets = train.targets
+    
+        targets = dataset.targets
         dataset = torch.utils.data.TensorDataset(data, targets)
 
-        # print(dataset.tensors[0][0])
-
         for rbm in self.rbms:
-            batches = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
 
-            # rbm.fit(batches, epochs)
 
-            # data = dataset.tensors[0].view(len(train), self.n_visible).float()
+            rbm.fit(dataset, batch_size, epochs)
 
-            # targets = dataset.tensors[1]
+            data = dataset.tensors[0].view(len(dataset), rbm.n_visible).float()
+
+            targets = dataset.tensors[1]
             
-            # data, _ = rbm.hidden_sampling(data)
+            data, _ = rbm.hidden_sampling(data)
 
-            # data = data.detach()
+            data = data.detach()
 
-            # dataset = torch.utils.data.TensorDataset(data, targets)
+            dataset = torch.utils.data.TensorDataset(data, targets)
 
 
 
