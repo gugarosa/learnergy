@@ -4,11 +4,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
+from torch.utils.data import DataLoader
 
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.core.model import Model
+from learnergy.models.rbm import RBM
 
 logger = l.get_logger(__name__)
 
@@ -65,13 +67,53 @@ class DBN(Model):
         # Number of layers
         self.n_layers = len(n_hidden)
 
+        #
+        self.rbms = []
+
+        for i in range(self.n_layers):
+            if i == 0:
+                rbm = RBM(self.n_visible, self.n_hidden[i], self.steps, self.lr, self.momentum, self.decay, self.T, use_gpu)
+            else:
+                rbm = RBM(self.n_hidden[i-1], self.n_hidden[i], self.steps, self.lr, self.momentum, self.decay, self.T, use_gpu)
+            self.rbms.append(rbm)
+
         # Checks if current device is CUDA-based
         if self.device == 'cuda':
             # If yes, uses CUDA in the whole class
             self.cuda()
 
+
         logger.info('Class overrided.')
         logger.debug(
             f'Size: ({self.n_visible}, {self.n_hidden}) | Layers: {self.n_layers} | Learning: CD-{self.steps} | Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
+
+
+    def fit(self, train, epochs=10):
+        """
+        """
+
+        data = train.transform(train.data)
+        targets = train.targets
+        dataset = torch.utils.data.TensorDataset(data, targets)
+
+        print(dataset.tensors[0][0])
+
+        for rbm in self.rbms:
+            batches = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
+
+            # rbm.fit(batches, epochs)
+
+            # data = dataset.tensors[0].view(len(train), self.n_visible).float()
+
+            # targets = dataset.tensors[1]
+            
+            # data, _ = rbm.hidden_sampling(data)
+
+            # data = data.detach()
+
+            # dataset = torch.utils.data.TensorDataset(data, targets)
+
+
+
 
 
