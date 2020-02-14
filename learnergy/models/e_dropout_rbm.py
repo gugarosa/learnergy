@@ -2,6 +2,7 @@ import time
 
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
@@ -64,7 +65,7 @@ class EDropoutRBM(RBM):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (tensor): A tensor incoming from the visible layer.
+            v (torch.Tensor): A tensor incoming from the visible layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -95,8 +96,8 @@ class EDropoutRBM(RBM):
         """Calculates the total energy of the model.
 
         Args:
-            h (Tensor): Hidden sampling states.
-            v (Tensor): Visible sampling states.
+            h (torch.Tensor): Hidden sampling states.
+            v (torch.Tensor): Visible sampling states.
 
         Returns:
             The total energy of the model.
@@ -121,9 +122,9 @@ class EDropoutRBM(RBM):
         """Performs the Energy-based Dropout over the model.
 
         Args:
-            e (Tensor): Model's total energy.
-            p_prob (Tensor): Positive phase hidden probabilities.
-            n_prob (Tensor): Negative phase hidden probabilities.
+            e (torch.Tensor): Model's total energy.
+            p_prob (torch.Tensor): Positive phase hidden probabilities.
+            n_prob (torch.Tensor): Negative phase hidden probabilities.
 
         """
 
@@ -139,17 +140,21 @@ class EDropoutRBM(RBM):
         # Calculates the Energy-based Dropout mask
         self.M = (I < p).float()
 
-    def fit(self, batches, epochs=10):
+    def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
 
         Args:
-            batches (DataLoader): A DataLoader object containing the training batches.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            batch_size (int): Amount of samples per batch.
             epochs (int): Number of training epochs.
 
         Returns:
             MSE (mean squared error), log pseudo-likelihood and time from the training step.
 
         """
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every epoch
         for e in range(epochs):
@@ -236,11 +241,12 @@ class EDropoutRBM(RBM):
 
         return mse, pl
 
-    def reconstruct(self, batches):
+    def reconstruct(self, dataset, batch_size=128):
         """Reconstruct batches of new samples.
 
         Args:
-            batches (DataLoader): A DataLoader object containing batches to be reconstructed.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            batch_size (int): Amount of samples per batch.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).
@@ -251,6 +257,9 @@ class EDropoutRBM(RBM):
 
         # Resetting MSE to zero
         mse = 0
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every batch
         for samples, _ in batches:

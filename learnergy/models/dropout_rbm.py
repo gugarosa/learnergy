@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
@@ -66,7 +67,7 @@ class DropoutRBM(RBM):
         """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).
 
         Args:
-            v (tensor): A tensor incoming from the visible layer.
+            v (torch.Tensor): A tensor incoming from the visible layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -97,11 +98,12 @@ class DropoutRBM(RBM):
 
         return probs, states
 
-    def reconstruct(self, batches):
+    def reconstruct(self, dataset, batch_size=128):
         """Reconstruct batches of new samples.
 
         Args:
-            batches (DataLoader): A DataLoader object containing batches to be reconstructed.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            batch_size (int): Amount of samples per batch.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).
@@ -118,6 +120,9 @@ class DropoutRBM(RBM):
 
         # Temporarily disabling dropout
         self.p = 0
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every batch
         for samples, _ in batches:
