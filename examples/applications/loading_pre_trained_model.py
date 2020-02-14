@@ -2,8 +2,6 @@ import torch
 import torchvision
 from torch.utils.data import DataLoader
 
-from learnergy.models.rbm import RBM
-
 # Creating testing dataset
 test = torchvision.datasets.MNIST(
     root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
