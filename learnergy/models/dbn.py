@@ -32,7 +32,7 @@ class DBN(Model):
     """A DBN class provides the basic implementation for Deep Belief Networks.
 
     References:
-
+        G. Hinton, S. Osindero, Y. Teh. A fast learning algorithm for deep belief nets. Neural computation (2006).
 
     """
 
@@ -88,14 +88,17 @@ class DBN(Model):
         for i in range(self.n_layers):
             # If it is the first layer
             if i == 0:
-                # Creates an RBM with initial number of visible units
-                m = MODELS[model](self.n_visible, self.n_hidden[i], self.steps,
-                                  self.lr, self.momentum, self.decay, self.T, use_gpu)
+                # Gathers the number of input units as number of visible units
+                n_input = self.n_visible
+
             # If it is not the first layer
             else:
-                # Creates an RBM with visual units equals as previous hidden units
-                m = MODELS[model](self.n_hidden[i-1], self.n_hidden[i], self.steps,
-                                  self.lr, self.momentum, self.decay, self.T, use_gpu)
+                # Gathers the number of input units as previous number of hidden units
+                n_input = self.n_hidden[i-1]
+
+            # Creates an RBM
+            m = MODELS[model](n_input, self.n_hidden[i], self.steps,
+                              self.lr, self.momentum, self.decay, self.T, use_gpu)
 
             # Appends the model to the list
             self.models.append(m)
@@ -106,8 +109,7 @@ class DBN(Model):
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug(
-            f'Size: ({self.n_visible}, {self.n_hidden}) | Layers: {self.n_layers} | Learning: CD-{self.steps} | Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
+        logger.debug(f'Number of layers: {self.n_layers}.')
 
     @property
     def n_visible(self):
@@ -128,7 +130,7 @@ class DBN(Model):
 
     @property
     def n_hidden(self):
-        """int: List of hidden units.
+        """list: List of hidden units.
 
         """
 
@@ -243,6 +245,21 @@ class DBN(Model):
 
         self._T = T
 
+    @property
+    def models(self):
+        """list: List of models (RBMs).
+
+        """
+
+        return self._models
+
+    @models.setter
+    def models(self, models):
+        if not isinstance(models, list):
+            raise e.TypeError('`models` should be a list')
+
+        self._models = models
+
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new DBN model.
 
@@ -264,8 +281,11 @@ class DBN(Model):
         targets = dataset.targets
         dataset = torch.utils.data.TensorDataset(data, targets)
 
-        for rbm in self.models:
+        # For every possible RBM
+        for i, rbm in enumerate(self.models):
+            logger.info(f'Fitting layer {i+1}/{self.n_layers} ...')
 
+            # Fits the RBM
             rbm.fit(dataset, batch_size, epochs)
 
             data = dataset.tensors[0].view(len(dataset), rbm.n_visible).float()
@@ -277,3 +297,19 @@ class DBN(Model):
             data = data.detach()
 
             dataset = torch.utils.data.TensorDataset(data, targets)
+
+    def reconstruct(self, dataset, batch_size=128):
+        """Reconstruct batches of new samples.
+
+        Args:
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            batch_size (int): Amount of samples per batch.
+
+        Returns:
+            Reconstruction error and visible probabilities, i.e., P(v|h).
+
+        """
+
+        # For every possible RBM
+        for i, rbm in enumerate(self.models):
+            logger.info(f'Reconstructing layer {i+1}/{self.n_layers} ...')
