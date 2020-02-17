@@ -4,11 +4,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
-from torch.utils.data import DataLoader
+from torchvision import transforms
 
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
+from learnergy.core.dataset import Dataset
 from learnergy.core.model import Model
 from learnergy.models.dropout_rbm import DropoutRBM
 from learnergy.models.e_dropout_rbm import EDropoutRBM
@@ -264,7 +265,7 @@ class DBN(Model):
         """Fits a new DBN model.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
             batch_size (int): Amount of samples per batch.
             epochs (int): Number of training epochs.
 
@@ -273,30 +274,54 @@ class DBN(Model):
 
         """
 
-        data = dataset.data
+        # Initializing MSE and pseudo-likelihood as lists
+        mse, pl = [], []
 
-        if isinstance(data[0], torch.ByteTensor):
-            data = torch.div(data.float(), 255)
+        # Initializing the dataset's variables
+        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
 
-        targets = dataset.targets
-        dataset = torch.utils.data.TensorDataset(data, targets)
-
-        # For every possible RBM
-        for i, rbm in enumerate(self.models):
+        # For every possible model (RBM)
+        for i, model in enumerate(self.models):
             logger.info(f'Fitting layer {i+1}/{self.n_layers} ...')
 
+            # Creating the dataset
+            d = Dataset(samples, targets, transform)
+
             # Fits the RBM
-            rbm.fit(dataset, batch_size, epochs)
+            model_mse, model_pl = model.fit(d, batch_size, epochs)
 
-            data = dataset.tensors[0].view(len(dataset), rbm.n_visible).float()
+            # Appending the metrics
+            mse.append(model_mse)
+            pl.append(model_pl)
 
-            targets = dataset.tensors[1]
+            # If the dataset has a transform
+            if d.transform:
+                # Applies the transform over the samples
+                samples = d.transform(d.data)
+                # samples = d.transform(d.data)
+            
+            # If there is no transform
+            else:
+                # Just gather the samples
+                samples = d.data
 
-            data, _ = rbm.hidden_sampling(data)
+            # Reshape the samples into an appropriate shape
+            samples = samples.view(len(dataset), model.n_visible)
 
-            data = data.detach()
+            # Gathers the targets
+            targets = d.targets
 
-            dataset = torch.utils.data.TensorDataset(data, targets)
+            # Gathers the transform callable from current dataset
+            transform = None
+
+            # Performs a forward pass over the samples
+            samples, _ = model.hidden_sampling(d.data)
+
+            # Detaches the variable from the computing graph
+            samples = samples.detach()            
+
+        return mse, pl
+
 
     def reconstruct(self, dataset, batch_size=128):
         """Reconstruct batches of new samples.

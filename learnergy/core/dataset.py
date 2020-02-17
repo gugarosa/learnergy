@@ -12,69 +12,78 @@ class Dataset(torch.utils.data.Dataset):
 
     """
 
-    def __init__(self, X, Y):
+    def __init__(self, data, targets, transform=None):
         """Initialization method.
 
         Args:
-            X (np.array): An n-dimensional array containing the data.
-            Y (np.array): An 1-dimensional array containing the data's labels.
+            data (np.array): An n-dimensional array containing the data.
+            targets (np.array): An 1-dimensional array containing the data's labels.
+            transform (callable): Optional transform to be applied over a sample.
 
         """
 
         logger.info('Creating class: Dataset.')
 
         # Samples array
-        self.X = X
+        self.data = data
 
         # Labels array
-        self.Y = Y
+        self.targets = targets
+
+        # Transform callable
+        self.transform = transform
 
         logger.info('Class created.')
-        logger.debug(f'X: {X.shape} | Y: {Y.shape}.')
+        logger.debug(f'Data: {self.data.shape} | Targets: {self.targets.shape} | Transforms: {self.transform}.')
 
     @property
-    def X(self):
+    def data(self):
         """np.array: An n-dimensional array containing the data.
 
         """
 
-        return self._X
+        return self._data
 
-    @X.setter
-    def X(self, X):
-        if not isinstance(X, np.ndarray):
-            raise e.TypeError('`X` should be a numpy array')
+    @data.setter
+    def data(self, data):
+        # if not isinstance(data, np.ndarray):
+            # raise e.TypeError('`data` should be a numpy array')
 
-        self._X = X
+        self._data = data
 
     @property
-    def Y(self):
+    def targets(self):
         """np.array: An 1-dimensional array containing the data's labels.
         
         """
 
-        return self._Y
+        return self._targets
 
-    @Y.setter
-    def Y(self, Y):
-        if not isinstance(Y, np.ndarray):
-            raise e.TypeError('`Y` should be a numpy array')
+    @targets.setter
+    def targets(self, targets):
+        # if not isinstance(targets, np.ndarray):
+            # raise e.TypeError('`targets` should be a numpy array')
 
-        self._Y = Y
+        self._targets = targets
 
-    def __getitem__(self, index):
+    def __getitem__(self, idx):
         """A private method that will be the base for PyTorch's iterator getting a new sample.
 
         Args:
-            index (int): The index of desired sample.
+            idx (int): The idx of desired sample.
 
         """
 
         # Gets a sample based on its index
-        x = torch.from_numpy(self.X[index]).float()
+        x = self.data[idx]
 
         # Gets a sample's label based on its index
-        y = torch.from_numpy((self.Y[index]).reshape([1, 1]))
+        y = self.targets[idx]
+
+        # If there is any transform to be applied
+        if self.transform:
+            # Applies the transform
+            x = self.transform(x)
 
         return x, y
 
@@ -83,4 +92,4 @@ class Dataset(torch.utils.data.Dataset):
 
         """
 
-        return len(self.X)
+        return len(self.data)
