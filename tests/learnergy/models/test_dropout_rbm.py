@@ -5,10 +5,28 @@ import torchvision
 from learnergy.models import dropout_rbm
 
 
-def test_dropout_rbm_properties():
+def test_dropout_rbm_p():
     new_dropout_rbm = dropout_rbm.DropoutRBM()
 
     assert new_dropout_rbm.p == 0.5
+
+
+def test_dropout_rbm_p_setter():
+    new_dropout_rbm = dropout_rbm.DropoutRBM()
+
+    try:
+        new_dropout_rbm.p = -1
+    except:
+        new_dropout_rbm.p = 0
+
+    assert new_dropout_rbm.p == 0
+
+    try:
+        new_dropout_rbm.p = 'a'
+    except:
+        new_dropout_rbm.p = 0
+
+    assert new_dropout_rbm.p == 0
 
 
 def test_dropout_rbm_hidden_sampling():
@@ -16,7 +34,12 @@ def test_dropout_rbm_hidden_sampling():
 
     v = torch.ones(1, 128)
 
-    probs, states = new_dropout_rbm.hidden_sampling(v)
+    probs, states = new_dropout_rbm.hidden_sampling(v, scale=True)
+
+    assert probs.size(1) == 128
+    assert states.size(1) == 128
+
+    probs, states = new_dropout_rbm.hidden_sampling(v, scale=False)
 
     assert probs.size(1) == 128
     assert states.size(1) == 128
