@@ -98,12 +98,11 @@ class DropoutRBM(RBM):
 
         return probs, states
 
-    def reconstruct(self, dataset, batch_size=128):
+    def reconstruct(self, dataset):
         """Reconstruct batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).
@@ -115,13 +114,16 @@ class DropoutRBM(RBM):
         # Resetting mse to zero
         mse = 0
 
+        # Defining the batch size as the amount of samples in the dataset
+        batch_size = len(dataset)
+
         # Saving dropout rate to an auxiliary variable
         p = self.p
 
         # Temporarily disabling dropout
         self.p = 0
 
-        # Transforming the dataset into training batches
+        # Transforming the dataset into testing batches
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every batch

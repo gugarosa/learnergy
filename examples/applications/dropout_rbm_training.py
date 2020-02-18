@@ -17,7 +17,7 @@ model = DropoutRBM(n_visible=784, n_hidden=128, steps=1,
 mse, pl = model.fit(train, batch_size=128, epochs=5)
 
 # Reconstructing test set
-rec_mse, v = model.reconstruct(test, batch_size=10000)
+rec_mse, v = model.reconstruct(test)
 
 # Saving model
 torch.save(model, 'model.pth')

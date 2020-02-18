@@ -14,13 +14,14 @@ model = DBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1
             0.1, 0.1, 0.1], momentum=[0, 0, 0], decay=[0, 0, 0], temperature=[1, 1, 1], use_gpu=True)
 
 # Training an DBN
-model.fit(train, batch_size=128, epochs=3)
+model.fit(train, batch_size=128, epochs=[3, 3, 3])
 
-# # Reconstructing test set
-rec_mse, v = model.reconstruct(test, batch_size=128)
+# Reconstructing test set
+rec_mse, v = model.reconstruct(test)
 
-# # Saving model
-# torch.save(model, 'model.pth')
+# Saving model
+torch.save(model, 'model.pth')
 
-# # Checking the model's history
-# print(model.history)
+# Checking the model's history
+for m in model.models:
+    print(m.history)

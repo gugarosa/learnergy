@@ -1,10 +1,5 @@
-import time
-
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as opt
-from torchvision import transforms
+from torch.utils.data import DataLoader
 
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
@@ -265,13 +260,13 @@ class DBN(Model):
 
         self._models = models
 
-    def fit(self, dataset, batch_size=128, epochs=10):
+    def fit(self, dataset, batch_size=128, epochs=[10]):
         """Fits a new DBN model.
 
         Args:
             dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
             batch_size (int): Amount of samples per batch.
-            epochs (int): Number of training epochs.
+            epochs (list): Number of training epochs per layer.
 
         Returns:
             MSE (mean squared error), log pseudo-likelihood and time from the training step.
@@ -293,7 +288,7 @@ class DBN(Model):
             d = Dataset(samples, targets, transform)
 
             # Fits the RBM
-            model_mse, model_pl = model.fit(d, batch_size, epochs)
+            model_mse, model_pl = model.fit(d, batch_size, epochs[i])
 
             # Appending the metrics
             mse.append(model_mse)
@@ -303,7 +298,6 @@ class DBN(Model):
             if d.transform:
                 # Applies the transform over the samples
                 samples = d.transform(d.data)
-                # samples = d.transform(d.data)
 
             # If there is no transform
             else:
@@ -327,53 +321,76 @@ class DBN(Model):
 
         return mse, pl
 
-    def reconstruct(self, dataset, batch_size=128):
+    def reconstruct(self, dataset):
         """Reconstruct batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
-        # Initializing the dataset's variables
-        samples = dataset.transform(dataset.data.numpy())
+        logger.info(f'Reconstructing new samples ...')
 
-        #
-        hidden_states = samples
+        # Resetting MSE to zero
+        mse = 0
 
-        samples = samples.view(len(dataset), self.models[0].n_visible)
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=len(
+            dataset), shuffle=True, num_workers=1)
 
-        # For every possible model (RBM)
-        for i, model in enumerate(self.models):
-            logger.info(f'Reconstructing layer {i+1}/{self.n_layers} ...')
+        # For every batch
+        for samples, _ in batches:
+            # Gathering the size of the batch
+            batch_size = samples.size(0)
 
-            #
-            hidden_states = hidden_states.view(len(dataset), model.n_visible)
+            # Flattening the samples' batch
+            samples = samples.view(
+                len(samples), self.models[0].n_visible).float()
 
-            #
-            hidden_probs, hidden_states = model.hidden_sampling(hidden_states)
-        
-        #
-        visible_states = hidden_states
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
 
-        # For every possible model (RBM)
-        for i, model in enumerate(reversed(self.models)):
-            logger.info(f'Reconstructing layer {i+1}/{self.n_layers} ...')  
+            # Applying the initial hidden states as the samples
+            hidden_states = samples
 
-            #
-            visible_states = visible_states.view(len(dataset), model.n_hidden)     
+            # For every possible model (RBM)
+            for i, model in enumerate(self.models):
+                # Flattening the hidden states
+                hidden_states = hidden_states.view(
+                    len(dataset), model.n_visible)
 
-            #
-            visible_probs, visible_states = model.visible_sampling(visible_states) 
-  
-        #
-        mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), visible_states.size(0))
+                # Performing a hidden layer sampling
+                hidden_probs, hidden_states = model.hidden_sampling(
+                    hidden_states)
+
+            # Applying the initial visible states as the hidden states
+            visible_states = hidden_states
+
+            # For every possible model (RBM)
+            for i, model in enumerate(reversed(self.models)):
+                # Flattening the visible states
+                visible_states = visible_states.view(
+                    len(dataset), model.n_hidden)
+
+                # Performing a visible layer sampling
+                visible_probs, visible_states = model.visible_sampling(
+                    visible_states)
+
+            # Calculating current's batch reconstruction MSE
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+
+            # Summing up to reconstruction's MSE
+            mse += batch_mse
+
+        # Normalizing the MSE with the number of batches
+        mse /= len(batches)
 
         logger.info(f'MSE: {mse}')
 
         return mse, visible_probs
-

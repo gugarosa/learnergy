@@ -241,12 +241,11 @@ class EDropoutRBM(RBM):
 
         return mse, pl
 
-    def reconstruct(self, dataset, batch_size=128):
+    def reconstruct(self, dataset):
         """Reconstruct batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).
@@ -258,14 +257,14 @@ class EDropoutRBM(RBM):
         # Resetting MSE to zero
         mse = 0
 
+        # Defining the batch size as the amount of samples in the dataset
+        batch_size = len(dataset)
+
         # Transforming the dataset into training batches
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every batch
         for samples, _ in batches:
-            # Gathering the size of the batch
-            batch_size = samples.size(0)
-
             # Returns the Energy-based Dropout mask to one
             self.M = torch.ones(
                 (batch_size, self.n_hidden), device=self.device)
