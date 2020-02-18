@@ -1,7 +1,6 @@
 import pytest
 import torch
 import torchvision
-from torch.utils.data import DataLoader
 
 from learnergy.models import dropout_rbm
 
@@ -27,13 +26,10 @@ def test_dropout_rbm_reconstruct():
     test = torchvision.datasets.MNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
-    test_batches = DataLoader(test, batch_size=10000,
-                              shuffle=True, num_workers=1)
-
     new_dropout_rbm = dropout_rbm.DropoutRBM(
         n_visible=784, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, dropout=0.5, use_gpu=False)
 
-    e, v = new_dropout_rbm.reconstruct(test_batches)
+    e, v = new_dropout_rbm.reconstruct(test)
 
     assert e >= 0
     assert v.size(1) == 784

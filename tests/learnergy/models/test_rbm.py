@@ -1,7 +1,6 @@
 import pytest
 import torch
 import torchvision
-from torch.utils.data import DataLoader
 
 from learnergy.models import rbm
 
@@ -71,13 +70,10 @@ def test_rbm_fit():
     train = torchvision.datasets.MNIST(
         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
-    train_batches = DataLoader(
-        train, batch_size=128, shuffle=True, num_workers=1)
-
     new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
-                      learning_rate=0.1, momentum=0, decay=0, temperature=1)
+                      learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False)
 
-    e, pl = new_rbm.fit(train_batches, epochs=1)
+    e, pl = new_rbm.fit(train, batch_size=128, epochs=1)
 
     assert e >= 0
     assert pl <= 0
@@ -87,13 +83,10 @@ def test_rbm_reconstruct():
     test = torchvision.datasets.MNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
-    test_batches = DataLoader(test, batch_size=10000,
-                              shuffle=True, num_workers=1)
-
     new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
                       learning_rate=0.1, momentum=0, decay=0, temperature=1)
 
-    e, v = new_rbm.reconstruct(test_batches)
+    e, v = new_rbm.reconstruct(test)
 
     assert e >= 0
     assert v.size(1) == 784
