@@ -19,7 +19,7 @@ def show_tensor(tensor):
     plt.figure()
 
     # Plots the numpy version of the tensor (grayscale)
-    plt.imshow(tensor.numpy(), cmap=plt.cm.gray)
+    plt.imshow(tensor.detach().numpy(), cmap=plt.cm.gray)
 
     # Disables all axis' ticks
     plt.xticks([])

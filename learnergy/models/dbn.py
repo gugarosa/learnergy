@@ -37,18 +37,18 @@ class DBN(Model):
 
     """
 
-    def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=[1], learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1], use_gpu=False):
         """Initialization method.
 
         Args:
             model (str): Indicates which type of RBM should be used to compose the DBN.
             n_visible (int): Amount of visible units.
             n_hidden (list): Amount of hidden units per layer.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
+            steps (list): Number of Gibbs' sampling steps per layer.
+            learning_rate (list): Learning rate per layer.
+            momentum (list): Momentum parameter per layer.
+            decay (list): Weight decay used for penalization per layer.
+            temperature (list): Temperature factor per layer.
             use_gpu (boolean): Whether GPU should be used or not.
 
         """
@@ -98,8 +98,8 @@ class DBN(Model):
                 n_input = self.n_hidden[i-1]
 
             # Creates an RBM
-            m = MODELS[model](n_input, self.n_hidden[i], self.steps,
-                              self.lr, self.momentum, self.decay, self.T, use_gpu)
+            m = MODELS[model](n_input, self.n_hidden[i], self.steps[i],
+                              self.lr[i], self.momentum[i], self.decay[i], self.T[i], use_gpu)
 
             # Appends the model to the list
             self.models.append(m)
@@ -163,7 +163,7 @@ class DBN(Model):
 
     @property
     def steps(self):
-        """int: Number of steps Gibbs' sampling steps.
+        """list: Number of steps Gibbs' sampling steps per layer.
 
         """
 
@@ -171,16 +171,17 @@ class DBN(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, int):
-            raise e.TypeError('`steps` should be an integer')
-        if steps <= 0:
-            raise e.ValueError('`steps` should be > 0')
+        if not isinstance(steps, list):
+            raise e.TypeError('`steps` should be a list')
+        if len(steps) != self.n_layers:
+            raise e.SizeError(
+                f'`steps` should have size equal as {self.n_layers}')
 
         self._steps = steps
 
     @property
     def lr(self):
-        """float: Learning rate.
+        """list: Learning rate per layer.
 
         """
 
@@ -188,16 +189,17 @@ class DBN(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not (isinstance(lr, float) or isinstance(lr, int)):
-            raise e.TypeError('`lr` should be a float or integer')
-        if lr < 0:
-            raise e.ValueError('`lr` should be >= 0')
+        if not isinstance(lr, list):
+            raise e.TypeError('`lr` should be a list')
+        if len(lr) != self.n_layers:
+            raise e.SizeError(
+                f'`lr` should have size equal as {self.n_layers}')
 
         self._lr = lr
 
     @property
     def momentum(self):
-        """float: Momentum parameter.
+        """list: Momentum parameter per layer.
 
         """
 
@@ -205,16 +207,17 @@ class DBN(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not (isinstance(momentum, float) or isinstance(momentum, int)):
-            raise e.TypeError('`momentum` should be a float or integer')
-        if momentum < 0:
-            raise e.ValueError('`momentum` should be >= 0')
+        if not isinstance(momentum, list):
+            raise e.TypeError('`momentum` should be a list')
+        if len(momentum) != self.n_layers:
+            raise e.SizeError(
+                f'`momentum` should have size equal as {self.n_layers}')
 
         self._momentum = momentum
 
     @property
     def decay(self):
-        """float: Weight decay.
+        """list: Weight decay per layer.
 
         """
 
@@ -222,16 +225,17 @@ class DBN(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not (isinstance(decay, float) or isinstance(decay, int)):
-            raise e.TypeError('`decay` should be a float or integer')
-        if decay < 0:
-            raise e.ValueError('`decay` should be >= 0')
+        if not isinstance(decay, list):
+            raise e.TypeError('`decay` should be a list')
+        if len(decay) != self.n_layers:
+            raise e.SizeError(
+                f'`decay` should have size equal as {self.n_layers}')
 
         self._decay = decay
 
     @property
     def T(self):
-        """float: Temperature factor.
+        """list: Temperature factor per layer.
 
         """
 
@@ -239,10 +243,10 @@ class DBN(Model):
 
     @T.setter
     def T(self, T):
-        if not (isinstance(T, float) or isinstance(T, int)):
-            raise e.TypeError('`T` should be a float or integer')
-        if T < 0 or T > 1:
-            raise e.ValueError('`T` should be between 0 and 1')
+        if not isinstance(T, list):
+            raise e.TypeError('`T` should be a list')
+        if len(T) != self.n_layers:
+            raise e.SizeError(f'`T` should have size equal as {self.n_layers}')
 
         self._T = T
 
@@ -278,7 +282,8 @@ class DBN(Model):
         mse, pl = [], []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = dataset.data.numpy(
+        ), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (RBM)
         for i, model in enumerate(self.models):
@@ -299,7 +304,7 @@ class DBN(Model):
                 # Applies the transform over the samples
                 samples = d.transform(d.data)
                 # samples = d.transform(d.data)
-            
+
             # If there is no transform
             else:
                 # Just gather the samples
@@ -315,13 +320,12 @@ class DBN(Model):
             transform = None
 
             # Performs a forward pass over the samples
-            samples, _ = model.hidden_sampling(d.data)
+            _, samples = model.hidden_sampling(samples)
 
             # Detaches the variable from the computing graph
-            samples = samples.detach()            
+            samples = samples.detach()
 
         return mse, pl
-
 
     def reconstruct(self, dataset, batch_size=128):
         """Reconstruct batches of new samples.
@@ -335,6 +339,41 @@ class DBN(Model):
 
         """
 
-        # For every possible RBM
-        for i, rbm in enumerate(self.models):
+        # Initializing the dataset's variables
+        samples = dataset.transform(dataset.data.numpy())
+
+        #
+        hidden_states = samples
+
+        samples = samples.view(len(dataset), self.models[0].n_visible)
+
+        # For every possible model (RBM)
+        for i, model in enumerate(self.models):
             logger.info(f'Reconstructing layer {i+1}/{self.n_layers} ...')
+
+            #
+            hidden_states = hidden_states.view(len(dataset), model.n_visible)
+
+            #
+            hidden_probs, hidden_states = model.hidden_sampling(hidden_states)
+        
+        #
+        visible_states = hidden_states
+
+        # For every possible model (RBM)
+        for i, model in enumerate(reversed(self.models)):
+            logger.info(f'Reconstructing layer {i+1}/{self.n_layers} ...')  
+
+            #
+            visible_states = visible_states.view(len(dataset), model.n_hidden)     
+
+            #
+            visible_probs, visible_states = model.visible_sampling(visible_states) 
+  
+        #
+        mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), visible_states.size(0))
+
+        logger.info(f'MSE: {mse}')
+
+        return mse, visible_probs
+
