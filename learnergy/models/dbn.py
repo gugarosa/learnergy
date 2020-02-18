@@ -273,6 +273,11 @@ class DBN(Model):
 
         """
 
+        # Checking if the length of number of epochs' list is correct
+        if len(epochs) != self.n_layers:
+            # If not, raises an error
+            raise e.SizeError(f'`epochs` should have size equal as {self.n_layers}')
+
         # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
 

@@ -9,4 +9,4 @@ test = torchvision.datasets.MNIST(
 model = torch.load('model.pth')
 
 # Reconstructing test set
-rec_mse, v = model.reconstruct(test, batch_size=10000)
+rec_mse, v = model.reconstruct(test)

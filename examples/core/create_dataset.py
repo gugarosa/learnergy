@@ -4,13 +4,13 @@ from torch.utils.data import DataLoader
 from learnergy.core.dataset import Dataset
 
 # Declaring samples
-X = np.asarray([[1, 2], [2, 4]])
+data = np.asarray([[1, 2], [2, 4]])
 
 # Declaring labels
-Y = np.asarray([1, 2])
+targets = np.asarray([1, 2])
 
 # Creating the dataset object
-dataset = Dataset(X, Y)
+dataset = Dataset(data, targets)
 
 # Creating PyTorch's batches
 batches = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
