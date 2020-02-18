@@ -276,7 +276,8 @@ class DBN(Model):
         # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
             # If not, raises an error
-            raise e.SizeError(f'`epochs` should have size equal as {self.n_layers}')
+            raise e.SizeError(
+                f'`epochs` should have size equal as {self.n_layers}')
 
         # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
@@ -309,6 +310,11 @@ class DBN(Model):
                 # Just gather the samples
                 samples = d.data
 
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
+
             # Reshape the samples into an appropriate shape
             samples = samples.view(len(dataset), model.n_visible)
 
@@ -320,6 +326,11 @@ class DBN(Model):
 
             # Performs a forward pass over the samples
             _, samples = model.hidden_sampling(samples)
+
+            # Checking whether GPU is being used
+            if self.device == 'cuda':
+                # If yes, get samples back to the CPU
+                samples = samples.cpu()
 
             # Detaches the variable from the computing graph
             samples = samples.detach()
@@ -352,8 +363,7 @@ class DBN(Model):
             batch_size = samples.size(0)
 
             # Flattening the samples' batch
-            samples = samples.view(
-                len(samples), self.models[0].n_visible).float()
+            samples = samples.view(batch_size, self.models[0].n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
@@ -366,8 +376,7 @@ class DBN(Model):
             # For every possible model (RBM)
             for i, model in enumerate(self.models):
                 # Flattening the hidden states
-                hidden_states = hidden_states.view(
-                    len(dataset), model.n_visible)
+                hidden_states = hidden_states.view(batch_size, model.n_visible)
 
                 # Performing a hidden layer sampling
                 hidden_probs, hidden_states = model.hidden_sampling(
@@ -379,8 +388,7 @@ class DBN(Model):
             # For every possible model (RBM)
             for i, model in enumerate(reversed(self.models)):
                 # Flattening the visible states
-                visible_states = visible_states.view(
-                    len(dataset), model.n_hidden)
+                visible_states = visible_states.view(batch_size, model.n_hidden)
 
                 # Performing a visible layer sampling
                 visible_probs, visible_states = model.visible_sampling(
