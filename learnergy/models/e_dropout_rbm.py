@@ -177,7 +177,7 @@ class EDropoutRBM(RBM):
                     (batch_size, self.n_hidden), device=self.device)
 
                 # Flattening the samples' batch
-                samples = samples.view(len(samples), self.n_visible).float()
+                samples = samples.view(len(samples), self.n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
                 if self.device == 'cuda':
@@ -270,7 +270,7 @@ class EDropoutRBM(RBM):
                 (batch_size, self.n_hidden), device=self.device)
 
             # Flattening the samples' batch
-            samples = samples.view(len(samples), self.n_visible).float()
+            samples = samples.view(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':

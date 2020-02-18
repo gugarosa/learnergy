@@ -129,7 +129,7 @@ class DropoutRBM(RBM):
         # For every batch
         for samples, _ in batches:
             # Flattening the samples' batch
-            samples = samples.view(len(samples), self.n_visible).float()
+            samples = samples.view(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
