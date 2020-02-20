@@ -124,7 +124,7 @@ class DropoutRBM(RBM):
         self.p = 0
 
         # Transforming the dataset into testing batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in batches:

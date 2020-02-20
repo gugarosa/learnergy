@@ -261,7 +261,7 @@ class EDropoutRBM(RBM):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in batches:

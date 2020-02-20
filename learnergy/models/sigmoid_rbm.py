@@ -64,7 +64,7 @@ class SigmoidRBM(RBM):
             # Calculate probabilities as usual
             probs = torch.sigmoid(activations)
 
-        # Sampling current states
-        states = torch.bernoulli(probs)
+        # Copying states as current probabilities
+        states = probs
 
         return states, probs
