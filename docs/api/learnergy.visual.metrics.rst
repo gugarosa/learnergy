@@ -1,7 +1,7 @@
-learnergy.core.dataset
+learnergy.visual.metrics
 ==========================
 
-.. autoapiclass:: learnergy.core.dataset.Dataset
+.. autoapimodule:: learnergy.visual.metrics
     :members:
     :private-members:
     :special-members:

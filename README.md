@@ -67,6 +67,7 @@ Learnergy is based on the following structure, and you should pay attention to i
         - logging
     - visual
         - image
+        - metrics
         - tensor
 ```
 
