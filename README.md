@@ -35,6 +35,14 @@ Learnergy is compatible with: **Python 3.6+**.
 If you use Learnergy to fulfill any of your needs, please cite us:
 
 ```
+@misc{roder2020learnergy,
+    title={Learnergy: Energy-based Machine Learners},
+    author={Mateus Roder and Gustavo Henrique de Rosa and João Paulo Papa},
+    year={2020},
+    eprint={2003.07443},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG}
+}
 ```
 
 ---
