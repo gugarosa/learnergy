@@ -1,8 +1,7 @@
-import torch
-import torch.nn.functional as F
-
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
+import torch
+import torch.nn.functional as F
 from learnergy.models.rbm import RBM
 
 logger = l.get_logger(__name__)
@@ -12,11 +11,13 @@ class SigmoidRBM(RBM):
     """A SigmoidRBM class provides the basic implementation for Sigmoid-Bernoulli Restricted Boltzmann Machines.
 
     References:
-        G. Hinton. A practical guide to training restricted Boltzmann machines. Neural networks: Tricks of the trade (2012).
+        G. Hinton. A practical guide to training restricted Boltzmann machines.
+        Neural networks: Tricks of the trade (2012).
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
+                 momentum=0, decay=0, temperature=1, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -34,8 +35,8 @@ class SigmoidRBM(RBM):
         logger.info('Overriding class: RBM -> SigmoidRBM.')
 
         # Override its parent class
-        super(SigmoidRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                         learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+        super(SigmoidRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                         momentum, decay, temperature, use_gpu)
 
         logger.info('Class overrided.')
 

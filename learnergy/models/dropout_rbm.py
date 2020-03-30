@@ -1,10 +1,9 @@
-import torch
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
+import torch
+import torch.nn.functional as F
 from learnergy.models.rbm import RBM
+from torch.utils.data import DataLoader
 
 logger = l.get_logger(__name__)
 
@@ -14,11 +13,13 @@ class DropoutRBM(RBM):
     along with a Dropout regularization.
 
     References:
-        N. Srivastava, et al. Dropout: a simple way to prevent neural networks from overfitting. The journal of machine learning research (2014).
+        N. Srivastava, et al. Dropout: a simple way to prevent neural networks from overfitting.
+        The journal of machine learning research (2014).
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, dropout=0.5, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
+                 momentum=0, decay=0, temperature=1, dropout=0.5, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -37,8 +38,8 @@ class DropoutRBM(RBM):
         logger.info('Overriding class: RBM -> DropoutRBM.')
 
         # Override its parent class
-        super(DropoutRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                         learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+        super(DropoutRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                         momentum, decay, temperature, use_gpu)
 
         # Intensity of dropout
         self.p = dropout

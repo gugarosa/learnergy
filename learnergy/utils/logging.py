@@ -22,11 +22,11 @@ def get_console_handler():
     return console_handler
 
 
-def get_file_handler():
-    """Gets a file handler to handle logging into files.
+def get_timed_file_handler():
+    """Gets a timed file handler to handle logging into files.
 
     Returns:
-        A handler to output information into files.
+        A handler to output information into timed files.
 
     """
 
@@ -56,7 +56,7 @@ def get_logger(logger_name):
 
     # Adds the desired handlers
     logger.addHandler(get_console_handler())
-    logger.addHandler(get_file_handler())
+    logger.addHandler(get_timed_file_handler())
 
     # True or False for propagating logs
     logger.propagate = False

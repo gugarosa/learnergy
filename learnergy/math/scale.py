@@ -1,5 +1,6 @@
 import learnergy.utils.constants as c
 
+
 def unitary_scale(x):
     """Scales an array between 0 and 1.
 

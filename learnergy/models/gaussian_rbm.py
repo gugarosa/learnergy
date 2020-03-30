@@ -1,9 +1,8 @@
+import learnergy.utils.exception as e
+import learnergy.utils.logging as l
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.models.rbm import RBM
 
 logger = l.get_logger(__name__)
@@ -16,11 +15,13 @@ class GaussianRBM(RBM):
     This is a trick to ease the calculations of the hidden and visible layer samplings, as well as the cost function.
 
     References:
-        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines. International conference on artificial neural networks (2011).
+        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
+        International conference on artificial neural networks (2011).
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
+                 momentum=0, decay=0, temperature=1, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -38,8 +39,8 @@ class GaussianRBM(RBM):
         logger.info('Overriding class: RBM -> GaussianRBM.')
 
         # Override its parent class
-        super(GaussianRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                          learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+        super(GaussianRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                          momentum, decay, temperature, use_gpu)
 
         logger.info('Class overrided.')
 
@@ -78,11 +79,13 @@ class VarianceGaussianRBM(RBM):
     there is no need to standardize the data, as the variance will be trained throughout the learning procedure.
 
     References:
-        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines. International conference on artificial neural networks (2011).
+        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
+        International conference on artificial neural networks (2011).
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
+                 momentum=0, decay=0, temperature=1, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -100,8 +103,8 @@ class VarianceGaussianRBM(RBM):
         logger.info('Overriding class: RBM -> VarianceGaussianRBM.')
 
         # Override its parent class
-        super(VarianceGaussianRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                                  learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+        super(VarianceGaussianRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                                  momentum, decay, temperature, use_gpu)
 
         # Variance parameter
         self.sigma = nn.Parameter(torch.ones(n_visible))

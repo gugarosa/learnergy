@@ -1,9 +1,7 @@
-import torch
-from torch.utils.data import DataLoader
-
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
+import torch
 from learnergy.core.dataset import Dataset
 from learnergy.core.model import Model
 from learnergy.models.dropout_rbm import DropoutRBM
@@ -11,6 +9,7 @@ from learnergy.models.e_dropout_rbm import EDropoutRBM
 from learnergy.models.gaussian_rbm import GaussianRBM, VarianceGaussianRBM
 from learnergy.models.rbm import RBM
 from learnergy.models.sigmoid_rbm import SigmoidRBM
+from torch.utils.data import DataLoader
 
 logger = l.get_logger(__name__)
 
@@ -28,11 +27,13 @@ class DBN(Model):
     """A DBN class provides the basic implementation for Deep Belief Networks.
 
     References:
-        G. Hinton, S. Osindero, Y. Teh. A fast learning algorithm for deep belief nets. Neural computation (2006).
+        G. Hinton, S. Osindero, Y. Teh. A fast learning algorithm for deep belief nets.
+        Neural computation (2006).
 
     """
 
-    def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=[1], learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1], use_gpu=False):
+    def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=[1],
+                 learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1], use_gpu=False):
         """Initialization method.
 
         Args:
@@ -283,8 +284,7 @@ class DBN(Model):
         mse, pl = [], []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(
-        ), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (RBM)
         for i, model in enumerate(self.models):
@@ -378,8 +378,7 @@ class DBN(Model):
                 hidden_states = hidden_states.view(batch_size, model.n_visible)
 
                 # Performing a hidden layer sampling
-                hidden_probs, hidden_states = model.hidden_sampling(
-                    hidden_states)
+                hidden_probs, hidden_states = model.hidden_sampling(hidden_states)
 
             # Applying the initial visible states as the hidden states
             visible_states = hidden_states
@@ -390,8 +389,7 @@ class DBN(Model):
                 visible_states = visible_states.view(batch_size, model.n_hidden)
 
                 # Performing a visible layer sampling
-                visible_probs, visible_states = model.visible_sampling(
-                    visible_states)
+                visible_probs, visible_states = model.visible_sampling(visible_states)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(

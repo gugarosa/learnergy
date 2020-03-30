@@ -1,12 +1,11 @@
 import time
 
-import torch
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
+import torch
+import torch.nn.functional as F
 from learnergy.models.rbm import RBM
+from torch.utils.data import DataLoader
 
 logger = l.get_logger(__name__)
 
@@ -16,11 +15,13 @@ class EDropoutRBM(RBM):
     along with a Energy-based Dropout regularization.
 
     References:
-        M. Roder, G. H. de Rosa, A. L. D. Rossi, J. P. Papa. Energy-based Dropout in Restricted Boltzmann Machines: Why Do Not Go Random. Publication pending (2020).
+        M. Roder, G. H. de Rosa, A. L. D. Rossi, J. P. Papa.
+        Energy-based Dropout in Restricted Boltzmann Machines: Why Do Not Go Random. Publication pending (2020).
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
+                 momentum=0, decay=0, temperature=1, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -38,8 +39,8 @@ class EDropoutRBM(RBM):
         logger.info('Overriding class: RBM -> EDropoutRBM.')
 
         # Override its parent class
-        super(EDropoutRBM, self).__init__(n_visible=n_visible, n_hidden=n_hidden, steps=steps,
-                                          learning_rate=learning_rate, momentum=momentum, decay=decay, temperature=temperature, use_gpu=use_gpu)
+        super(EDropoutRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                          momentum, decay, temperature, use_gpu)
 
         # Initializes the Energy-based Dropout mask
         self.M = torch.Tensor()

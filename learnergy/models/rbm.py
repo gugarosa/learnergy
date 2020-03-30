@@ -1,15 +1,14 @@
 import time
 
+import learnergy.utils.constants as c
+import learnergy.utils.exception as e
+import learnergy.utils.logging as l
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
-from torch.utils.data import DataLoader
-
-import learnergy.utils.constants as c
-import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.core.model import Model
+from torch.utils.data import DataLoader
 
 logger = l.get_logger(__name__)
 
@@ -18,11 +17,13 @@ class RBM(Model):
     """An RBM class provides the basic implementation for Bernoulli-Bernoulli Restricted Boltzmann Machines.
 
     References:
-        G. Hinton. A practical guide to training restricted Boltzmann machines. Neural networks: Tricks of the trade (2012).
+        G. Hinton. A practical guide to training restricted Boltzmann machines.
+        Neural networks: Tricks of the trade (2012).
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(self, n_visible=128, n_hidden=128, steps=1,
+                 learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -83,7 +84,8 @@ class RBM(Model):
 
         logger.info('Class overrided.')
         logger.debug(
-            f'Size: ({self.n_visible}, {self.n_hidden}) | Learning: CD-{self.steps} | Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
+            f'Size: ({self.n_visible}, {self.n_hidden}) | Learning: CD-{self.steps} | '
+            f'Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
 
     @property
     def n_visible(self):
@@ -347,11 +349,11 @@ class RBM(Model):
         for _ in range(self.steps):
             # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(
-                neg_hidden_states, scale=True)
+                neg_hidden_states, True)
 
             # Calculating hidden probabilities and states
             neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                visible_states, scale=True)
+                visible_states, True)
 
         return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
 

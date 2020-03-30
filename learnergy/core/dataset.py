@@ -1,8 +1,7 @@
-import numpy as np
-import torch
-
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
+import numpy as np
+import torch
 
 logger = l.get_logger(__name__)
 
@@ -65,6 +64,21 @@ class Dataset(torch.utils.data.Dataset):
             # raise e.TypeError('`targets` should be a numpy array')
 
         self._targets = targets
+
+    @property
+    def transform(self):
+        """callable: Optional transform to be applied over a sample.
+        
+        """
+
+        return self._transform
+
+    @transform.setter
+    def transform(self, transform):
+        # if not isinstance(transform, callable):
+            # raise e.TypeError('`transform` should be a callable')
+
+        self._transform = transform
 
     def __getitem__(self, idx):
         """A private method that will be the base for PyTorch's iterator getting a new sample.
