@@ -1,7 +1,9 @@
+import torch
+from torch.utils.data import DataLoader
+
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
-import torch
 from learnergy.core.dataset import Dataset
 from learnergy.core.model import Model
 from learnergy.models.dropout_rbm import DropoutRBM
@@ -9,7 +11,6 @@ from learnergy.models.e_dropout_rbm import EDropoutRBM
 from learnergy.models.gaussian_rbm import GaussianRBM, VarianceGaussianRBM
 from learnergy.models.rbm import RBM
 from learnergy.models.sigmoid_rbm import SigmoidRBM
-from torch.utils.data import DataLoader
 
 logger = l.get_logger(__name__)
 

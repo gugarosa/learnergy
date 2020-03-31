@@ -1,8 +1,8 @@
 import numpy as np
+from PIL import Image
 
 import learnergy.math.scale as s
 import learnergy.utils.logging as l
-from PIL import Image
 
 logger = l.get_logger(__name__)
 

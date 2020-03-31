@@ -1,14 +1,15 @@
 import time
 
-import learnergy.utils.constants as c
-import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
-from learnergy.core.model import Model
 from torch.utils.data import DataLoader
+
+import learnergy.utils.constants as c
+import learnergy.utils.exception as e
+import learnergy.utils.logging as l
+from learnergy.core.model import Model
 
 logger = l.get_logger(__name__)
 

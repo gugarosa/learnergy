@@ -1,6 +1,7 @@
+import torch
+
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
-import torch
 
 logger = l.get_logger(__name__)
 
