@@ -4,7 +4,7 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup(name='learnergy',
-      version='1.0.3',
+      version='1.0.4',
       description='Energy-based Machine Learners',
       long_description=long_description,
       long_description_content_type='text/markdown',
