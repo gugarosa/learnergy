@@ -450,6 +450,8 @@ class DRBM(Model):
         #
         y = torch.zeros(samples.size(0), self.n_class)
 
+        y_sum = torch.zeros(samples.size(0))
+
         # Calculate samples' activations
         activations = F.linear(samples, self.W.t(), self.b)
 
@@ -457,10 +459,14 @@ class DRBM(Model):
         s = nn.Softplus()
 
         for i in range(self.n_class):
-            y[:, i] = torch.sum(s(activations + self.U[i, :]), dim=1)
+            y[:, i] = torch.exp(self.c[i]) + torch.sum(s(activations + self.U[i, :]), dim=1)
 
-        # for i in range(self.n_class):
-        #     y[:, i] /= torch.sum(y, 1)
+        y_sum = torch.exp(torch.sum(self.c)) + torch.sum(s(activations + torch.sum(self.U)), dim=1)
+
+        for i in range(self.n_class):
+            y[:, i] /= y_sum
+
+        # y /= y_sum
 
         # print(y)
 
@@ -551,8 +557,8 @@ class DRBM(Model):
             start = time.time()
 
             # Resetting epoch's MSE and pseudo-likelihood to zero
-            mse = 0
-            pl = 0
+            loss = 0
+            acc = 0
 
             # For every batch
             for samples, labels in batches:
@@ -575,7 +581,7 @@ class DRBM(Model):
                 # Detaching the visible states from GPU for further computation
                 # visible_states = visible_states.detach()
 
-                # probs = self.energy(samples)
+                probs = self.energy(samples)
 
                 # print(probs)
 
@@ -585,9 +591,11 @@ class DRBM(Model):
 
                 # print(probs.shape, labels.shape)
 
-                cost = self.loss(self.energy(samples), labels)
+                cost = self.loss(probs, labels)
 
-                print(torch.argmax(self.energy(samples), 1), labels)
+                preds = torch.argmax(probs, 1)
+
+                # print(torch.argmax(self.energy(samples), 1), labels)
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -601,22 +609,25 @@ class DRBM(Model):
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
 
+                #
+                accuracy = torch.sum(preds == labels).float()
+
                 # Calculating current's batch MSE
-                # batch_mse = torch.div(
-                    # torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                batch_acc = torch.mean(accuracy / batch_size)
 
                 # Calculating the current's batch logarithm pseudo-likelihood
                 # batch_pl = self.pseudo_likelihood(samples)
 
                 # Summing up to epochs' MSE and pseudo-likelihood
-                # mse += batch_mse
+                loss += cost
+                acc += batch_acc
                 # pl += batch_pl
 
-                logger.info(f'Cost: {cost}')
+                # print(f'Cost: {cost}')
 
             # Normalizing the MSE and pseudo-likelihood with the number of batches
-            # mse /= len(batches)
-            # pl /= len(batches)
+            loss /= len(batches)
+            acc /= len(batches)
 
             # Calculating the time of the epoch's ending
             end = time.time()
@@ -624,7 +635,7 @@ class DRBM(Model):
             # Dumps the desired variables to the model's history
             # self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
 
-            # logger.info(f'MSE: {mse} | log-PL: {pl}')
+            logger.info(f'Loss: {loss} | Accuracy: {acc}')
 
         return mse, pl
 
