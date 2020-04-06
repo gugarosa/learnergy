@@ -244,7 +244,7 @@ class EDropoutRBM(RBM):
         return mse, pl
 
     def reconstruct(self, dataset):
-        """Reconstruct batches of new samples.
+        """Reconstructs batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
@@ -290,7 +290,7 @@ class EDropoutRBM(RBM):
             batch_mse = torch.div(
                 torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
-            # Summing up to reconstruction's MSE
+            # Summing up the reconstruction's MSE
             mse += batch_mse
 
         # Normalizing the MSE with the number of batches

@@ -9,12 +9,12 @@ from torch.utils.data import DataLoader
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
-from learnergy.core.model import Model
+from learnergy.models.rbm import RBM
 
 logger = l.get_logger(__name__)
 
 
-class DRBM(Model):
+class DRBM(RBM):
     """A DRBM class provides the basic implementation for Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machines.
 
     References:
@@ -22,14 +22,14 @@ class DRBM(Model):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, n_class=1, steps=1,
+    def __init__(self, n_visible=128, n_hidden=128, n_classes=1, steps=1,
                  learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
         """Initialization method.
 
         Args:
             n_visible (int): Amount of visible units.
             n_hidden (int): Amount of hidden units.
-            n_class (int): Amount of classes.
+            n_classes (int): Amount of classes.
             steps (int): Number of Gibbs' sampling steps.
             learning_rate (float): Learning rate.
             momentum (float): Momentum parameter.
@@ -39,250 +39,105 @@ class DRBM(Model):
 
         """
 
-        logger.info('Overriding class: Model -> DRBM.')
+        logger.info('Overriding class: RBM -> DRBM.')
 
         # Override its parent class
-        super(DRBM, self).__init__(use_gpu=use_gpu)
-
-        self.loss = nn.CrossEntropyLoss()
-
-        # Amount of visible units
-        self.n_visible = n_visible
-
-        # Amount of hidden units
-        self.n_hidden = n_hidden
-
-        # Amount of classes
-        self.n_class = n_class
-
-        # Number of steps Gibbs' sampling steps
-        self.steps = steps
-
-        # Learning rate
-        self.lr = learning_rate
-
-        # Momentum parameter
-        self.momentum = momentum
-
-        # Weight decay
-        self.decay = decay
-
-        # Temperature factor
-        self.T = temperature
-
-        # Weights matrix
-        self.W = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01)
+        super(DRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                   momentum, decay, temperature, use_gpu)
+    
+        # Number of classes
+        self.n_classes = n_classes 
 
         # Class weights matrix
-        self.U = nn.Parameter(torch.randn(n_class, n_hidden) * 0.05)
-
-        # Visible units bias
-        self.a = nn.Parameter(torch.zeros(n_visible))
-
-        # Hidden units bias
-        self.b = nn.Parameter(torch.zeros(n_hidden))
+        self.U = nn.Parameter(torch.randn(n_classes, n_hidden) * 0.05)
 
         # Class bias
-        self.c = nn.Parameter(torch.zeros(n_class))
+        self.c = nn.Parameter(torch.zeros(n_classes))
 
-        # Creating the optimizer object
-        self.optimizer = opt.SGD(
-            self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
+        # Creating the loss function for the DRBM
+        self.loss = nn.CrossEntropyLoss()
 
-        # Checks if current device is CUDA-based
+        # Updating optimizer's parameters with `U`
+        self.optimizer.add_param_group({'params': self.U})
+
+        # Updating optimizer's parameters with `c`
+        self.optimizer.add_param_group({'params': self.c})
+
+        # Re-checks if current device is CUDA-based due to new parameter
         if self.device == 'cuda':
-            # If yes, uses CUDA in the whole class
+            # If yes, re-uses CUDA in the whole class
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug(
-            f'Size: ({self.n_visible}, {self.n_hidden}) | Learning: CD-{self.steps} | '
-            f'Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
 
     @property
-    def n_visible(self):
-        """int: Number of visible units.
+    def n_classes(self):
+        """int: Number of classes.
 
         """
 
-        return self._n_visible
+        return self._n_classes
 
-    @n_visible.setter
-    def n_visible(self, n_visible):
-        if not isinstance(n_visible, int):
-            raise e.TypeError('`n_visible` should be an integer')
-        if n_visible <= 0:
-            raise e.ValueError('`n_visible` should be > 0')
+    @n_classes.setter
+    def n_classes(self, n_classes):
+        if not isinstance(n_classes, int):
+            raise e.TypeError('`n_classes` should be an integer')
+        if n_classes <= 0:
+            raise e.ValueError('`n_classes` should be > 0')
 
-        self._n_visible = n_visible
+        self._n_classes = n_classes
 
     @property
-    def n_hidden(self):
-        """int: Number of hidden units.
+    def U(self):
+        """torch.nn.Parameter: Class weights' matrix.
 
         """
 
-        return self._n_hidden
+        return self._U
 
-    @n_hidden.setter
-    def n_hidden(self, n_hidden):
-        if not isinstance(n_hidden, int):
-            raise e.TypeError('`n_hidden` should be an integer')
-        if n_hidden <= 0:
-            raise e.ValueError('`n_hidden` should be > 0')
+    @U.setter
+    def U(self, U):
+        if not isinstance(U, nn.Parameter):
+            raise e.TypeError('`U` should be a PyTorch parameter')
 
-        self._n_hidden = n_hidden
+        self._U = U
 
     @property
-    def steps(self):
-        """int: Number of steps Gibbs' sampling steps.
+    def c(self):
+        """torch.nn.Parameter: Class units bias.
 
         """
 
-        return self._steps
+        return self._c
 
-    @steps.setter
-    def steps(self, steps):
-        if not isinstance(steps, int):
-            raise e.TypeError('`steps` should be an integer')
-        if steps <= 0:
-            raise e.ValueError('`steps` should be > 0')
+    @c.setter
+    def c(self, c):
+        if not isinstance(c, nn.Parameter):
+            raise e.TypeError('`c` should be a PyTorch parameter')
 
-        self._steps = steps
+        self._c = c
 
     @property
-    def lr(self):
-        """float: Learning rate.
+    def loss(self):
+        """torch.nn.CrossEntropyLoss: Cross-Entropy loss function.
 
         """
 
-        return self._lr
+        return self._loss
 
-    @lr.setter
-    def lr(self, lr):
-        if not (isinstance(lr, float) or isinstance(lr, int)):
-            raise e.TypeError('`lr` should be a float or integer')
-        if lr < 0:
-            raise e.ValueError('`lr` should be >= 0')
+    @loss.setter
+    def loss(self, loss):
+        if not isinstance(loss, nn.CrossEntropyLoss):
+            raise e.TypeError('`loss` should be a CrossEntropy')
 
-        self._lr = lr
-
-    @property
-    def momentum(self):
-        """float: Momentum parameter.
-
-        """
-
-        return self._momentum
-
-    @momentum.setter
-    def momentum(self, momentum):
-        if not (isinstance(momentum, float) or isinstance(momentum, int)):
-            raise e.TypeError('`momentum` should be a float or integer')
-        if momentum < 0:
-            raise e.ValueError('`momentum` should be >= 0')
-
-        self._momentum = momentum
-
-    @property
-    def decay(self):
-        """float: Weight decay.
-
-        """
-
-        return self._decay
-
-    @decay.setter
-    def decay(self, decay):
-        if not (isinstance(decay, float) or isinstance(decay, int)):
-            raise e.TypeError('`decay` should be a float or integer')
-        if decay < 0:
-            raise e.ValueError('`decay` should be >= 0')
-
-        self._decay = decay
-
-    @property
-    def T(self):
-        """float: Temperature factor.
-
-        """
-
-        return self._T
-
-    @T.setter
-    def T(self, T):
-        if not (isinstance(T, float) or isinstance(T, int)):
-            raise e.TypeError('`T` should be a float or integer')
-        if T < 0 or T > 1:
-            raise e.ValueError('`T` should be between 0 and 1')
-
-        self._T = T
-
-    @property
-    def W(self):
-        """torch.nn.Parameter: Weights' matrix.
-
-        """
-
-        return self._W
-
-    @W.setter
-    def W(self, W):
-        if not isinstance(W, nn.Parameter):
-            raise e.TypeError('`W` should be a PyTorch parameter')
-
-        self._W = W
-
-    @property
-    def a(self):
-        """torch.nn.Parameter: Visible units bias.
-
-        """
-
-        return self._a
-
-    @a.setter
-    def a(self, a):
-        if not isinstance(a, nn.Parameter):
-            raise e.TypeError('`a` should be a PyTorch parameter')
-
-        self._a = a
-
-    @property
-    def b(self):
-        """torch.nn.Parameter: Hidden units bias.
-
-        """
-
-        return self._b
-
-    @b.setter
-    def b(self, b):
-        if not isinstance(b, nn.Parameter):
-            raise e.TypeError('`b` should be a PyTorch parameter')
-
-        self._b = b
-
-    @property
-    def optimizer(self):
-        """torch.optim.SGD: Stochastic Gradient Descent object.
-
-        """
-
-        return self._optimizer
-
-    @optimizer.setter
-    def optimizer(self, optimizer):
-        if not isinstance(optimizer, opt.SGD):
-            raise e.TypeError('`optimizer` should be a SGD')
-
-        self._optimizer = optimizer
+        self._loss = loss
 
     def hidden_sampling(self, v, y, scale=False):
-        """Performs the hidden layer sampling, i.e., P(h|v).
+        """Performs the hidden layer sampling, i.e., P(h|y,v).
 
         Args:
             v (torch.Tensor): A tensor incoming from the visible layer.
+            y (torch.Tensor): A tensor incoming from the class layer.
             scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
@@ -338,52 +193,6 @@ class DRBM(Model):
 
         return probs, states
 
-    def sample_class_given_x(self, input_data):
-        """Sampling the label given input data in time O(n_hidden * num_visible + n_class * n_class) for each example"""
-
-        probs = torch.zeros((input_data.shape[0], self.n_class))
-        
-        # activations = F.linear(input_data, self.W.t(), self.b)
-
-        # for i in range(self.n_class):
-        #     probs[:, i] = torch.exp(self.c[i]) * torch.exp(1 + self.U[i, :] + activations)
-
-
-        # probs = probs / torch.sum(probs)
-
-        # print(probs)
-
-        # print(probs.shape)
-        # print(self.U.shape)
-
-        # probs = torch.exp(self.c) + torch.prod(torch.exp(activations + self.U) + 1)
-
-        # print(probs)
-    
-        # precomputed_factor = F.linear(input_data, self.W.t(), self.b)
-        # class_probabilities = torch.zeros((input_data.shape[0], self.n_class))
-
-        # for y in range(self.n_class):
-        #     prod = torch.zeros(input_data.shape[0], device = input_data.device)
-        #     prod += self.c[y]
-        #     for j in range(self.n_hidden):
-        #         prod += torch.log(1 + torch.exp(precomputed_factor[:,j] + self.U[y, j]))
-        #     #print(prod)
-        #     class_probabilities[:, y] = prod  
-
-        # copy_probabilities = torch.zeros(class_probabilities.shape, device = input_data.device)
-
-        # for c in range(self.n_class):
-        #   for d in range(self.n_class):
-        #     copy_probabilities[:, c] += torch.exp(-1*class_probabilities[:, c] + class_probabilities[:, d])
-
-        # copy_probabilities = 1/copy_probabilities
-
-
-        # class_probabilities = copy_probabilities
-
-        return probs
-
     def class_sampling(self, h):
         """
         """
@@ -398,7 +207,7 @@ class DRBM(Model):
         probs = probs / torch.exp(F.linear(h, torch.sum(self.U), torch.sum(self.c)))
 
         # Sampling current states
-        states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), n_class=self.n_class).float()
+        states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), n_classes=self.n_classes).float()
 
         return probs, states
 
@@ -436,19 +245,19 @@ class DRBM(Model):
 
         return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
 
-    def energy(self, samples):
-        """Calculates and frees the system's energy.
+    def labels_sampling(self, samples):
+        """Calculates labels probabilities by samplings, i.e., P(y|v).
 
         Args:
-            samples (torch.Tensor): Samples to be energy-freed.
+            samples (torch.Tensor): Samples to be labels-calculated
 
         Returns:
-            The system's energy based on input samples.
+            Labels' probabilities based on input samples.
 
         """
 
         #
-        y = torch.zeros(samples.size(0), self.n_class)
+        y = torch.zeros(samples.size(0), self.n_classes)
 
         y_sum = torch.zeros(samples.size(0))
 
@@ -458,80 +267,18 @@ class DRBM(Model):
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
 
-        for i in range(self.n_class):
+        for i in range(self.n_classes):
             y[:, i] = torch.exp(self.c[i]) + torch.sum(s(activations + self.U[i, :]), dim=1)
 
         y_sum = torch.exp(torch.sum(self.c)) + torch.sum(s(activations + torch.sum(self.U)), dim=1)
 
-        for i in range(self.n_class):
+        for i in range(self.n_classes):
             y[:, i] /= y_sum
 
-        # y /= y_sum
-
-        # print(y)
-
-        # print(y.shape)
-        # print(torch.sum(y, 1).shape)
-
-        # energy = torch.div(y, torch.sum(y, 1))
-
-        # print(torch.sum(y, 1).shape)
-        # print(torch.sum(y, 1))
-        # print(y)
+        preds = torch.argmax(y, 1)
 
 
-
-        # # Calculate the hidden term
-        # h = 
-
-        # # Calculate the visible term
-        # v = torch.mv(samples, self.a)
-
-        # # Finally, gathers the system's energy
-        # energy = -v - h
-
-        return y
-
-    def pseudo_likelihood(self, samples):
-        """Calculates the logarithm of the pseudo-likelihood.
-
-        Args:
-            samples (torch.Tensor): Samples to be calculated.
-
-        Returns:
-            The logarithm of the pseudo-likelihood based on input samples.
-
-        """
-
-        # Gathering a new array to hold the rounded samples
-        samples_binary = torch.round(samples)
-
-        # Calculates the energy of samples before flipping the bits
-        e = self.energy(samples_binary)
-
-        # Samples an array of indexes to flip the bits
-        indexes = torch.randint(0, self.n_visible, size=(
-            samples.size(0), 1), device=self.device)
-
-        # Creates an empty vector for filling the indexes
-        bits = torch.zeros(samples.size(
-            0), samples.size(1), device=self.device)
-
-        # Fills the sampled indexes with 1
-        bits = bits.scatter_(1, indexes, 1)
-
-        # Actually flips the bits
-        samples_binary = torch.where(
-            bits == 0, samples_binary, 1 - samples_binary)
-
-        # Calculates the energy after flipping the bits
-        e1 = self.energy(samples_binary)
-
-        # Calculate the logarithm of the pseudo-likelihood
-        pl = torch.mean(self.n_visible *
-                        torch.log(torch.sigmoid(e1 - e) + c.EPSILON))
-
-        return pl
+        return y, preds
 
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new DRBM model.
@@ -542,7 +289,7 @@ class DRBM(Model):
             epochs (int): Number of training epochs.
 
         Returns:
-            MSE (mean squared error), log pseudo-likelihood and time from the training step.
+            Loss and accuracy from the training step.
 
         """
 
@@ -565,15 +312,10 @@ class DRBM(Model):
                 # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible)
 
-                #
-                # labels = torch.nn.functional.one_hot(labels, num_classes=self.n_class)
-
                 # Checking whether GPU is avaliable and if it should be used
                 if self.device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
-
-                # probs = self.sample_class_given_x(samples)
 
                 # Performs the Gibbs sampling procedure
                 # _, _, _, _, visible_states = self.gibbs_sampling(samples)
@@ -581,21 +323,11 @@ class DRBM(Model):
                 # Detaching the visible states from GPU for further computation
                 # visible_states = visible_states.detach()
 
-                probs = self.energy(samples)
-
-                # print(probs)
+                # Calculates labels probabilities and predictions by sampling
+                probs, preds = self.labels_sampling(samples)
 
                 # Calculates the loss for further gradients' computation
-                # cost = torch.mean(self.energy(samples)) - \
-                    # torch.mean(self.energy(visible_states))
-
-                # print(probs.shape, labels.shape)
-
                 cost = self.loss(probs, labels)
-
-                preds = torch.argmax(probs, 1)
-
-                # print(torch.argmax(self.energy(samples), 1), labels)
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -609,23 +341,14 @@ class DRBM(Model):
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
 
-                #
-                accuracy = torch.sum(preds == labels).float()
+                # Calculating current's batch accuracy
+                batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
 
-                # Calculating current's batch MSE
-                batch_acc = torch.mean(accuracy / batch_size)
-
-                # Calculating the current's batch logarithm pseudo-likelihood
-                # batch_pl = self.pseudo_likelihood(samples)
-
-                # Summing up to epochs' MSE and pseudo-likelihood
+                # Summing up to epochs' loss and accuracy
                 loss += cost
                 acc += batch_acc
-                # pl += batch_pl
 
-                # print(f'Cost: {cost}')
-
-            # Normalizing the MSE and pseudo-likelihood with the number of batches
+            # Normalizing the loss and accuracy with the number of batches
             loss /= len(batches)
             acc /= len(batches)
 
@@ -633,27 +356,27 @@ class DRBM(Model):
             end = time.time()
 
             # Dumps the desired variables to the model's history
-            # self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
+            self.dump(loss=loss.item(), acc=acc.item(), time=end-start)
 
             logger.info(f'Loss: {loss} | Accuracy: {acc}')
 
-        return mse, pl
+        return loss, acc
 
-    def reconstruct(self, dataset):
-        """Reconstruct batches of new samples.
+    def predict(self, dataset):
+        """Predicts batches of new samples.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            Prediction probabilities and labels, i.e., P(y|v).
 
         """
 
-        logger.info(f'Reconstructing new samples ...')
+        logger.info(f'Predicting new samples ...')
 
-        # Resetting MSE to zero
-        mse = 0
+        # Resetting accuracy to zero
+        acc = 0
 
         # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
@@ -662,7 +385,7 @@ class DRBM(Model):
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
-        for samples, _ in batches:
+        for samples, labels in batches:
             # Flattening the samples' batch
             samples = samples.view(len(samples), self.n_visible)
 
@@ -671,26 +394,19 @@ class DRBM(Model):
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Calculating positive phase hidden probabilities and states
-            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
+            # Calculating labels probabilities and predictions by sampling
+            probs, preds = self.labels_sampling(samples)
 
-            # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                pos_hidden_states)
+            # Calculating current's batch accuracy
+            batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
 
-            # Gathering the size of the batch
-            batch_size = samples.size(0)
+            # Summing up the prediction accuracy
+            acc += batch_acc
 
-            # Calculating current's batch reconstruction MSE
-            batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+        # Normalizing the accuracy with the number of batches
+        acc /= len(batches)
 
-            # Summing up to reconstruction's MSE
-            mse += batch_mse
+        logger.info(f'Accuracy: {acc}')
 
-        # Normalizing the MSE with the number of batches
-        mse /= len(batches)
+        return acc, probs, preds
 
-        logger.info(f'MSE: {mse}')
-
-        return mse, visible_probs

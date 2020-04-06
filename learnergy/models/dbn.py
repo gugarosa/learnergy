@@ -271,7 +271,7 @@ class DBN(Model):
             epochs (list): Number of training epochs per layer.
 
         Returns:
-            MSE (mean squared error), log pseudo-likelihood and time from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -339,7 +339,7 @@ class DBN(Model):
         return mse, pl
 
     def reconstruct(self, dataset):
-        """Reconstruct batches of new samples.
+        """Reconstructs batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
@@ -354,14 +354,14 @@ class DBN(Model):
         # Resetting MSE to zero
         mse = 0
 
+        # Defining the batch size as the amount of samples in the dataset
+        batch_size = len(dataset)
+
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=len(dataset), shuffle=False, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in batches:
-            # Gathering the size of the batch
-            batch_size = samples.size(0)
-
             # Flattening the samples' batch
             samples = samples.view(batch_size, self.models[0].n_visible)
 

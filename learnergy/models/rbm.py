@@ -436,7 +436,7 @@ class RBM(Model):
             epochs (int): Number of training epochs.
 
         Returns:
-            MSE (mean squared error), log pseudo-likelihood and time from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -512,10 +512,10 @@ class RBM(Model):
         return mse, pl
 
     def reconstruct(self, dataset):
-        """Reconstruct batches of new samples.
+        """Reconstructs batches of new samples.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).
@@ -550,14 +550,11 @@ class RBM(Model):
             visible_probs, visible_states = self.visible_sampling(
                 pos_hidden_states)
 
-            # Gathering the size of the batch
-            batch_size = samples.size(0)
-
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
                 torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
-            # Summing up to reconstruction's MSE
+            # Summing up the reconstruction's MSE
             mse += batch_mse
 
         # Normalizing the MSE with the number of batches
