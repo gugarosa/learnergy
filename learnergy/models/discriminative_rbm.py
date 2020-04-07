@@ -399,14 +399,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         # Calculating neurons' activations
         activations = torch.exp(F.linear(h, self.U, self.c))
 
-        # print(activations.shape)
-
-        # print(F.linear(h, torch.sum(self.U, dim=0), torch.sum(self.c)).shape)
-
+        # Normalizing activations to calculate probabilities
         probs = torch.nn.functional.normalize(activations, p=1, dim=1)
-
-        # Calculating probabilities
-        # probs = torch.exp(activations) / torch.exp(F.linear(h, torch.sum(self.U), torch.sum(self.c)))
 
         # Sampling current states
         states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), num_classes=self.n_classes).float()

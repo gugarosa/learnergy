@@ -42,7 +42,8 @@ def test_discriminative_rbm_U_setter():
     try:
         new_discriminative_rbm.U = 1
     except:
-        new_discriminative_rbm.U = torch.nn.Parameter(torch.randn(10, 128) * 0.01)
+        new_discriminative_rbm.U = torch.nn.Parameter(
+            torch.randn(10, 128) * 0.01)
 
     assert new_discriminative_rbm.U.size(0) == 10
     assert new_discriminative_rbm.U.size(1) == 128
@@ -98,7 +99,7 @@ def test_discriminative_rbm_fit():
         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
-                      learning_rate=0.1, momentum=0, decay=0, use_gpu=False)
+                                                                  learning_rate=0.1, momentum=0, decay=0, use_gpu=False)
 
     loss, acc = new_discriminative_rbm.fit(train, batch_size=128, epochs=1)
 
@@ -111,7 +112,7 @@ def test_discriminative_rbm_predict():
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
-                      learning_rate=0.1, momentum=0, decay=0, use_gpu=False)
+                                                                  learning_rate=0.1, momentum=0, decay=0, use_gpu=False)
 
     acc, probs, labels = new_discriminative_rbm.predict(test)
 
@@ -143,8 +144,10 @@ def test_hybrid_discriminative_rbm_alpha_setter():
 
     assert new_hybrid_discriminative_rbm.alpha == 0.01
 
+
 def test_hybrid_discriminative_rbm_hidden_sampling():
-    new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(n_classes=10)
+    new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(
+        n_classes=10)
 
     v = torch.ones(1, 128)
     y = torch.ones(128, 10)
@@ -156,11 +159,26 @@ def test_hybrid_discriminative_rbm_hidden_sampling():
 
 
 def test_hybrid_discriminative_rbm_class_sampling():
-    new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(n_classes=10)
+    new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(
+        n_classes=10)
 
     h = torch.ones(1, 128)
 
     probs, states = new_hybrid_discriminative_rbm.class_sampling(h)
 
-    # assert probs.size(1) == 128
-    # assert states.size(1) == 128
+    assert probs.size(1) == 10
+    assert states.size(1) == 10
+
+
+def test_hybrid_discriminative_rbm_fit():
+    train = torchvision.datasets.MNIST(
+        root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+
+    new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
+                                                                               learning_rate=0.1, alpha=0.01, momentum=0, decay=0, use_gpu=False)
+
+    loss, acc = new_hybrid_discriminative_rbm.fit(
+        train, batch_size=128, epochs=1)
+
+    assert loss >= 0
+    assert acc >= 0
