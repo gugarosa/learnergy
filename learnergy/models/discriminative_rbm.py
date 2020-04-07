@@ -397,21 +397,28 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(h, self.U, self.c)
+        activations = torch.exp(F.linear(h, self.U, self.c))
+
+        # print(activations.shape)
+
+        # print(F.linear(h, torch.sum(self.U, dim=0), torch.sum(self.c)).shape)
+
+        probs = torch.nn.functional.normalize(activations, p=1, dim=1)
 
         # Calculating probabilities
-        probs = torch.exp(activations) / torch.exp(F.linear(h, torch.sum(self.U), torch.sum(self.c)))
+        # probs = torch.exp(activations) / torch.exp(F.linear(h, torch.sum(self.U), torch.sum(self.c)))
 
         # Sampling current states
-        states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), n_classes=self.n_classes)
+        states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), num_classes=self.n_classes).float()
 
         return probs, states
 
-    def gibbs_sampling(self, v):
+    def gibbs_sampling(self, v, y):
         """Performs the whole Gibbs sampling procedure.
 
         Args:
             v (torch.Tensor): A tensor incoming from the visible layer.
+            y (torch.Tensor): A tensor incoming from the class layer.
 
         Returns:
             The probabilities and states of the hidden layer sampling (positive),
@@ -420,8 +427,11 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
+        # Transforming labels to one-hot encoding
+        y = torch.nn.functional.one_hot(y, num_classes=self.n_classes).float()
+
         # Calculating positive phase hidden probabilities and states
-        pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v)
+        pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v, y)
 
         # Initially defining the negative phase
         neg_hidden_states = pos_hidden_states
@@ -441,7 +451,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
 
-def fit(self, dataset, batch_size=128, epochs=10):
+    def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new DRBM model.
 
         Args:
@@ -479,7 +489,7 @@ def fit(self, dataset, batch_size=128, epochs=10):
                     samples = samples.cuda()
 
                 # Performs the Gibbs sampling procedure
-                _, _, _, _, visible_states = self.gibbs_sampling(samples)
+                _, _, _, _, visible_states = self.gibbs_sampling(samples, labels)
 
                 # Detaching the visible states from GPU for further computation
                 visible_states = visible_states.detach()
