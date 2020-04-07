@@ -144,10 +144,10 @@ class DiscriminativeRBM(RBM):
         """
 
         # Creating an empty tensor for holding the probabilities per class
-        probs = torch.zeros(samples.size(0), self.n_classes)
+        probs = torch.zeros(samples.size(0), self.n_classes, device=self.device)
 
         # Creating an empty tensor for holding the probabilities considering all classes
-        probs_sum = torch.zeros(samples.size(0))
+        probs_sum = torch.zeros(samples.size(0), device=self.device)
 
         # Calculate samples' activations
         activations = F.linear(samples, self.W.t(), self.b)
@@ -205,8 +205,9 @@ class DiscriminativeRBM(RBM):
 
                 # Checking whether GPU is avaliable and if it should be used
                 if self.device == 'cuda':
-                    # Applies the GPU usage to the data
+                    # Applies the GPU usage to the data and labels
                     samples = samples.cuda()
+                    labels = labels.cuda()
 
                 # Calculates labels probabilities and predictions by sampling
                 probs, _ = self.labels_sampling(samples)
@@ -279,8 +280,9 @@ class DiscriminativeRBM(RBM):
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
-                # Applies the GPU usage to the data
+                # Applies the GPU usage to the data and labels
                 samples = samples.cuda()
+                labels = labels.cuda()
 
             # Calculating labels probabilities and predictions by sampling
             probs, preds = self.labels_sampling(samples)
@@ -322,7 +324,6 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             momentum (float): Momentum parameter.
             decay (float): Weight decay used for penalization.
             temperature (float): Temperature factor.
-            factor 
             use_gpu (boolean): Whether GPU should be used or not.
 
         """
@@ -479,8 +480,9 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
                 # Checking whether GPU is avaliable and if it should be used
                 if self.device == 'cuda':
-                    # Applies the GPU usage to the data
+                    # Applies the GPU usage to the data and labels
                     samples = samples.cuda()
+                    labels = labels.cuda()
 
                 # Performs the Gibbs sampling procedure
                 _, _, _, _, visible_states = self.gibbs_sampling(samples, labels)
