@@ -3,8 +3,10 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as opt
 from torch.utils.data import DataLoader
 
+import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.models.rbm import RBM
@@ -16,8 +18,7 @@ class DRBM(RBM):
     """A DRBM class provides the basic implementation for Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machines.
 
     References:
-        H. Larochelle and Y. Bengio. Classification using discriminative restricted Boltzmann machines.
-        Proceedings of the 25th international conference on Machine learning (2008).
+        
 
     """
 
@@ -131,22 +132,134 @@ class DRBM(RBM):
 
         self._loss = loss
 
+    def hidden_sampling(self, v, y, scale=False):
+        """Performs the hidden layer sampling, i.e., P(h|y,v).
+
+        Args:
+            v (torch.Tensor): A tensor incoming from the visible layer.
+            y (torch.Tensor): A tensor incoming from the class layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling.
+
+        """
+
+        # Calculating neurons' activations
+        activations = F.linear(v, self.W.t(), self.b) + torch.matmul(y, self.U)
+
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = torch.sigmoid(torch.div(activations, self.T))
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = torch.sigmoid(activations)
+
+        # Sampling current states
+        states = torch.bernoulli(probs)
+
+        return probs, states
+
+    def visible_sampling(self, h, scale=False):
+        """Performs the visible layer sampling, i.e., P(v|h).
+
+        Args:
+            h (torch.Tensor): A tensor incoming from the hidden layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the visible layer sampling.
+
+        """
+
+        # Calculating neurons' activations
+        activations = F.linear(h, self.W, self.a)
+
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = torch.sigmoid(torch.div(activations, self.T))
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = torch.sigmoid(activations)
+
+        # Sampling current states
+        states = torch.bernoulli(probs)
+
+        return probs, states
+
+    def class_sampling(self, h):
+        """
+        """
+
+        #
+        activations = F.linear(h, self.U, self.c)
+
+        # Calculate probabilities as usual
+        probs = torch.exp(activations)
+
+        #
+        probs = probs / torch.exp(F.linear(h, torch.sum(self.U), torch.sum(self.c)))
+
+        # Sampling current states
+        states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), n_classes=self.n_classes).float()
+
+        return probs, states
+
+    def gibbs_sampling(self, v):
+        """Performs the whole Gibbs sampling procedure.
+
+        Args:
+            v (torch.Tensor): A tensor incoming from the visible layer.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling (positive),
+            the probabilities and states of the hidden layer sampling (negative)
+            and the states of the visible layer sampling (negative). 
+
+        """
+
+        # Calculating positive phase hidden probabilities and states
+        pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v)
+
+        # Initially defining the negative phase
+        neg_hidden_states = pos_hidden_states
+
+        # Performing the Contrastive Divergence
+        for _ in range(self.steps):
+            # Calculating visible probabilities and states
+            visible_probs, visible_states = self.visible_sampling(
+                neg_hidden_states, True)
+
+            #
+            class_probs, class_states = self.class_sampling(neg_hidden_states)
+
+            # Calculating hidden probabilities and states
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
+                visible_states, True)
+
+        return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
+
     def labels_sampling(self, samples):
         """Calculates labels probabilities by samplings, i.e., P(y|v).
 
         Args:
-            samples (torch.Tensor): Samples to be labels-calculated.
+            samples (torch.Tensor): Samples to be labels-calculated
 
         Returns:
             Labels' probabilities based on input samples.
 
         """
 
-        # Creating an empty tensor for holding the probabilities per class
-        probs = torch.zeros(samples.size(0), self.n_classes)
+        #
+        y = torch.zeros(samples.size(0), self.n_classes)
 
-        # Creating an empty tensor for holding the probabilities considering all classes
-        probs_sum = torch.zeros(samples.size(0))
+        y_sum = torch.zeros(samples.size(0))
 
         # Calculate samples' activations
         activations = F.linear(samples, self.W.t(), self.b)
@@ -154,21 +267,18 @@ class DRBM(RBM):
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
 
-        # Iterating through every possible class
         for i in range(self.n_classes):
-            # Calculates the probability for the particular class
-            probs[:, i] = torch.exp(self.c[i]) + torch.sum(s(activations + self.U[i, :]), dim=1)
+            y[:, i] = torch.exp(self.c[i]) + torch.sum(s(activations + self.U[i, :]), dim=1)
 
-        # Calculates the probability over all classes
-        probs_sum = torch.exp(torch.sum(self.c)) + torch.sum(s(activations + torch.sum(self.U)), dim=1)
+        y_sum = torch.exp(torch.sum(self.c)) + torch.sum(s(activations + torch.sum(self.U)), dim=1)
 
-        # Finally, calculates P(y|v)
-        probs = torch.div(probs, probs_sum.unsqueeze(1))
+        for i in range(self.n_classes):
+            y[:, i] /= y_sum
 
-        # Recovering the predictions based on the probabilities
-        preds = torch.argmax(probs.detach(), 1)
+        preds = torch.argmax(y, 1)
 
-        return probs, preds
+
+        return y, preds
 
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new DRBM model.
@@ -206,6 +316,12 @@ class DRBM(RBM):
                 if self.device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
+
+                # Performs the Gibbs sampling procedure
+                # _, _, _, _, visible_states = self.gibbs_sampling(samples)
+
+                # Detaching the visible states from GPU for further computation
+                # visible_states = visible_states.detach()
 
                 # Calculates labels probabilities and predictions by sampling
                 probs, preds = self.labels_sampling(samples)
@@ -293,3 +409,4 @@ class DRBM(RBM):
         logger.info(f'Accuracy: {acc}')
 
         return acc, probs, preds
+

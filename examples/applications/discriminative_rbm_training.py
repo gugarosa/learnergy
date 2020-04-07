@@ -14,7 +14,7 @@ model = DRBM(n_visible=784, n_hidden=128, n_classes=10, steps=1, learning_rate=0
             momentum=0, decay=0, temperature=1, use_gpu=True)
 
 # Training a DRBM
-loss, acc = model.fit(train, batch_size=128, epochs=5)
+loss, acc = model.fit(train, batch_size=128, epochs=20)
 
 # Predicting test set
 pred_acc, pred_probs, pred_labels = model.predict(test)
