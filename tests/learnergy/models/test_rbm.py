@@ -309,3 +309,16 @@ def test_rbm_reconstruct():
 
     assert e >= 0
     assert v.size(1) == 784
+
+
+def test_rbm_forward():
+    test = torchvision.datasets.MNIST(
+        root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+
+    new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
+                      learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False)
+
+    probs, states = new_rbm.forward(test)
+
+    assert probs.size(1) == 128
+    assert states.size(1) == 128
