@@ -395,7 +395,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         activations = torch.exp(F.linear(h, self.U, self.c))
 
         # Normalizing activations to calculate probabilities
-        probs = torch.nn.functional.normalize(activations, p=1, dim=1)
+        # probs = torch.nn.functional.normalize(activations, p=1, dim=1)
+        probs = torch.div(activations, torch.sum(activations, dim=1).unsqueeze(1))
 
         # Sampling current states
         states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), num_classes=self.n_classes).float()
@@ -463,8 +464,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             # Calculating the time of the epoch's starting
             start = time.time()
 
-            # Resetting epoch's MSE and pseudo-likelihood to zero
-            loss = 0
+            # Resetting epoch's losses and accuracy to zero
+            d_loss, g_loss, loss = 0, 0, 0
             acc = 0
 
             # For every batch
@@ -484,20 +485,17 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                 # Detaching the visible states from GPU for further computation
                 visible_states = visible_states.detach()
 
-                # Calculates generator labels probabilities by sampling
-                gen_probs, _ = self.labels_sampling(visible_states)
-
-                # Calculates the generator loss for further gradients' computation
-                gen_cost = self.loss(gen_probs, labels)
-
                 # Calculates discriminator labels probabilities by sampling
                 disc_probs, _ = self.labels_sampling(samples)
 
                 # Calculates the discriminator loss for further gradients' computation
-                disc_cost = self.loss(disc_probs, labels)                
+                d_cost = self.loss(disc_probs, labels)   
+
+                # Calculates the generator loss for further gradients' computation
+                g_cost = -self.pseudo_likelihood(samples)             
 
                 # Calculates the total loss
-                cost = disc_cost + self.alpha * gen_cost
+                cost = d_cost + self.alpha * g_cost
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -517,11 +515,15 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                 # Calculating current's batch accuracy
                 batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
 
-                # Summing up to epochs' loss and accuracy
+                # Summing up to epochs' genator, discriminator and total loss, and accuracy
+                d_loss += d_cost
+                g_loss += g_cost
                 loss += cost.detach()
                 acc += batch_acc
 
-            # Normalizing the loss and accuracy with the number of batches
+            # Normalizing the losses and accuracy with the number of batches
+            d_loss /= len(batches)
+            g_loss /= len(batches)
             loss /= len(batches)
             acc /= len(batches)
 
@@ -529,8 +531,9 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             end = time.time()
 
             # Dumps the desired variables to the model's history
-            self.dump(loss=loss.item(), acc=acc.item(), time=end-start)
+            self.dump(d_loss=d_loss.item(), g_loss=g_loss.item(), loss=loss.item(),
+                      acc=acc.item(), time=end-start)
 
-            logger.info(f'Loss: {loss} | Accuracy: {acc}')
+            logger.info(f'Loss(D): {d_loss} | Loss(G): {g_loss} | Loss: {loss} | Accuracy: {acc}')
 
         return loss, acc
