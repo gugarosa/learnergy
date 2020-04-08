@@ -157,16 +157,10 @@ class DiscriminativeRBM(RBM):
 
         # Iterating through every possible class
         for i in range(self.n_classes):
-            # Calculates the probability for the particular class
-            probs[:, i] = torch.exp(self.c[i]) + torch.sum(s(activations + self.U[i, :]), dim=1)
+            # Calculates the logit-probability for the particular class
+            probs[:, i] = self.c[i] + torch.sum(s(activations + self.U[i, :]), dim=1)
 
-        # Calculates the probability over all classes
-        probs_sum = torch.exp(torch.sum(self.c)) + torch.sum(s(activations + torch.sum(self.U)), dim=1)
-
-        # Finally, calculates P(y|v)
-        probs = torch.div(probs, probs_sum.unsqueeze(1))
-
-        # Recovering the predictions based on the probabilities
+        # Recovering the predictions based on the logit-probabilities
         preds = torch.argmax(probs.detach(), 1)
 
         return probs, preds
