@@ -64,6 +64,9 @@ class DBN(Model):
         # Number of layers
         self.n_layers = len(n_hidden)
 
+        # Creating a Fully-Connected layer to classification purpose (10 class classification)
+        self.fc = torch.nn.Linear(self.n_hidden[self.n_layers-1], 10)
+
         # Number of steps Gibbs' sampling steps
         self.steps = steps
 
@@ -422,3 +425,29 @@ class DBN(Model):
         logger.info(f'MSE: {mse}')
 
         return mse, visible_probs
+
+    def forward(self, x):
+        """Performs the forward pass to classification purpose.
+
+        Args:
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+
+        Returns:
+            Fully-Connected layer outputs.
+       
+        """
+        n_layer = self.n_layers# - 1
+
+        if not self.res:
+            for i in range(n_layer):
+                _, x = self.models[i].hidden_sampling(x)
+        else:
+            for i in range(n_layer):
+                aux = self.models[i].pre_act(x)
+                aux = F.relu(aux) / (F.relu(aux).max())
+                _, x = self.models[i].hidden_sampling(x)
+                aux = 1 * x + 1 * aux
+                x = aux / aux.max()
+            #x = self.rbm[i].transform(x, drop)
+        x = self.fc(x)
+        return x
