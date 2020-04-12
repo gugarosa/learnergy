@@ -426,6 +426,20 @@ class RBM(Model):
                         torch.log(torch.sigmoid(e1 - e) + c.EPSILON))
 
         return pl
+    
+    def pre_act(self, v, scale=False):
+        """Performs the pre-activation over hidden neurons, i.e., wx' + b.
+
+        Args:
+            v (torch.Tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The input for any activation function.
+
+        """
+        #TODO: To implement scale if needed
+        return F.linear(v, self.W.t(), self.b)
 
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
