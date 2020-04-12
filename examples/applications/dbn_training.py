@@ -11,7 +11,7 @@ test = torchvision.datasets.MNIST(
 
 # Creating an DBN
 model = DBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1, 1, 1], learning_rate=[
-            0.1, 0.1, 0.1], momentum=[0, 0, 0], decay=[0, 0, 0], temperature=[1, 1, 1], use_gpu=True)
+            0.1, 0.1, 0.1], momentum=[0, 0, 0], decay=[0, 0, 0], temperature=[1, 1, 1], residual = True, use_gpu=True)
 
 # Training an DBN
 model.fit(train, batch_size=128, epochs=[3, 3, 3])
