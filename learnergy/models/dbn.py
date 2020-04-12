@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-
+import torch.nn.functional as F
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
@@ -34,7 +34,7 @@ class DBN(Model):
     """
 
     def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=[1],
-                 learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1], use_gpu=False):
+                 learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1], residual=True, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -79,8 +79,14 @@ class DBN(Model):
         # Temperature factor
         self.T = temperature
 
+        # Flag to use Reinforcement
+        self.res = residual
+
         # List of models (RBMs)
         self.models = []
+
+        # Auxiliary Dataset to Reinforcement and posterior access if needed
+        self.dt = []
 
         # For every possible layer
         for i in range(self.n_layers):
@@ -93,7 +99,7 @@ class DBN(Model):
             else:
                 # Gathers the number of input units as previous number of hidden units
                 n_input = self.n_hidden[i-1]
-                model = 'sigmoid' # fit hidden layers for continuous [0, 1] input data
+                model = 'sigmoid'
 
             # Creates an RBM
             m = MODELS[model](n_input, self.n_hidden[i], self.steps[i],
@@ -295,6 +301,12 @@ class DBN(Model):
             # Creating the dataset
             d = Dataset(samples, targets, transform)
 
+            if i>0 and self.res:
+                aux = F.relu(self.dt)/(F.relu(self.dt)).max()
+                aux = 1 * samples + 1 * aux
+                aux = aux / aux.max()
+                print("Reinforcement Aggregated")
+
             # Fits the RBM
             model_mse, model_pl = model.fit(d, batch_size, epochs[i])
 
@@ -325,6 +337,10 @@ class DBN(Model):
 
             # Gathers the transform callable from current dataset
             transform = None
+
+            # Gethers the pre-activation data
+            if self.res:
+                self.dt = model.pre_act(samples)
 
             # Performs a forward pass over the samples
             _, samples = model.hidden_sampling(samples)
