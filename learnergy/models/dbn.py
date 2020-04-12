@@ -93,6 +93,7 @@ class DBN(Model):
             else:
                 # Gathers the number of input units as previous number of hidden units
                 n_input = self.n_hidden[i-1]
+                model = 'sigmoid' # fit hidden layers for continuous [0, 1] input data
 
             # Creates an RBM
             m = MODELS[model](n_input, self.n_hidden[i], self.steps[i],
