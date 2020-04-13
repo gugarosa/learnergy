@@ -408,3 +408,21 @@ class DBN(Model):
         logger.info(f'MSE: {mse}')
 
         return mse, visible_probs
+
+    def forward(self, x):
+        """Re-writes the forward pass for classification purposes.
+
+        Args:
+            x (torch.Tensor): An input tensor for computing the forward pass.
+
+        Returns:
+            A tensor containing the DBN's outputs.
+       
+        """
+
+        # For every possible layer
+        for i in range(self.n_layers):
+            # Calculates the outputs of current layer
+            _, x = self.models[i].hidden_sampling(x)
+
+        return x

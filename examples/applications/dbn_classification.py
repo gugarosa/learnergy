@@ -11,22 +11,22 @@ from learnergy.models.dbn import DBN
 from learnergy.models.rbm import RBM
 from learnergy.models.sigmoid_rbm import SigmoidRBM as SRBM
 
+# Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 test = torchvision.datasets.MNIST(
     root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
-# Some DBN parameters
-visible = 784
-layers = [256, 256]
-lr = [0.1, 0.1]
+# Creating a DBN
+model = DBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1, 1, 1],
+            learning_rate=[0.1, 0.1, 0.1], momentum=[0, 0, 0], decay=[0, 0, 0], temperature=[1, 1, 1],
+            use_gpu=True)
 
-# Creates a DBN-based class
-model = DBN(model='bernoulli', n_visible=visible, n_hidden=layers, steps=[1, 1], learning_rate=lr, 
-            momentum=[0, 0], decay=[0, 0], temperature=[1, 1], residual=True, use_gpu=True)
+# Training a DBN
+model.fit(train, batch_size=128, epochs=[3, 3, 3])
 
-# Fitting the model
-model.fit(train,batch_size=100,epochs=[10, 10])
+
+fc = torch.nn.Linear(model.n_hidden[model.n_layers-1], 10)
 
 # Cross-Entropy Loss for the discriminative fine-tuning
 criterion = nn.CrossEntropyLoss()
@@ -52,7 +52,8 @@ for epoch in range(n):
             optimizer[k].zero_grad()
             
         samples = samples.view(len(samples), visible)
-        outputs = model(samples)
+        outputs = fc(model(samples))
+        print(outputs)
         loss = criterion(outputs, y)
         #for x_test, y_test in test_:
         #    out = model(x_test)

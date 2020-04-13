@@ -64,7 +64,6 @@ Learnergy is based on the following structure, and you should pay attention to i
         - scale
     - models
         - dbn
-        - discriminative_dbn
         - discriminative_rbm
         - dropout_rbm
         - e_dropout_rbm

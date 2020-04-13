@@ -192,3 +192,30 @@ class ResidualDBN(DBN):
             samples = samples.detach()
 
         return mse, pl
+
+    def forward(self, x):
+        """Re-writes the forward pass for classification purposes.
+
+        Args:
+            x (torch.Tensor): An input tensor for computing the forward pass.
+
+        Returns:
+            A tensor containing the DBN's outputs.
+       
+        """
+
+        # For every possible layer
+        for i in range(self.n_layers):
+            # Calculates the pre-activations of current layer
+            pre_activation = self.models[i].pre_activation(x)
+
+            # Performs a forward pass over the input
+            _, x = model.hidden_sampling(x)
+
+            # Aggregates the residual learning
+            x = self.alpha * x + self.beta * self.calculate_residual(pre_activation)
+
+            # Normalizes the input for the next layer
+            x /= torch.max(x)
+
+        return x
