@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models.dbn import DBN
+from learnergy.models.residual_dbn import ResidualDBN
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(
@@ -9,12 +9,12 @@ train = torchvision.datasets.MNIST(
 test = torchvision.datasets.MNIST(
     root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
-# Creating a DBN
-model = DBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1, 1, 1],
+# Creating a ResidualDBN
+model = ResidualDBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1, 1, 1],
             learning_rate=[0.1, 0.1, 0.1], momentum=[0, 0, 0], decay=[0, 0, 0], temperature=[1, 1, 1],
-            use_gpu=True)
+            alpha=1, beta=1, use_gpu=True)
 
-# Training a DBN
+# Training a ResidualDBN
 model.fit(train, batch_size=128, epochs=[3, 3, 3])
 
 # Reconstructing test set

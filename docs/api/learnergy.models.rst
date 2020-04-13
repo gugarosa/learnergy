@@ -5,11 +5,13 @@ This is the heart, basically. All models are declared and implemented here. We w
 
 .. toctree::
     learnergy.models.dbn
-    learnergy.models.drbm
+    learnergy.models.discriminative_dbn
+    learnergy.models.discriminative_rbm
     learnergy.models.dropout_rbm
     learnergy.models.e_dropout_rbm
     learnergy.models.gaussian_rbm
     learnergy.models.rbm
+    learnergy.models.residual_dbn
     learnergy.models.sigmoid_rbm
 
 .. autoapimodule:: learnergy.models

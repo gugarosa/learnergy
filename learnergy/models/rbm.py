@@ -267,6 +267,28 @@ class RBM(Model):
 
         self._optimizer = optimizer
 
+    def pre_activation(self, v, scale=False):
+        """Performs the pre-activation over hidden neurons, i.e., Wx' + b.
+
+        Args:
+            v (torch.Tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            An input for any type of activation function.
+
+        """
+
+        # Calculating neurons' activations
+        activations = F.linear(v, self.W.t(), self.b)
+
+        # If scaling is true
+        if scale:
+            # Scales the activations with temperature
+            activations = torch.div(activations, self.T)
+        
+        return activations
+
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
@@ -427,20 +449,6 @@ class RBM(Model):
 
         return pl
     
-    def pre_act(self, v, scale=False):
-        """Performs the pre-activation over hidden neurons, i.e., wx' + b.
-
-        Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
-
-        Returns:
-            The input for any activation function.
-
-        """
-        #TODO: To implement scale if needed
-        return F.linear(v, self.W.t(), self.b)
-
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
 
