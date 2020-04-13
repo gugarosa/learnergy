@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import learnergy.visual.image as im
 import learnergy.visual.tensor as t
 from learnergy.models.dbn import DBN
+from learnergy.models.residual_dbn import ResidualDBN
 from learnergy.models.rbm import RBM
 from learnergy.models.sigmoid_rbm import SigmoidRBM as SRBM
 
@@ -18,12 +19,16 @@ test = torchvision.datasets.MNIST(
     root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
 # Creating a DBN
-model = DBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1, 1, 1],
-            learning_rate=[0.1, 0.1, 0.1], momentum=[0, 0, 0], decay=[0, 0, 0], temperature=[1, 1, 1],
+model = DBN(model='bernoulli', n_visible=784, n_hidden=[256, 256], steps=[1, 1],
+            learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1],
             use_gpu=True)
 
+# model = ResidualDBN(model='bernoulli', n_visible=784, n_hidden=[256, 256], steps=[1, 1],
+#             learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1],
+#             alpha=1, beta=1, use_gpu=True)
+
 # Training a DBN
-model.fit(train, batch_size=128, epochs=[3, 3, 3])
+model.fit(train, batch_size=128, epochs=[5, 5])
 
 
 fc = torch.nn.Linear(model.n_hidden[model.n_layers-1], 10)
@@ -33,7 +38,7 @@ criterion = nn.CrossEntropyLoss()
 
 # Creating the optimzers
 optimizer = []
-for k in range(len(layers)):
+for k in range(model.n_layers):
     optimizer.append(optim.Adam(model.models[k].parameters(), lr=10 ** (-3)))
 
 bs = 2**8 # Size of the batch for fine-tuning
@@ -48,27 +53,29 @@ for epoch in range(n):
     val_loss = 0.0
     
     for samples, y in batches:
-        for k in range(len(layers)):
+        for k in range(model.n_layers):
             optimizer[k].zero_grad()
             
-        samples = samples.view(len(samples), visible)
-        outputs = fc(model(samples))
-        print(outputs)
+        samples = samples.view(len(samples), model.n_visible)
+        outputs = model(samples)
+        outputs = fc(outputs)
+        # print(outputs)
         loss = criterion(outputs, y)
         #for x_test, y_test in test_:
         #    out = model(x_test)
         #    val_loss += criterion(out, y_test).item()
         loss.backward()
         
-        for k in range(len(layers)):
+        for k in range(model.n_layers):
             optimizer[k].step()
 
         running_loss += loss.item()
         
     # Calculate the test accuracy for the model:
     for x_test, y_test in test_:
-        x = x_test.view(len(x_test), visible)
+        x = x_test.view(len(x_test), model.n_visible)
         out = model(x)
+        out = fc(out)
 
     _, predicted = torch.max(out, 1)
     pred = predicted.cpu().numpy()

@@ -82,6 +82,8 @@ class DBN(Model):
         # List of models (RBMs)
         self.models = []
 
+        # self.fc = torch.nn.Linear(self.n_hidden[self.n_layers-1], 10)
+
         # For every possible layer
         for i in range(self.n_layers):
             # If it is the first layer
@@ -424,5 +426,7 @@ class DBN(Model):
         for i in range(self.n_layers):
             # Calculates the outputs of current layer
             x, _ = self.models[i].hidden_sampling(x)
+
+        # x = self.fc(x)
 
         return x
