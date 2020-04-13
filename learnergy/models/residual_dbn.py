@@ -9,7 +9,6 @@ from learnergy.models.dbn import DBN
 logger = l.get_logger(__name__)
 
 
-
 class ResidualDBN(DBN):
     """A ResidualDBN class provides the basic implementation for Residual-based Deep Belief Networks.
 
@@ -173,7 +172,7 @@ class ResidualDBN(DBN):
                 pre_activation = model.pre_activation(samples)
 
             # Performs a forward pass over the samples
-            _, samples = model.hidden_sampling(samples)
+            samples, _ = model.hidden_sampling(samples)
 
             # Checks if it is not the first layer
             if i > 0:
@@ -210,7 +209,7 @@ class ResidualDBN(DBN):
             pre_activation = self.models[i].pre_activation(x)
 
             # Performs a forward pass over the input
-            _, x = model.hidden_sampling(x)
+            x, _ = model.hidden_sampling(x)
 
             # Aggregates the residual learning
             x = self.alpha * x + self.beta * self.calculate_residual(pre_activation)

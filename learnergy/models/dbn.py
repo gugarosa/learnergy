@@ -328,8 +328,8 @@ class DBN(Model):
             # Gathers the transform callable from current dataset
             transform = None
 
-            # Performs a forward pass over the samples
-            _, samples = model.hidden_sampling(samples)
+            # Performs a forward pass over the samples to get their probabilities
+            samples, _ = model.hidden_sampling(samples)
 
             # Checking whether GPU is being used
             if self.device == 'cuda':
@@ -373,27 +373,27 @@ class DBN(Model):
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Applying the initial hidden states as the samples
-            hidden_states = samples
+            # Applying the initial hidden probabilities as the samples
+            hidden_probs = samples
 
             # For every possible model (RBM)
             for i, model in enumerate(self.models):
-                # Flattening the hidden states
-                hidden_states = hidden_states.view(batch_size, model.n_visible)
+                # Flattening the hidden probabilities
+                hidden_probs = hidden_probs.view(batch_size, model.n_visible)
 
                 # Performing a hidden layer sampling
-                hidden_probs, hidden_states = model.hidden_sampling(hidden_states)
+                hidden_probs, hidden_states = model.hidden_sampling(hidden_probs)
 
-            # Applying the initial visible states as the hidden states
-            visible_states = hidden_states
+            # Applying the initial visible probabilities as the hidden probabilities
+            visible_probs = hidden_probs
 
             # For every possible model (RBM)
             for i, model in enumerate(reversed(self.models)):
-                # Flattening the visible states
-                visible_states = visible_states.view(batch_size, model.n_hidden)
+                # Flattening the visible probabilities
+                visible_probs = visible_probs.view(batch_size, model.n_hidden)
 
                 # Performing a visible layer sampling
-                visible_probs, visible_states = model.visible_sampling(visible_states)
+                visible_probs, visible_states = model.visible_sampling(visible_probs)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
@@ -423,6 +423,6 @@ class DBN(Model):
         # For every possible layer
         for i in range(self.n_layers):
             # Calculates the outputs of current layer
-            _, x = self.models[i].hidden_sampling(x)
+            x, _ = self.models[i].hidden_sampling(x)
 
         return x
