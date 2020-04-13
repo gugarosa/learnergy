@@ -3,12 +3,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+from torch.utils.data import DataLoader
+
+import learnergy.visual.image as im
+import learnergy.visual.tensor as t
 from learnergy.models.dbn import DBN
 from learnergy.models.rbm import RBM
 from learnergy.models.sigmoid_rbm import SigmoidRBM as SRBM
-import learnergy.visual.tensor as t
-import learnergy.visual.image as im
-from torch.utils.data import DataLoader
 
 train = torchvision.datasets.MNIST(
     root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())

@@ -1,40 +1,26 @@
 import torch
-from torch.utils.data import DataLoader
 import torch.nn.functional as F
-import learnergy.utils.constants as c
+
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.core.dataset import Dataset
-from learnergy.core.model import Model
-from learnergy.models.dropout_rbm import DropoutRBM
-from learnergy.models.e_dropout_rbm import EDropoutRBM
-from learnergy.models.gaussian_rbm import GaussianRBM, VarianceGaussianRBM
-from learnergy.models.rbm import RBM
-from learnergy.models.sigmoid_rbm import SigmoidRBM
 from learnergy.models.dbn import DBN
 
 logger = l.get_logger(__name__)
 
-MODELS = {
-    'bernoulli': RBM,
-    'dropout': DropoutRBM,
-    'e_dropout': EDropoutRBM,
-    'gaussian': GaussianRBM,
-    'sigmoid': SigmoidRBM,
-    'variance_gaussian': VarianceGaussianRBM
-}
 
 
 class ResidualDBN(DBN):
     """A ResidualDBN class provides the basic implementation for Residual-based Deep Belief Networks.
 
     References:
-        
+        M. Roder, et al. A Layer-Wise Information Reinforcement Approach to Improve Learning in Deep Belief Networks.
+        International Conference on Artificial Intelligence and Soft Computing (2020).
 
     """
 
     def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=[1],
-                 learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1], 
+                 learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1],
                  alpha=1, beta=1, use_gpu=False):
         """Initialization method.
 
@@ -64,6 +50,40 @@ class ResidualDBN(DBN):
 
         # Defining a property for holding the residual learning's penalization
         self.beta = beta
+
+    @property
+    def alpha(self):
+        """float: Penalization factor for original learning.
+
+        """
+
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha):
+        if not (isinstance(alpha, float) or isinstance(alpha, int)):
+            raise e.TypeError('`alpha` should be a float or integer')
+        if alpha < 0:
+            raise e.ValueError('`alpha` should be >= 0')
+
+        self._alpha = alpha
+
+    @property
+    def beta(self):
+        """float: Penalization factor for residual learning.
+
+        """
+
+        return self._beta
+
+    @beta.setter
+    def beta(self, beta):
+        if not (isinstance(beta, float) or isinstance(beta, int)):
+            raise e.TypeError('`beta` should be a float or integer')
+        if beta < 0:
+            raise e.ValueError('`beta` should be >= 0')
+
+        self._beta = beta
 
     def calculate_residual(self, pre_activations):
         """Calculates the residual learning over input.
@@ -147,7 +167,7 @@ class ResidualDBN(DBN):
             # Gathers the transform callable from current dataset
             transform = None
 
-            # Checks if it is not first layer
+            # Checks if it is not the first layer
             if i > 0:
                 # Calculates pre-activation values
                 pre_activation = model.pre_activation(samples)
@@ -155,7 +175,7 @@ class ResidualDBN(DBN):
             # Performs a forward pass over the samples
             _, samples = model.hidden_sampling(samples)
 
-            # Checks if it is not first layer
+            # Checks if it is not the first layer
             if i > 0:
                 # Aggregates the residual learning
                 samples = self.alpha * samples + self.beta * self.calculate_residual(pre_activation)
