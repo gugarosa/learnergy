@@ -207,7 +207,7 @@ class ResidualDBN(DBN):
             pre_activation = self.models[i].pre_activation(x)
 
             # Performs a forward pass over the input
-            x, _ = model.hidden_sampling(x)
+            x, _ = model.hidden_sampling(x) #-> Is it correct? Wouldn't be self.models[i], too?
 
             # Aggregates the residual learning
             x = self.alpha * x + self.beta * self.calculate_residual(pre_activation)
