@@ -166,10 +166,8 @@ class ResidualDBN(DBN):
             # Gathers the transform callable from current dataset
             transform = None
 
-            # Checks if it is not the first layer
-            if i > 0:
-                # Calculates pre-activation values
-                pre_activation = model.pre_activation(samples)
+            # Calculates pre-activation values
+            pre_activation = model.pre_activation(samples)
 
             # Performs a forward pass over the samples
             samples, _ = model.hidden_sampling(samples)
