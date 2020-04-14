@@ -99,7 +99,7 @@ class ResidualDBN(DBN):
         residual = F.relu(pre_activations)
 
         # Normalizing the values
-        residual /= torch.max(residual)
+        residual = torch.div(residual, torch.max(residual))
 
         return residual
 
@@ -172,13 +172,11 @@ class ResidualDBN(DBN):
             # Performs a forward pass over the samples
             samples, _ = model.hidden_sampling(samples)
 
-            # Checks if it is not the first layer
-            if i > 0:
-                # Aggregates the residual learning
-                samples = self.alpha * samples + self.beta * self.calculate_residual(pre_activation)
+            # Aggregates the residual learning
+            samples = torch.mul(samples, self.alpha) + torch.mul(self.calculate_residual(pre_activation), self.beta)
 
-                # Normalizes the input for the next layer
-                samples /= torch.max(samples)
+            # Normalizes the input for the next layer
+            samples = torch.div(samples, torch.max(samples))
 
             # Checking whether GPU is being used
             if self.device == 'cuda':
@@ -201,18 +199,18 @@ class ResidualDBN(DBN):
        
         """
 
-        # For every possible layer
-        for i in range(self.n_layers):
-            # Calculates the pre-activations of current layer
-            pre_activation = self.models[i].pre_activation(x)
+        # For every possible model
+        for model in self.models:
+            # Calculates the pre-activations of current model
+            pre_activation = model.pre_activation(x)
 
             # Performs a forward pass over the input
-            x, _ = model.hidden_sampling(x) #-> Is it correct? Wouldn't be self.models[i], too?
+            x, _ = model.hidden_sampling(x)
 
             # Aggregates the residual learning
-            x = self.alpha * x + self.beta * self.calculate_residual(pre_activation)
+            x = torch.mul(x, self.alpha) + torch.mul(self.calculate_residual(pre_activation), self.beta)
 
             # Normalizes the input for the next layer
-            x /= torch.max(x)
+            x = torch.div(x, torch.max(x))
 
         return x

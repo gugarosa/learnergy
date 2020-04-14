@@ -422,11 +422,9 @@ class DBN(Model):
        
         """
 
-        # For every possible layer
-        for i in range(self.n_layers):
-            # Calculates the outputs of current layer
-            x, _ = self.models[i].hidden_sampling(x)
-
-        # x = self.fc(x)
+        # For every possible model
+        for model in self.models:
+            # Calculates the outputs of current model
+            x, _ = model.hidden_sampling(x)
 
         return x
