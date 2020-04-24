@@ -44,6 +44,7 @@ criterion = nn.CrossEntropyLoss()
 
 # Creating the optimzers
 optimizer = [optim.Adam(m.parameters(), lr=0.001) for m in model.models]
+optimizer.append(optim.Adam(fc.parameters(), lr=0.001))
 
 # Creating training and validation batches
 train_batch = DataLoader(train, batch_size=batch_size, shuffle=False, num_workers=1)
@@ -117,8 +118,8 @@ for e in range(fine_tune_epochs):
 
     print(f'Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc}')
 
-# Saving model
-torch.save(model, 'model.pth')
+# Saving the fine-tuned model
+torch.save(model, 'tuned_model.pth')
 
 # Checking the model's history
 for m in model.models:

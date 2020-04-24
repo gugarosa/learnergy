@@ -412,7 +412,7 @@ class DBN(Model):
         return mse, visible_probs
 
     def forward(self, x):
-        """Re-writes the forward pass for classification purposes.
+        """Performs a forward pass over the data.
 
         Args:
             x (torch.Tensor): An input tensor for computing the forward pass.

@@ -590,17 +590,14 @@ class RBM(Model):
         """Performs a forward pass over the data.
 
         Args:
-            x (torch.utils.data.DataLoader): A DataLoader object containing the data.
+            x (torch.Tensor): An input tensor for computing the forward pass.
 
         Returns:
-            Hidden layer probabilities, i.e., P(h|x).
+            A tensor containing the RBM's outputs.
 
         """
 
-        if self.device == 'cuda':
-            # Applies the GPU usage to the data
-            x = x.cuda()
-
+        # Calculates the outputs of the model
         x, _ = self.hidden_sampling(x)
 
         return x

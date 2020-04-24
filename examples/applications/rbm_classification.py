@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from learnergy.models.rbm import RBM
 
 # Defining some input variables
-batch_size = 2**7
+batch_size = 128
 n_classes = 10
 fine_tune_epochs = 20
 
@@ -23,7 +23,7 @@ model = RBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1,
             momentum=0, decay=0, temperature=1, use_gpu=True)
 
 # Training an RBM
-mse, pl = model.fit(train, batch_size=128, epochs=5)
+model.fit(train, batch_size=batch_size, epochs=5)
 
 # Creating the Fully Connected layer to append on top of DBNs
 fc = torch.nn.Linear(model.n_hidden, n_classes)
@@ -37,8 +37,8 @@ if model.device == 'cuda':
 criterion = nn.CrossEntropyLoss()
 
 # Creating the optimzers
-optimizer = [optim.Adam(fc.parameters(), lr=0.001),
-             optim.Adam(model.parameters(), lr=0.001)]
+optimizer = [optim.Adam(model.parameters(), lr=0.001),
+             optim.Adam(fc.parameters(), lr=0.001)]
 
 # Creating training and validation batches
 train_batch = DataLoader(train, batch_size=batch_size, shuffle=False, num_workers=1)
@@ -112,10 +112,8 @@ for e in range(fine_tune_epochs):
 
     print(f'Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc}')
 
-
 # Saving the fine-tuned model
-torch.save(model, 'fine_model.pth')
+torch.save(model, 'tuned_model.pth')
 
 # Checking the model's history
 print(model.history)
-
