@@ -586,38 +586,21 @@ class RBM(Model):
 
         return mse, visible_probs
 
-    def forward(self, dataset):
+    def forward(self, x):
         """Performs a forward pass over the data.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+            x (torch.utils.data.DataLoader): A DataLoader object containing the data.
 
         Returns:
-            Hidden layer probabilities and states, i.e., P(h|x).
+            Hidden layer probabilities, i.e., P(h|x).
 
         """
 
-        logger.info(f'Performing a forward pass ...')
+        if self.device == 'cuda':
+            # Applies the GPU usage to the data
+            x = x.cuda()
 
-        # Defining the batch size as the amount of samples in the dataset
-        batch_size = len(dataset)
+        x, _ = self.hidden_sampling(x)
 
-        # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
-
-        # For every batch
-        for samples, _ in batches:
-            # Flattening the samples' batch
-            samples = samples.view(len(samples), self.n_visible)
-
-            # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
-                # Applies the GPU usage to the data
-                samples = samples.cuda()
-
-            # Calculating positive phase hidden probabilities and states
-            probs, states = self.hidden_sampling(samples)
-
-        logger.info(f'Forward pass completed.')
-
-        return probs, states
+        return x
