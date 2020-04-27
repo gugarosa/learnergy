@@ -231,12 +231,12 @@ def test_dbn_reconstruct():
     assert e >= 0
     assert v.size(1) == 784
 
-def test_dbn_forward():
-    new_dbn = dbn.DBN(n_visible=784, n_hidden=[128, 128], steps=[1, 1],
-                      learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1], use_gpu=False)
+# def test_dbn_forward():
+#     new_dbn = dbn.DBN(n_visible=784, n_hidden=[128, 128], steps=[1, 1],
+#                       learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1], use_gpu=False)
 
-    v = torch.ones(1, 784)
+#     v = torch.ones(1, 784)
 
-    probs = new_dbn.forward(v)
+#     probs = new_dbn.forward(v)
 
-    assert probs.size(1) == 128
+#     assert probs.size(1) == 128
