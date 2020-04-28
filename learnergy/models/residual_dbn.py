@@ -20,7 +20,7 @@ class ResidualDBN(DBN):
 
     def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=[1],
                  learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1],
-                 alpha=1, beta=1, use_gpu=False):
+                 zetta1=1, zetta2=1, use_gpu=False):
         """Initialization method.
 
         Args:
@@ -32,8 +32,8 @@ class ResidualDBN(DBN):
             momentum (list): Momentum parameter per layer.
             decay (list): Weight decay used for penalization per layer.
             temperature (list): Temperature factor per layer.
-            alpha (float): Penalization factor for original learning.
-            beta (float): Penalization factor for residual learning.
+            zetta1 (float): Penalization factor for original learning.
+            zetta2 (float): Penalization factor for residual learning.
             use_gpu (boolean): Whether GPU should be used or not.
 
         """
@@ -45,44 +45,44 @@ class ResidualDBN(DBN):
                                           momentum, decay, temperature, use_gpu)
 
         # Defining a property for holding the original learning's penalization
-        self.alpha = alpha
+        self.zetta1 = zetta1
 
         # Defining a property for holding the residual learning's penalization
-        self.beta = beta
+        self.zetta2 = zetta2
 
     @property
-    def alpha(self):
+    def zetta1(self):
         """float: Penalization factor for original learning.
 
         """
 
-        return self._alpha
+        return self._zetta1
 
-    @alpha.setter
-    def alpha(self, alpha):
-        if not (isinstance(alpha, float) or isinstance(alpha, int)):
-            raise e.TypeError('`alpha` should be a float or integer')
-        if alpha < 0:
-            raise e.ValueError('`alpha` should be >= 0')
+    @zetta1.setter
+    def zetta1(self, zetta1):
+        if not (isinstance(zetta1, float) or isinstance(zetta1, int)):
+            raise e.TypeError('`zetta1` should be a float or integer')
+        if zetta1 < 0:
+            raise e.ValueError('`zetta1` should be >= 0')
 
-        self._alpha = alpha
+        self._zetta1 = zetta1
 
     @property
-    def beta(self):
+    def zetta2(self):
         """float: Penalization factor for residual learning.
 
         """
 
-        return self._beta
+        return self._zetta2
 
-    @beta.setter
-    def beta(self, beta):
-        if not (isinstance(beta, float) or isinstance(beta, int)):
-            raise e.TypeError('`beta` should be a float or integer')
-        if beta < 0:
-            raise e.ValueError('`beta` should be >= 0')
+    @zetta2.setter
+    def zetta2(self, zetta2):
+        if not (isinstance(zetta2, float) or isinstance(zetta2, int)):
+            raise e.TypeError('`zetta2` should be a float or integer')
+        if zetta2 < 0:
+            raise e.ValueError('`zetta2` should be >= 0')
 
-        self._beta = beta
+        self._zetta2 = zetta2
 
     def calculate_residual(self, pre_activations):
         """Calculates the residual learning over input.
@@ -173,7 +173,7 @@ class ResidualDBN(DBN):
             samples, _ = model.hidden_sampling(samples)
 
             # Aggregates the residual learning
-            samples = torch.mul(samples, self.alpha) + torch.mul(self.calculate_residual(pre_activation), self.beta)
+            samples = torch.mul(samples, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
 
             # Normalizes the input for the next layer
             samples = torch.div(samples, torch.max(samples))
@@ -208,7 +208,7 @@ class ResidualDBN(DBN):
             x, _ = model.hidden_sampling(x)
 
             # Aggregates the residual learning
-            x = torch.mul(x, self.alpha) + torch.mul(self.calculate_residual(pre_activation), self.beta)
+            x = torch.mul(x, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
 
             # Normalizes the input for the next layer
             x = torch.div(x, torch.max(x))
