@@ -1,4 +1,4 @@
-from learnergy.models.dropout_rbm import DropoutRBM
+from learnergy.models import DropoutRBM
 
 # Creates a DropoutRBM-based class
 model = DropoutRBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1,

@@ -1,4 +1,4 @@
-from learnergy.models.rbm import RBM
+from learnergy.models import RBM
 
 # Creates an RBM-based class
 model = RBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1,

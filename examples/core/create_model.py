@@ -1,4 +1,4 @@
-from learnergy.core.model import Model
+from learnergy.core import Model
 
 # Creates a template Model class
 model = Model(use_gpu=False)

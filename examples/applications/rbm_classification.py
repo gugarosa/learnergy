@@ -5,7 +5,7 @@ import torch.optim as optim
 import torchvision
 from torch.utils.data import DataLoader
 
-from learnergy.models.rbm import RBM
+from learnergy.models import RBM
 
 # Defining some input variables
 batch_size = 128

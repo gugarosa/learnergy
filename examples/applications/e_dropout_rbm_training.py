@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models.e_dropout_rbm import EDropoutRBM
+from learnergy.models import EDropoutRBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(

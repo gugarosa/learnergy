@@ -1,4 +1,4 @@
-from learnergy.models.residual_dbn import ResidualDBN
+from learnergy.models import ResidualDBN
 
 # Creates a ResidualDBN-based class
 model = ResidualDBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1, 1, 1],

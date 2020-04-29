@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
-from learnergy.core.model import Model
+from learnergy.core import Model
 
 logger = l.get_logger(__name__)
 

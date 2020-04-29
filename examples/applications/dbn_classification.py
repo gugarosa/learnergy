@@ -4,8 +4,8 @@ import torch.optim as optim
 import torchvision
 from torch.utils.data import DataLoader
 
-from learnergy.models.dbn import DBN
-from learnergy.models.residual_dbn import ResidualDBN
+from learnergy.models import DBN
+from learnergy.models import ResidualDBN
 
 # Defining some input variables
 batch_size = 128

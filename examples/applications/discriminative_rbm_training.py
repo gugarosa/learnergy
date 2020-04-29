@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models.discriminative_rbm import DiscriminativeRBM
+from learnergy.models import DiscriminativeRBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(

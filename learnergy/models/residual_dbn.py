@@ -3,8 +3,8 @@ import torch.nn.functional as F
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
-from learnergy.core.dataset import Dataset
-from learnergy.models.dbn import DBN
+from learnergy.core import Dataset
+from learnergy.models import DBN
 
 logger = l.get_logger(__name__)
 

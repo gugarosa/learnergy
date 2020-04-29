@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
-from learnergy.models.rbm import RBM
+from learnergy.models import RBM
 
 logger = l.get_logger(__name__)
 
