@@ -1,7 +1,0 @@
-learnergy.core.dataset
-==========================
-
-.. autoapiclass:: learnergy.core.dataset.Dataset
-    :members:
-    :private-members:
-    :special-members:
