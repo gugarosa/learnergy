@@ -510,10 +510,10 @@ class RBM(Model):
 
                 # Calculating current's batch MSE
                 batch_mse = torch.div(
-                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
 
                 # Calculating the current's batch logarithm pseudo-likelihood
-                batch_pl = self.pseudo_likelihood(samples)
+                batch_pl = self.pseudo_likelihood(samples).detach()
 
                 # Summing up to epochs' MSE and pseudo-likelihood
                 mse += batch_mse
