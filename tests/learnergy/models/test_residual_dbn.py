@@ -64,17 +64,17 @@ def test_residual_dbn_calculate_residual():
     assert res.size(1) == 784
 
 
-def test_residual_dbn_fit():
-    train = torchvision.datasets.MNIST(
-        root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+# def test_residual_dbn_fit():
+#     train = torchvision.datasets.MNIST(
+#         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
-    new_residual_dbn = residual_dbn.ResidualDBN(n_visible=784, n_hidden=[128, 128], steps=[1, 1],
-                                                learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1], use_gpu=False)
+#     new_residual_dbn = residual_dbn.ResidualDBN(n_visible=784, n_hidden=[128, 128], steps=[1, 1],
+#                                                 learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1], use_gpu=False)
 
-    e, pl = new_residual_dbn.fit(train, batch_size=128, epochs=[1, 1])
+#     e, pl = new_residual_dbn.fit(train, batch_size=128, epochs=[1, 1])
 
-    assert len(e) == 2
-    assert len(pl) == 2
+#     assert len(e) == 2
+#     assert len(pl) == 2
 
 
 def test_residual_dbn_forward():
