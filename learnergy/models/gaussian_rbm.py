@@ -44,6 +44,34 @@ class GaussianRBM(RBM):
                                           momentum, decay, temperature, use_gpu)
 
         logger.info('Class overrided.')
+        
+    def energy(self, samples):
+        """Calculates and frees the system's energy.
+
+        Args:
+            samples (torch.Tensor): Samples to be energy-freed.
+
+        Returns:
+            The system's energy based on input samples.
+
+        """
+
+        # Calculate samples' activations
+        activations = F.linear(samples, self.W.t(), self.b)
+
+        # Creating a Softplus function for numerical stability
+        s = nn.Softplus()
+
+        # Calculate the hidden term
+        h = torch.sum(s(activations), dim=1)
+
+        # Calculate the visible term
+        v = 0.5*torch.sum((samples-self.a)**2, dim=1)
+
+        # Finally, gathers the system's energy
+        energy = v - h
+
+        return energy     
 
     def visible_sampling(self, h, scale=False):
         """Performs the visible layer sampling, i.e., P(v|h).
