@@ -43,7 +43,7 @@ class Model(torch.nn.Module):
 
     @property
     def device(self):
-        """dict: Indicates which device is being used for computation.
+        """str: Indicates which device is being used for computation.
 
         """
 
