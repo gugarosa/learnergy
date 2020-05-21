@@ -66,7 +66,7 @@ class GaussianRBM(RBM):
         h = torch.sum(s(activations), dim=1)
 
         # Calculate the visible term
-        v = 0.5*torch.sum((samples-self.a)**2, dim=1)
+        v = 0.5 * torch.sum((samples - self.a) ** 2, dim=1)
 
         # Finally, gathers the system's energy
         energy = v - h
