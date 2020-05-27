@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
@@ -318,7 +319,7 @@ class DBN(Model):
                 samples = samples.cuda()
 
             # Reshape the samples into an appropriate shape
-            samples = samples.view(len(dataset), model.n_visible)
+            samples = samples.reshape(len(dataset), model.n_visible)
 
             # Gathers the targets
             targets = d.targets
@@ -362,7 +363,7 @@ class DBN(Model):
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
-        for samples, _ in batches:
+        for samples, _ in tqdm(batches):
             # Flattening the samples' batch
             samples = samples.view(batch_size, self.models[0].n_visible)
 

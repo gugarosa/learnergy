@@ -3,6 +3,7 @@ import time
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
@@ -170,7 +171,7 @@ class EDropoutRBM(RBM):
             pl = 0
 
             # For every batch
-            for samples, _ in batches:
+            for samples, _ in tqdm(batches):
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
 
@@ -266,7 +267,7 @@ class EDropoutRBM(RBM):
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
-        for samples, _ in batches:
+        for samples, _ in tqdm(batches):
             # Returns the Energy-based Dropout mask to one
             self.M = torch.ones(
                 (batch_size, self.n_hidden), device=self.device)

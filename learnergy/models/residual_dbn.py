@@ -158,7 +158,7 @@ class ResidualDBN(DBN):
                 samples = samples.cuda()
 
             # Reshape the samples into an appropriate shape
-            samples = samples.view(len(dataset), model.n_visible)
+            samples = samples.reshape(len(dataset), model.n_visible)
 
             # Gathers the targets
             targets = d.targets

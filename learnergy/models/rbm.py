@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
@@ -477,7 +478,7 @@ class RBM(Model):
             pl = 0
 
             # For every batch
-            for samples, _ in batches:
+            for samples, _ in tqdm(batches):
                 # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible)
 
@@ -556,7 +557,7 @@ class RBM(Model):
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
-        for samples, _ in batches:
+        for samples, _ in tqdm(batches):
             # Flattening the samples' batch
             samples = samples.view(len(samples), self.n_visible)
 

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
@@ -193,7 +194,7 @@ class DiscriminativeRBM(RBM):
             acc = 0
 
             # For every batch
-            for samples, labels in batches:
+            for samples, labels in tqdm(batches):
                 # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible)
 
@@ -268,7 +269,7 @@ class DiscriminativeRBM(RBM):
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
-        for samples, labels in batches:
+        for samples, labels in tqdm(batches):
             # Flattening the samples' batch
             samples = samples.view(len(samples), self.n_visible)
 
@@ -469,7 +470,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             acc = 0
 
             # For every batch
-            for samples, labels in batches:
+            for samples, labels in tqdm(batches):
                 # Flattening the samples' batch
                 samples = samples.view(len(samples), self.n_visible)
 

@@ -212,8 +212,7 @@ class VarianceGaussianRBM(RBM):
         # Checks if device is CPU-based
         if self.device == 'cpu':
             # If yes, variance needs to have size equal to (batch_size, n_visible)
-            sigma = torch.repeat_interleave(
-                self.sigma, activations.size(0), dim=0)
+            sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
 
         # If it is GPU-based
         else:
@@ -250,8 +249,7 @@ class VarianceGaussianRBM(RBM):
 
         # Calculate the visible term
         # Note that this might be improved
-        v = torch.sum(
-            torch.div(torch.pow(samples - self.a, 2), 2 * sigma), dim=1)
+        v = torch.sum(torch.div(torch.pow(samples - self.a, 2), 2 * sigma), dim=1)
 
         # Finally, gathers the system's energy
         energy = -v - h
