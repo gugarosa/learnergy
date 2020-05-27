@@ -59,7 +59,7 @@ for e in range(fine_tune_epochs):
             opt.zero_grad()
         
         # Flatenning the samples batch
-        x_batch = x_batch.view(x_batch.size(0), model.n_visible)
+        x_batch = x_batch.reshape(x_batch.size(0), model.n_visible)
 
         # Checking whether GPU is avaliable and if it should be used
         if model.device == 'cuda':
@@ -90,7 +90,7 @@ for e in range(fine_tune_epochs):
     # Calculate the test accuracy for the model:
     for x_batch, y_batch in val_batch:
         # Flatenning the testing samples batch
-        x_batch = x_batch.view(x_batch.size(0), model.n_visible)
+        x_batch = x_batch.reshape(x_batch.size(0), model.n_visible)
 
         # Checking whether GPU is avaliable and if it should be used
         if model.device == 'cuda':

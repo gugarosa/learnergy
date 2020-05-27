@@ -20,4 +20,4 @@ model.fit(train, epochs=1)
 _, v = model.reconstruct(test)
 
 # Showing a reconstructed sample
-t.show_tensor(v[0].view(28, 28))
+t.show_tensor(v[0].reshape(28, 28))

@@ -365,7 +365,7 @@ class DBN(Model):
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.view(batch_size, self.models[0].n_visible)
+            samples = samples.reshape(batch_size, self.models[0].n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
@@ -378,7 +378,7 @@ class DBN(Model):
             # For every possible model (RBM)
             for i, model in enumerate(self.models):
                 # Flattening the hidden probabilities
-                hidden_probs = hidden_probs.view(batch_size, model.n_visible)
+                hidden_probs = hidden_probs.reshape(batch_size, model.n_visible)
 
                 # Performing a hidden layer sampling
                 hidden_probs, hidden_states = model.hidden_sampling(hidden_probs)
@@ -389,7 +389,7 @@ class DBN(Model):
             # For every possible model (RBM)
             for i, model in enumerate(reversed(self.models)):
                 # Flattening the visible probabilities
-                visible_probs = visible_probs.view(batch_size, model.n_hidden)
+                visible_probs = visible_probs.reshape(batch_size, model.n_hidden)
 
                 # Performing a visible layer sampling
                 visible_probs, visible_states = model.visible_sampling(visible_probs)

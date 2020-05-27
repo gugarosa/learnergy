@@ -480,7 +480,7 @@ class RBM(Model):
             # For every batch
             for samples, _ in tqdm(batches):
                 # Flattening the samples' batch
-                samples = samples.view(len(samples), self.n_visible)
+                samples = samples.reshape(len(samples), self.n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
                 if self.device == 'cuda':
@@ -559,7 +559,7 @@ class RBM(Model):
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.view(len(samples), self.n_visible)
+            samples = samples.reshape(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
