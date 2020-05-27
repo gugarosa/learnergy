@@ -20,6 +20,22 @@ def test_gaussian_rbm_visible_sampling():
     assert states.size(1) == 128
 
 
+def test_gaussian_relu_rbm_hidden_sampling():
+    new_gaussian_relu_rbm = gaussian_rbm.GaussianReluRBM()
+
+    v = torch.ones(1, 128)
+
+    probs, states = new_gaussian_relu_rbm.hidden_sampling(v, scale=True)
+
+    assert probs.size(1) == 128
+    assert states.size(1) == 128
+
+    probs, states = new_gaussian_relu_rbm.hidden_sampling(v, scale=False)
+
+    assert probs.size(1) == 128
+    assert states.size(1) == 128
+
+
 def test_variance_gaussian_rbm_sigma():
     new_variance_gaussian_rbm = gaussian_rbm.VarianceGaussianRBM()
 

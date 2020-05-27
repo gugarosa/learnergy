@@ -101,6 +101,73 @@ class GaussianRBM(RBM):
         return states, activations
 
 
+class GaussianReluRBM(GaussianRBM):
+    """A GaussianReluRBM class provides the basic implementation for Gaussian-ReLU Restricted Boltzmann Machines (for raw pixels values).
+
+    Note that this class requires raw data (integer-valued) in order to model the image covariance into a latent ReLU layer.
+
+    References:
+        G. Hinton. A practical guide to training restricted Boltzmann machines.
+        Neural networks: Tricks of the trade (2012).
+
+    """
+
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.001,
+                 momentum=0, decay=0, temperature=1, use_gpu=False):
+        """Initialization method.
+
+        Args:
+            n_visible (int): Amount of visible units.
+            n_hidden (int): Amount of hidden units.
+            steps (int): Number of Gibbs' sampling steps.
+            learning_rate (float): Learning rate.
+            momentum (float): Momentum parameter.
+            decay (float): Weight decay used for penalization.
+            temperature (float): Temperature factor.
+            use_gpu (boolean): Whether GPU should be used or not.
+
+        """
+
+        logger.info('Overriding class: GaussianRBM -> GaussianReluRBM.')
+
+        # Override its parent class
+        super(GaussianReluRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                              momentum, decay, temperature, use_gpu)
+
+        logger.info('Class overrided.')
+
+
+    def hidden_sampling(self, v, scale=False):
+        """Performs the hidden layer sampling, i.e., P(h|v).
+
+        Args:
+            v (torch.Tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling.
+
+        """
+
+        # Calculating neurons' activations
+        activations = F.linear(v, self.W.t(), self.b)
+
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = F.relu(torch.div(activations, self.T))
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = F.relu(activations)
+
+        # Current states equals probabilities
+        states = probs
+
+        return probs, states
+
+
 class VarianceGaussianRBM(RBM):
     """A VarianceGaussianRBM class provides the basic implementation for Gaussian-Bernoulli Restricted Boltzmann Machines (without standardization).
 

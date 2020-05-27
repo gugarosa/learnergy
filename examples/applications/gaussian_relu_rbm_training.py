@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models.gauss_relu_rbm import GReluRBM
+from learnergy.models import GaussianReluRBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(
@@ -13,14 +13,12 @@ test = torchvision.datasets.MNIST(
         torchvision.transforms.ToTensor()
     ]))
 
-print("Max pixel value:", train.data.max())
+# Creating a GaussianReluRBM
+model = GaussianReluRBM(n_visible=784, n_hidden=256, steps=1, learning_rate=0.001,
+                        momentum=0.9, decay=0, temperature=1, use_gpu=False)
 
-# Creating a Gaussian-ReLU RBM
-model = GReluRBM(n_visible=784, n_hidden=256, steps=1, learning_rate=0.001,
-                    momentum=0.9, decay=0, temperature=1, use_gpu=False)
-
-# Training a GaussianRBM
-mse, pl = model.fit(train, batch_size=100, epochs=5)
+# Training a GaussianReluRBM
+mse, pl = model.fit(train, batch_size=128, epochs=5)
 
 # Reconstructing test set
 rec_mse, v = model.reconstruct(test)
