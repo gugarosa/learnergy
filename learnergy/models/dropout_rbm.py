@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -83,7 +84,7 @@ class DropoutRBM(RBM):
 
         # Sampling a dropout mask from Bernoulli's distribution
         mask = (torch.full((activations.size(0), activations.size(1)),
-                           1 - self.p, device=self.device)).bernoulli()
+                           1 - self.p, dtype=torch.float, device=self.device)).bernoulli()
 
         # If scaling is true
         if scale:
@@ -119,6 +120,8 @@ class DropoutRBM(RBM):
 
         # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
+
+        self.W = nn.Parameter(self.W * self.p)
 
         # Saving dropout rate to an auxiliary variable
         p = self.p
