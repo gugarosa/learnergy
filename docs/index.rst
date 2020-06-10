@@ -5,9 +5,9 @@ Did you ever reach a bottleneck in your computational experiments? Are you tired
 
 Use Learnergy if you need a library or wish to:
 
-* Create your energy-based machine learning algorithm.
-* Design or use pre-loaded learners.
-* Mix-and-match different strategies to solve your problem.
+* Create your energy-based machine learning algorithm;
+* Design or use pre-loaded learners;
+* Mix-and-match different strategies to solve your problem;
 * Because it is incredible to learn things.
 
 Learnergy is compatible with: **Python 3.6+**.
