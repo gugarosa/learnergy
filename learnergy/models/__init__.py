@@ -2,6 +2,7 @@
 """
 
 from learnergy.models.rbm import RBM
+from learnergy.models.conv_rbm import ConvRBM
 from learnergy.models.discriminative_rbm import DiscriminativeRBM, HybridDiscriminativeRBM
 from learnergy.models.dropout_rbm import DropoutRBM
 from learnergy.models.e_dropout_rbm import EDropoutRBM
