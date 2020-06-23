@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from learnergy.models import sigmoid_rbm
+from learnergy.models.real import sigmoid_rbm
 
 
 def test_sigmoid_rbm_hidden_sampling():

@@ -2,7 +2,7 @@ import pytest
 import torch
 import torchvision
 
-from learnergy.models import residual_dbn
+from learnergy.models.stack import residual_dbn
 
 
 def test_residual_dbn_zetta1():

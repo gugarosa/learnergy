@@ -2,7 +2,7 @@ import pytest
 import torch
 import torchvision
 
-from learnergy.models import e_dropout_rbm
+from learnergy.models.binary import e_dropout_rbm
 
 
 def test_e_dropout_rbm_M():

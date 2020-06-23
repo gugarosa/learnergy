@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
-from learnergy.models import RBM
+from learnergy.models.binary import RBM
 
 logger = l.get_logger(__name__)
 

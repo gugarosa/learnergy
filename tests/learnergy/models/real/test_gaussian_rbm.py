@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from learnergy.models import gaussian_rbm
+from learnergy.models.real import gaussian_rbm
 
 
 def test_gaussian_rbm_visible_sampling():

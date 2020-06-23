@@ -1,4 +1,4 @@
-from learnergy.models import DBN
+from learnergy.models.stack import DBN
 
 # Creates a DBN-based class
 model = DBN(model='bernoulli', n_visible=784, n_hidden=[128, 256, 128], steps=[1, 1, 1], learning_rate=[

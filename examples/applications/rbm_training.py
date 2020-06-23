@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models import RBM
+from learnergy.models.binary import RBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(

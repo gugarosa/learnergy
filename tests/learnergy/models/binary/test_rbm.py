@@ -2,7 +2,7 @@ import pytest
 import torch
 import torchvision
 
-from learnergy.models import rbm
+from learnergy.models.binary import rbm
 
 
 def test_rbm_n_visible():

@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models import SigmoidRBM
+from learnergy.models.real import SigmoidRBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(

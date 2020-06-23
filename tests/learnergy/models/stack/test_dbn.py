@@ -2,7 +2,7 @@ import pytest
 import torch
 import torchvision
 
-from learnergy.models import dbn
+from learnergy.models.stack import dbn
 
 
 def test_dbn_n_visible():

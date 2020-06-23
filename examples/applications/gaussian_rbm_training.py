@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models import GaussianRBM
+from learnergy.models.real import GaussianRBM
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(

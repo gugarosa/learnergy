@@ -2,7 +2,7 @@ import pytest
 import torch
 import torchvision
 
-from learnergy.models import discriminative_rbm
+from learnergy.models.binary import discriminative_rbm
 
 
 def test_discriminative_rbm_n_classes():
