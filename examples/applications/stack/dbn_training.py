@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-from learnergy.models import DBN
+from learnergy.models.stack import DBN
 
 # Creating training and testing dataset
 train = torchvision.datasets.MNIST(
