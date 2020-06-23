@@ -81,12 +81,12 @@ class ConvRBM(Model):
 
         """
 
-        print(v.size(), self.W.size(), self.b.size())
+        # print(v.size(), self.W.size(), self.b.size())
 
         # Calculating neurons' activations
         activations = F.conv2d(v, self.W, bias=self.b)
 
-        print(activations.size())
+        # print(activations.size())
 
         # Calculate probabilities as usual
         probs = torch.sigmoid(activations)
@@ -108,12 +108,12 @@ class ConvRBM(Model):
 
         """
 
-        print(h.size(), self.W.permute(1, 0, 2, 3).size(), self.a.size())
+        # print(h.size(), self.W.permute(1, 0, 2, 3).size(), self.a.size())
 
         # Calculating neurons' activations
-        activations = F.conv2d(h, self.W.permute(1, 0, 2, 3), bias=self.a)
+        activations = F.conv2d(h, self.W.permute(1, 0, 2, 3), bias=self.a, padding=(self.filter_shape[0] - 1, self.filter_shape[1] - 1))
 
-        print(activations.size())
+        # print(activations.size())
 
         # Calculate probabilities as usual
         probs = torch.sigmoid(activations)
@@ -165,8 +165,10 @@ class ConvRBM(Model):
 
         """
 
+        # print(samples.size())
+
         # Calculate samples' activations
-        activations = F.linear(samples, self.W.t(), self.b)
+        activations = F.conv2d(samples, self.W, bias=self.b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -175,7 +177,9 @@ class ConvRBM(Model):
         h = torch.sum(s(activations), dim=1)
 
         # Calculate the visible term
-        v = torch.mv(samples, self.a)
+        v = self.a * torch.sum(samples)
+
+
 
         # Finally, gathers the system's energy
         energy = -v - h
@@ -287,23 +291,23 @@ class ConvRBM(Model):
                     torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
 
                 # Calculating the current's batch logarithm pseudo-likelihood
-                batch_pl = self.pseudo_likelihood(samples).detach()
+                # batch_pl = self.pseudo_likelihood(samples).detach()
 
                 # Summing up to epochs' MSE and pseudo-likelihood
                 mse += batch_mse
-                pl += batch_pl
+                # pl += batch_pl
 
             # Normalizing the MSE and pseudo-likelihood with the number of batches
             mse /= len(batches)
-            pl /= len(batches)
+            # pl /= len(batches)
 
             # Calculating the time of the epoch's ending
             end = time.time()
 
             # Dumps the desired variables to the model's history
-            self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
+            self.dump(mse=mse.item(), time=end-start)
 
-            logger.info(f'MSE: {mse} | log-PL: {pl}')
+            logger.info(f'MSE: {mse}')
 
         return mse, pl
 
