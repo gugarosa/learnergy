@@ -332,7 +332,7 @@ class ConvRBM(Model):
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.reshape(len(samples), self.n_visible)
+            samples = samples.reshape(len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
@@ -359,19 +359,3 @@ class ConvRBM(Model):
         logger.info(f'MSE: {mse}')
 
         return mse, visible_probs
-
-    def forward(self, x):
-        """Performs a forward pass over the data.
-
-        Args:
-            x (torch.Tensor): An input tensor for computing the forward pass.
-
-        Returns:
-            A tensor containing the RBM's outputs.
-
-        """
-
-        # Calculates the outputs of the model
-        x, _ = self.hidden_sampling(x)
-
-        return x
