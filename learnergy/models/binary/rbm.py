@@ -494,8 +494,7 @@ class RBM(Model):
                 visible_states = visible_states.detach()
 
                 # Calculates the loss for further gradients' computation
-                cost = torch.mean(self.energy(samples)) - \
-                    torch.mean(self.energy(visible_states))
+                cost = torch.mean(self.energy(samples)) - torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()

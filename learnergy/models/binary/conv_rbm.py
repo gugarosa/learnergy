@@ -108,10 +108,10 @@ class ConvRBM(Model):
 
         """
 
-        # print(h.size(), self.W.permute(1, 0, 2, 3).size(), self.a.size())
+        # print(h.size(), self.W.size(), self.a.size())
 
         # Calculating neurons' activations
-        activations = F.conv2d(h, self.W.permute(1, 0, 2, 3), bias=self.a, padding=(self.filter_shape[0] - 1, self.filter_shape[1] - 1))
+        activations = F.conv_transpose2d(h, self.W, bias=self.a)
 
         # print(activations.size())
 
@@ -165,8 +165,6 @@ class ConvRBM(Model):
 
         """
 
-        # print(samples.size())
-
         # Calculate samples' activations
         activations = F.conv2d(samples, self.W, bias=self.b)
 
@@ -178,8 +176,6 @@ class ConvRBM(Model):
 
         # Calculate the visible term
         v = self.a * torch.sum(samples)
-
-
 
         # Finally, gathers the system's energy
         energy = -v - h
