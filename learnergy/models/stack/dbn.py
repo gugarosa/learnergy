@@ -7,7 +7,8 @@ import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.core import Dataset, Model
 from learnergy.models.binary import RBM, DropoutRBM, EDropoutRBM
-from learnergy.models.real import GaussianRBM, GaussianReluRBM, SigmoidRBM, VarianceGaussianRBM
+from learnergy.models.real import (GaussianRBM, GaussianReluRBM, SigmoidRBM,
+                                   VarianceGaussianRBM)
 
 logger = l.get_logger(__name__)
 

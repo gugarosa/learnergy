@@ -24,38 +24,56 @@ class ConvRBM(Model):
 
     """
 
-    def __init__(self, visible_shape=(28, 28), filter_shape=(7, 7), n_filters=5, n_channels=1, steps=1, learning_rate=0.1):
+    def __init__(self, visible_shape=(28, 28), filter_shape=(7, 7), n_filters=5, n_channels=1,
+                 steps=1, learning_rate=0.1, momentum=0, decay=0, use_gpu=False):
         """Initialization method.
 
         Args:
-
+            visible_shape (tuple): Shape of visible units.
+            filter_shape (tuple): Shape of filters.
+            n_filters (int): Number of filters.
+            n_channels (int): Number of channels.
+            steps (int): Number of Gibbs' sampling steps.
+            learning_rate (float): Learning rate.
+            momentum (float): Momentum parameter.
+            decay (float): Weight decay used for penalization.
+            use_gpu (boolean): Whether GPU should be used or not.
 
         """
 
         logger.info('Overriding class: Model -> ConvRBM.')
 
         # Override its parent class
-        super(ConvRBM, self).__init__()
+        super(ConvRBM, self).__init__(use_gpu=use_gpu)
 
-        # Amount of visible units
+        # Shape of visible units
         self.visible_shape = visible_shape
 
-        # Amount of hidden units
+        # Shape of filters
         self.filter_shape = filter_shape
 
-        #
+        # Shape of hidden units
         self.hidden_shape = (visible_shape[0] - filter_shape[0] + 1, visible_shape[1] - filter_shape[1] + 1)
 
-        #
+        # Number of filters
         self.n_filters = n_filters
 
-        #
+        # Number of channels
         self.n_channels = n_channels
 
-        #
+        # Number of steps Gibbs' sampling steps
         self.steps = steps
 
-        # Weights matrix
+        # Learning rate
+        self.lr = learning_rate
+
+        # Momentum parameter
+        self.momentum = momentum
+
+        # Weight decay
+        self.decay = decay
+
+        # Filters' matrix
         self.W = nn.Parameter(torch.randn(n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01)
 
         # Visible units bias
@@ -65,30 +83,243 @@ class ConvRBM(Model):
         self.b = nn.Parameter(torch.zeros(n_filters))
 
         # Creating the optimizer object
-        self.optimizer = opt.SGD(self.parameters(), lr=learning_rate)
+        self.optimizer = opt.SGD(self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
+
+        # Checks if current device is CUDA-based
+        if self.device == 'cuda':
+            # If yes, uses CUDA in the whole class
+            self.cuda()
 
         logger.info('Class overrided.')
+        logger.debug(
+            f'Visible: {self.visible_shape} | Filters: {self.n_filters} x {self.filter_shape} | Hidden: {self.hidden_shape} | '
+            f'Channels: {self.n_channels} | Learning: CD-{self.steps} | '
+            f'Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}.')
 
-    def hidden_sampling(self, v, scale=False):
+    @property
+    def visible_shape(self):
+        """tuple: Shape of visible units.
+
+        """
+
+        return self._visible_shape
+
+    @visible_shape.setter
+    def visible_shape(self, visible_shape):
+        if not isinstance(visible_shape, tuple):
+            raise e.TypeError('`visible_shape` should be a tuple')
+
+        self._visible_shape = visible_shape
+
+    @property
+    def filter_shape(self):
+        """tuple: Shape of filters.
+
+        """
+
+        return self._filter_shape
+
+    @filter_shape.setter
+    def filter_shape(self, filter_shape):
+        if not isinstance(filter_shape, tuple):
+            raise e.TypeError('`filter_shape` should be a tuple')
+        if (filter_shape[0] >= self.visible_shape[0]) or (filter_shape[1] >= self.visible_shape[1]):
+            raise e.ValueError('`filter_shape` should be smaller than `visible_shape`')
+
+        self._filter_shape = filter_shape
+
+    @property
+    def hidden_shape(self):
+        """tuple: Shape of hidden units.
+
+        """
+
+        return self._hidden_shape
+
+    @hidden_shape.setter
+    def hidden_shape(self, hidden_shape):
+        if not isinstance(hidden_shape, tuple):
+            raise e.TypeError('`hidden_shape` should be a tuple')
+
+        self._hidden_shape = hidden_shape
+
+    @property
+    def n_filters(self):
+        """int: Number of filters.
+
+        """
+
+        return self._n_filters
+
+    @n_filters.setter
+    def n_filters(self, n_filters):
+        if not isinstance(n_filters, int):
+            raise e.TypeError('`n_filters` should be an integer')
+        if n_filters <= 0:
+            raise e.ValueError('`n_filters` should be > 0')
+
+        self._n_filters = n_filters
+
+    @property
+    def n_channels(self):
+        """int: Number of channels.
+
+        """
+
+        return self._n_channels
+
+    @n_channels.setter
+    def n_channels(self, n_channels):
+        if not isinstance(n_channels, int):
+            raise e.TypeError('`n_channels` should be an integer')
+        if n_channels <= 0:
+            raise e.ValueError('`n_channels` should be > 0')
+
+        self._n_channels = n_channels
+
+    @property
+    def steps(self):
+        """int: Number of steps Gibbs' sampling steps.
+
+        """
+
+        return self._steps
+
+    @steps.setter
+    def steps(self, steps):
+        if not isinstance(steps, int):
+            raise e.TypeError('`steps` should be an integer')
+        if steps <= 0:
+            raise e.ValueError('`steps` should be > 0')
+
+        self._steps = steps
+
+    @property
+    def lr(self):
+        """float: Learning rate.
+
+        """
+
+        return self._lr
+
+    @lr.setter
+    def lr(self, lr):
+        if not (isinstance(lr, float) or isinstance(lr, int)):
+            raise e.TypeError('`lr` should be a float or integer')
+        if lr < 0:
+            raise e.ValueError('`lr` should be >= 0')
+
+        self._lr = lr
+
+    @property
+    def momentum(self):
+        """float: Momentum parameter.
+
+        """
+
+        return self._momentum
+
+    @momentum.setter
+    def momentum(self, momentum):
+        if not (isinstance(momentum, float) or isinstance(momentum, int)):
+            raise e.TypeError('`momentum` should be a float or integer')
+        if momentum < 0:
+            raise e.ValueError('`momentum` should be >= 0')
+
+        self._momentum = momentum
+
+    @property
+    def decay(self):
+        """float: Weight decay.
+
+        """
+
+        return self._decay
+
+    @decay.setter
+    def decay(self, decay):
+        if not (isinstance(decay, float) or isinstance(decay, int)):
+            raise e.TypeError('`decay` should be a float or integer')
+        if decay < 0:
+            raise e.ValueError('`decay` should be >= 0')
+
+        self._decay = decay
+
+    @property
+    def W(self):
+        """torch.nn.Parameter: Filters' matrix.
+
+        """
+
+        return self._W
+
+    @W.setter
+    def W(self, W):
+        if not isinstance(W, nn.Parameter):
+            raise e.TypeError('`W` should be a PyTorch parameter')
+
+        self._W = W
+
+    @property
+    def a(self):
+        """torch.nn.Parameter: Visible units bias.
+
+        """
+
+        return self._a
+
+    @a.setter
+    def a(self, a):
+        if not isinstance(a, nn.Parameter):
+            raise e.TypeError('`a` should be a PyTorch parameter')
+
+        self._a = a
+
+    @property
+    def b(self):
+        """torch.nn.Parameter: Hidden units bias.
+
+        """
+
+        return self._b
+
+    @b.setter
+    def b(self, b):
+        if not isinstance(b, nn.Parameter):
+            raise e.TypeError('`b` should be a PyTorch parameter')
+
+        self._b = b
+
+    @property
+    def optimizer(self):
+        """torch.optim.SGD: Stochastic Gradient Descent object.
+
+        """
+
+        return self._optimizer
+
+    @optimizer.setter
+    def optimizer(self, optimizer):
+        if not isinstance(optimizer, opt.SGD):
+            raise e.TypeError('`optimizer` should be a SGD')
+
+        self._optimizer = optimizer
+
+    def hidden_sampling(self, v):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
             v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
             The probabilities and states of the hidden layer sampling.
 
         """
 
-        # print(v.size(), self.W.size(), self.b.size())
-
         # Calculating neurons' activations
         activations = F.conv2d(v, self.W, bias=self.b)
 
-        # print(activations.size())
-
-        # Calculate probabilities as usual
+        # Calculate probabilities
         probs = torch.sigmoid(activations)
 
         # Sampling current states
@@ -96,26 +327,21 @@ class ConvRBM(Model):
 
         return probs, states
 
-    def visible_sampling(self, h, scale=False):
+    def visible_sampling(self, h):
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
             h (torch.Tensor): A tensor incoming from the hidden layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
 
         Returns:
             The probabilities and states of the visible layer sampling.
 
         """
 
-        # print(h.size(), self.W.size(), self.a.size())
-
         # Calculating neurons' activations
         activations = F.conv_transpose2d(h, self.W, bias=self.a)
 
-        # print(activations.size())
-
-        # Calculate probabilities as usual
+        # Calculate probabilities
         probs = torch.sigmoid(activations)
 
         # Sampling current states
@@ -145,12 +371,10 @@ class ConvRBM(Model):
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                neg_hidden_states, True)
+            visible_probs, visible_states = self.visible_sampling(neg_hidden_states)
 
             # Calculating hidden probabilities and states
-            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                visible_states, True)
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(visible_states)
 
         return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
 
@@ -182,47 +406,6 @@ class ConvRBM(Model):
 
         return energy
 
-    def pseudo_likelihood(self, samples):
-        """Calculates the logarithm of the pseudo-likelihood.
-
-        Args:
-            samples (torch.Tensor): Samples to be calculated.
-
-        Returns:
-            The logarithm of the pseudo-likelihood based on input samples.
-
-        """
-
-        # Gathering a new array to hold the rounded samples
-        samples_binary = torch.round(samples)
-
-        # Calculates the energy of samples before flipping the bits
-        e = self.energy(samples_binary)
-
-        # Samples an array of indexes to flip the bits
-        indexes = torch.randint(0, self.n_visible, size=(
-            samples.size(0), 1), device=self.device)
-
-        # Creates an empty vector for filling the indexes
-        bits = torch.zeros(samples.size(
-            0), samples.size(1), device=self.device)
-
-        # Fills the sampled indexes with 1
-        bits = bits.scatter_(1, indexes, 1)
-
-        # Actually flips the bits
-        samples_binary = torch.where(
-            bits == 0, samples_binary, 1 - samples_binary)
-
-        # Calculates the energy after flipping the bits
-        e1 = self.energy(samples_binary)
-
-        # Calculate the logarithm of the pseudo-likelihood
-        pl = torch.mean(self.n_visible *
-                        torch.log(torch.sigmoid(e1 - e) + c.EPSILON))
-
-        return pl
-    
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
 
@@ -246,9 +429,8 @@ class ConvRBM(Model):
             # Calculating the time of the epoch's starting
             start = time.time()
 
-            # Resetting epoch's MSE and pseudo-likelihood to zero
+            # Resetting epoch's MSE to zero
             mse = 0
-            pl = 0
 
             # For every batch
             for samples, _ in tqdm(batches):
@@ -267,8 +449,7 @@ class ConvRBM(Model):
                 visible_states = visible_states.detach()
 
                 # Calculates the loss for further gradients' computation
-                cost = torch.mean(self.energy(samples)) - \
-                    torch.mean(self.energy(visible_states))
+                cost = torch.mean(self.energy(samples)) - torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -283,19 +464,13 @@ class ConvRBM(Model):
                 batch_size = samples.size(0)
 
                 # Calculating current's batch MSE
-                batch_mse = torch.div(
-                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
+                batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
 
-                # Calculating the current's batch logarithm pseudo-likelihood
-                # batch_pl = self.pseudo_likelihood(samples).detach()
-
-                # Summing up to epochs' MSE and pseudo-likelihood
+                # Summing up to epochs' MSE
                 mse += batch_mse
-                # pl += batch_pl
 
-            # Normalizing the MSE and pseudo-likelihood with the number of batches
+            # Normalizing the MSE with the number of batches
             mse /= len(batches)
-            # pl /= len(batches)
 
             # Calculating the time of the epoch's ending
             end = time.time()
@@ -305,7 +480,7 @@ class ConvRBM(Model):
 
             logger.info(f'MSE: {mse}')
 
-        return mse, pl
+        return mse
 
     def reconstruct(self, dataset):
         """Reconstructs batches of new samples.
@@ -343,12 +518,10 @@ class ConvRBM(Model):
             pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                pos_hidden_states)
+            visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
             # Calculating current's batch reconstruction MSE
-            batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+            batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
             # Summing up the reconstruction's MSE
             mse += batch_mse
