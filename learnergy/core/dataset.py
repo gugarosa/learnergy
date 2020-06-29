@@ -46,8 +46,8 @@ class Dataset(torch.utils.data.Dataset):
 
     @data.setter
     def data(self, data):
-        # if not isinstance(data, np.ndarray):
-            # raise e.TypeError('`data` should be a numpy array')
+        if not isinstance(data, np.ndarray):
+            raise e.TypeError('`data` should be a numpy array')
 
         self._data = data
 
@@ -61,8 +61,8 @@ class Dataset(torch.utils.data.Dataset):
 
     @targets.setter
     def targets(self, targets):
-        # if not isinstance(targets, np.ndarray):
-            # raise e.TypeError('`targets` should be a numpy array')
+        if not isinstance(targets, np.ndarray):
+            raise e.TypeError('`targets` should be a numpy array')
 
         self._targets = targets
 
@@ -76,8 +76,8 @@ class Dataset(torch.utils.data.Dataset):
 
     @transform.setter
     def transform(self, transform):
-        # if not isinstance(transform, callable):
-            # raise e.TypeError('`transform` should be a callable')
+        if not hasattr(transform, '__call__'):
+            raise e.TypeError('`transform` should be a callable')
 
         self._transform = transform
 

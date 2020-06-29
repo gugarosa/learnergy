@@ -396,10 +396,10 @@ class ConvRBM(Model):
         s = nn.Softplus()
 
         # Calculate the hidden term
-        h = torch.sum(s(activations), dim=1)
+        h = torch.sum(s(activations), dim=(1, 2, 3))
 
         # Calculate the visible term
-        v = self.a * torch.sum(samples)
+        v = torch.sum(samples, dim=(1, 2, 3)) * self.a
 
         # Finally, gathers the system's energy
         energy = -v - h
