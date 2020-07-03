@@ -212,7 +212,7 @@ def test_rbm_a_setter():
 def test_rbm_b():
     new_rbm = rbm.RBM()
 
-    assert new_rbm.a.size(0) == 128
+    assert new_rbm.b.size(0) == 128
 
 
 def test_rbm_b_setter():
