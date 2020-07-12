@@ -17,9 +17,12 @@ def show_tensor(tensor):
 
     # Creates a matplotlib figure
     plt.figure()
-
-    # Plots the numpy version of the tensor (grayscale)
-    plt.imshow(tensor.detach().numpy(), cmap=plt.cm.gray)
+    if tensor.size(0)==3:
+        tensor = tensor.permute(1, 2, 0)
+        plt.imshow(tensor.cpu().detach().numpy())
+    else:
+        # Plots the numpy version of the tensor (grayscale)
+        plt.imshow(tensor.cpu().detach().numpy(), cmap=plt.cm.gray)
 
     # Disables all axis' ticks
     plt.xticks([])
