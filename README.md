@@ -71,6 +71,7 @@ Learnergy is based on the following structure, and you should pay attention to i
             - e_dropout_rbm
             - rbm
         - real
+            - conv_rbm        
             - gaussian_rbm
             - sigmoid_rbm
         - stack
