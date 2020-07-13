@@ -1,9 +1,9 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from learnergy.models.binary import RBM
 
@@ -23,10 +23,10 @@ model = RBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1,
             momentum=0, decay=0, temperature=1, use_gpu=True)
 
 # Training an RBM
-model.fit(train, batch_size=batch_size, epochs=5)
+model.fit(train, batch_size=batch_size, epochs=1)
 
-# Creating the Fully Connected layer to append on top of DBNs
-fc = torch.nn.Linear(model.n_hidden, n_classes)
+# Creating the Fully Connected layer to append on top of RBM
+fc = nn.Linear(model.n_hidden, n_classes)
 
 # Check if model uses GPU
 if model.device == 'cuda':
@@ -52,7 +52,7 @@ for e in range(fine_tune_epochs):
     train_loss, val_acc = 0, 0
     
     # For every possible batch
-    for x_batch, y_batch in train_batch:
+    for x_batch, y_batch in tqdm(train_batch):
         # For every possible optimizer
         for opt in optimizer:
             # Resets the optimizer
@@ -88,7 +88,7 @@ for e in range(fine_tune_epochs):
         train_loss += loss.item()
         
     # Calculate the test accuracy for the model:
-    for x_batch, y_batch in val_batch:
+    for x_batch, y_batch in tqdm(val_batch):
         # Flatenning the testing samples batch
         x_batch = x_batch.reshape(x_batch.size(0), model.n_visible)
 

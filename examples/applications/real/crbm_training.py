@@ -1,12 +1,15 @@
+import os
+
+import numpy as np
 import torch
 import torchvision
-import numpy as np
-import os
-#os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+import learnergy.visual.tensor as t
 #from learnergy.models.binary import ConvRBM
 from learnergy.models.real import ConvRBM
-import learnergy.visual.tensor as t
+
+#os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 
 # Creating training and testing dataset
 train = torchvision.datasets.CIFAR10(
@@ -42,4 +45,3 @@ _, v = model.reconstruct(test)
 # Showing a reconstructed sample
 t.show_tensor(v[0].squeeze())
 t.show_tensor(test.__getitem__(0)[0].squeeze())
-

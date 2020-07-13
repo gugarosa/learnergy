@@ -1,17 +1,17 @@
-import torch
-import torchvision
-import torch.nn as nn
-import torch.nn.functional as F
-from torch import optim
-from torch.utils.data import DataLoader
+import os
 
 import numpy as np
-import os
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision
+from torch import optim
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import learnergy.visual.tensor as t
 #from learnergy.models.binary import ConvRBM
 from learnergy.models.real import ConvRBM
-import learnergy.visual.tensor as t
 
 # Creating training and testing dataset
 train = torchvision.datasets.CIFAR10(
@@ -43,7 +43,7 @@ batch_size=100
 model = ConvRBM(visible_shape=(dim, dim), filter_shape=(f_shape, f_shape), n_filters=n_filters, n_channels=n_channels, learning_rate=0.00001, momentum=0.5, use_gpu=True)
 
 # Training a ConvRBM
-mse = model.fit(train, batch_size=batch_size, epochs=30)
+mse = model.fit(train, batch_size=batch_size, epochs=1)
 
 torch.save(model, 'model.pth')
 
@@ -133,4 +133,3 @@ for e in range(fine_tune_epochs):
 
 # Saving the fine-tuned model
 torch.save(model, 'tuned_model.pth')
-

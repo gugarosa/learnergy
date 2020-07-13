@@ -16,11 +16,11 @@ logger = l.get_logger(__name__)
 
 
 class ConvRBM(Model):
-    """A ConvRBM class provides the basic implementation for Bernoulli-Bernoulli Restricted Boltzmann Machines.
+    """A ConvRBM class provides the basic implementation for Convolutional Restricted Boltzmann Machines.
 
     References:
-        G. Hinton. A practical guide to training restricted Boltzmann machines.
-        Neural networks: Tricks of the trade (2012).
+        H. Lee, et al. Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations.
+        Proceedings of the 26th annual international conference on machine learning (2009).
 
     """
 
@@ -77,7 +77,7 @@ class ConvRBM(Model):
         self.W = nn.Parameter(torch.randn(n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01)
 
         # Visible units bias
-        self.a = nn.Parameter(torch.zeros(1))
+        self.a = nn.Parameter(torch.zeros(n_channels))
 
         # Hidden units bias
         self.b = nn.Parameter(torch.zeros(n_filters))
@@ -399,7 +399,7 @@ class ConvRBM(Model):
         h = torch.sum(s(activations), dim=(1, 2, 3))
 
         # Calculate the visible term
-        v = torch.sum(samples, dim=(1, 2, 3)) * self.a
+        v = torch.sum(samples, dim=(1, 2, 3)) * torch.mean(self.a)
 
         # Finally, gathers the system's energy
         energy = -v - h
@@ -532,3 +532,19 @@ class ConvRBM(Model):
         logger.info(f'MSE: {mse}')
 
         return mse, visible_probs
+
+    def forward(self, x):
+        """Performs a forward pass over the data.
+
+        Args:
+            x (torch.Tensor): An input tensor for computing the forward pass.
+
+        Returns:
+            A tensor containing the Convolutional RBM's outputs.
+
+        """
+
+        # Calculates the outputs of the model
+        x, _ = self.hidden_sampling(x)
+
+        return x
