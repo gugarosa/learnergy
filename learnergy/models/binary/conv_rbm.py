@@ -319,7 +319,7 @@ class ConvRBM(Model):
         # Calculating neurons' activations
         activations = F.conv2d(v, self.W, bias=self.b)
 
-        # Calculate probabilities
+        # Calculates probabilities
         probs = torch.sigmoid(activations)
 
         # Sampling current states
@@ -341,7 +341,7 @@ class ConvRBM(Model):
         # Calculating neurons' activations
         activations = F.conv_transpose2d(h, self.W, bias=self.a)
 
-        # Calculate probabilities
+        # Calculates probabilities
         probs = torch.sigmoid(activations)
 
         # Sampling current states

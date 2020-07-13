@@ -311,11 +311,11 @@ def test_rbm_reconstruct():
     assert v.size(1) == 784
 
 
-# def test_rbm_forward():
-#     new_rbm = rbm.RBM()
+def test_rbm_forward():
+    new_rbm = rbm.RBM()
 
-#     v = torch.ones(1, 128)
+    v = torch.ones(1, 128)
 
-#     probs = new_rbm.forward(v)
+    probs = new_rbm.forward(v)
 
-#     assert probs.size(1) == 128
+    assert probs.size(1) == 128

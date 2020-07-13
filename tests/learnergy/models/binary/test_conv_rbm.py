@@ -332,3 +332,15 @@ def test_conv_rbm_reconstruct():
     assert v.size(1) == 1
     assert v.size(2) == 28
     assert v.size(3) == 28
+
+
+def test_conv_rbm_forward():
+    new_conv_rbm = conv_rbm.ConvRBM()
+
+    v = torch.ones(1, 1, 28, 28)
+
+    probs = new_conv_rbm.forward(v)
+
+    assert probs.size(1) == 5
+    assert probs.size(2) == 22
+    assert probs.size(3) == 22
