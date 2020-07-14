@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from learnergy.core import dataset
 

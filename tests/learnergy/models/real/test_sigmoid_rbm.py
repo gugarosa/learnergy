@@ -1,4 +1,3 @@
-import pytest
 import torch
 
 from learnergy.models.real import sigmoid_rbm

@@ -1,5 +1,3 @@
-import pytest
-
 from learnergy.utils import logging
 
 

@@ -1,4 +1,3 @@
-import pytest
 import torch
 
 from learnergy.visual import tensor
