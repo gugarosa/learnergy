@@ -17,9 +17,16 @@ def show_tensor(tensor):
 
     # Creates a matplotlib figure
     plt.figure()
-    if tensor.size(0)==3:
+
+    # Checks if tensor has 3 channels
+    if tensor.size(0) == 3:
+        # If yes, permutes the tensor
         tensor = tensor.permute(1, 2, 0)
+
+        # Plots without a color map
         plt.imshow(tensor.cpu().detach().numpy())
+
+    # If the tensor is grayscale
     else:
         # Plots the numpy version of the tensor (grayscale)
         plt.imshow(tensor.cpu().detach().numpy(), cmap=plt.cm.gray)
