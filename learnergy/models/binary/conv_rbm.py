@@ -1,3 +1,6 @@
+"""Convolutional Restricted Boltzmann Machine.
+"""
+
 import time
 
 import torch
@@ -7,7 +10,6 @@ import torch.optim as opt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.core import Model
@@ -16,10 +18,12 @@ logger = l.get_logger(__name__)
 
 
 class ConvRBM(Model):
-    """A ConvRBM class provides the basic implementation for Convolutional Restricted Boltzmann Machines.
+    """A ConvRBM class provides the basic implementation for
+    Convolutional Restricted Boltzmann Machines.
 
     References:
-        H. Lee, et al. Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations.
+        H. Lee, et al.
+        Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations.
         Proceedings of the 26th annual international conference on machine learning (2009).
 
     """
@@ -53,7 +57,8 @@ class ConvRBM(Model):
         self.filter_shape = filter_shape
 
         # Shape of hidden units
-        self.hidden_shape = (visible_shape[0] - filter_shape[0] + 1, visible_shape[1] - filter_shape[1] + 1)
+        self.hidden_shape = (
+            visible_shape[0] - filter_shape[0] + 1, visible_shape[1] - filter_shape[1] + 1)
 
         # Number of filters
         self.n_filters = n_filters
@@ -74,7 +79,8 @@ class ConvRBM(Model):
         self.decay = decay
 
         # Filters' matrix
-        self.W = nn.Parameter(torch.randn(n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01)
+        self.W = nn.Parameter(torch.randn(
+            n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01)
 
         # Visible units bias
         self.a = nn.Parameter(torch.zeros(n_channels))
@@ -83,7 +89,8 @@ class ConvRBM(Model):
         self.b = nn.Parameter(torch.zeros(n_filters))
 
         # Creating the optimizer object
-        self.optimizer = opt.SGD(self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
+        self.optimizer = opt.SGD(
+            self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
 
         # Checks if current device is CUDA-based
         if self.device == 'cuda':
@@ -91,10 +98,12 @@ class ConvRBM(Model):
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug(
-            f'Visible: {self.visible_shape} | Filters: {self.n_filters} x {self.filter_shape} | Hidden: {self.hidden_shape} | '
-            f'Channels: {self.n_channels} | Learning: CD-{self.steps} | '
-            f'Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}.')
+        logger.debug('Visible: %s | Filters: %d x %s | Hidden: %s | ' +
+                     'Channels: %d| Learning: CD-%d | ' +
+                     'Hyperparameters: lr = %f, momentum = %f, decay = %f.',
+                     self.visible_shape, self.n_filters, self.filter_shape,
+                     self.hidden_shape, self.n_channels, self.steps,
+                     self.lr, self.momentum, self.decay)
 
     @property
     def visible_shape(self):
@@ -124,7 +133,8 @@ class ConvRBM(Model):
         if not isinstance(filter_shape, tuple):
             raise e.TypeError('`filter_shape` should be a tuple')
         if (filter_shape[0] >= self.visible_shape[0]) or (filter_shape[1] >= self.visible_shape[1]):
-            raise e.ValueError('`filter_shape` should be smaller than `visible_shape`')
+            raise e.ValueError(
+                '`filter_shape` should be smaller than `visible_shape`')
 
         self._filter_shape = filter_shape
 
@@ -204,7 +214,7 @@ class ConvRBM(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not (isinstance(lr, float) or isinstance(lr, int)):
+        if not isinstance(lr, (float, int)):
             raise e.TypeError('`lr` should be a float or integer')
         if lr < 0:
             raise e.ValueError('`lr` should be >= 0')
@@ -221,7 +231,7 @@ class ConvRBM(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not (isinstance(momentum, float) or isinstance(momentum, int)):
+        if not isinstance(momentum, (float, int)):
             raise e.TypeError('`momentum` should be a float or integer')
         if momentum < 0:
             raise e.ValueError('`momentum` should be >= 0')
@@ -238,7 +248,7 @@ class ConvRBM(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not (isinstance(decay, float) or isinstance(decay, int)):
+        if not isinstance(decay, (float, int)):
             raise e.TypeError('`decay` should be a float or integer')
         if decay < 0:
             raise e.ValueError('`decay` should be >= 0')
@@ -358,7 +368,7 @@ class ConvRBM(Model):
         Returns:
             The probabilities and states of the hidden layer sampling (positive),
             the probabilities and states of the hidden layer sampling (negative)
-            and the states of the visible layer sampling (negative). 
+            and the states of the visible layer sampling (negative).
 
         """
 
@@ -371,10 +381,12 @@ class ConvRBM(Model):
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(neg_hidden_states)
+            _, visible_states = self.visible_sampling(
+                neg_hidden_states)
 
             # Calculating hidden probabilities and states
-            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(visible_states)
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
+                visible_states)
 
         return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
 
@@ -420,11 +432,12 @@ class ConvRBM(Model):
         """
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=True, num_workers=1)
 
         # For every epoch
-        for e in range(epochs):
-            logger.info(f'Epoch {e+1}/{epochs}')
+        for epoch in range(epochs):
+            logger.info('Epoch %d/%d', epoch+1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -435,7 +448,8 @@ class ConvRBM(Model):
             # For every batch
             for samples, _ in tqdm(batches):
                 # Flattening the samples' batch
-                samples = samples.reshape(len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+                samples = samples.reshape(
+                    len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
 
                 # Checking whether GPU is avaliable and if it should be used
                 if self.device == 'cuda':
@@ -449,7 +463,8 @@ class ConvRBM(Model):
                 visible_states = visible_states.detach()
 
                 # Calculates the loss for further gradients' computation
-                cost = torch.mean(self.energy(samples)) - torch.mean(self.energy(visible_states))
+                cost = torch.mean(self.energy(samples)) - \
+                    torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -464,7 +479,8 @@ class ConvRBM(Model):
                 batch_size = samples.size(0)
 
                 # Calculating current's batch MSE
-                batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
+                batch_mse = torch.div(
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
 
                 # Summing up to epochs' MSE
                 mse += batch_mse
@@ -478,7 +494,7 @@ class ConvRBM(Model):
             # Dumps the desired variables to the model's history
             self.dump(mse=mse.item(), time=end-start)
 
-            logger.info(f'MSE: {mse}')
+            logger.info('MSE: %f', mse)
 
         return mse
 
@@ -493,7 +509,7 @@ class ConvRBM(Model):
 
         """
 
-        logger.info(f'Reconstructing new samples ...')
+        logger.info('Reconstructing new samples ...')
 
         # Resetting MSE to zero
         mse = 0
@@ -502,12 +518,14 @@ class ConvRBM(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.reshape(len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+            samples = samples.reshape(
+                len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
 
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
@@ -515,13 +533,15 @@ class ConvRBM(Model):
                 samples = samples.cuda()
 
             # Calculating positive phase hidden probabilities and states
-            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
+            _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
+            visible_probs, visible_states = self.visible_sampling(
+                pos_hidden_states)
 
             # Calculating current's batch reconstruction MSE
-            batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
 
             # Summing up the reconstruction's MSE
             mse += batch_mse
@@ -529,7 +549,7 @@ class ConvRBM(Model):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info(f'MSE: {mse}')
+        logger.info('MSE: %f', mse)
 
         return mse, visible_probs
 

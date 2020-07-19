@@ -1,3 +1,6 @@
+"""Gaussian-Bernoulli Restricted Boltzmann Machine.
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,13 +13,18 @@ logger = l.get_logger(__name__)
 
 
 class GaussianRBM(RBM):
-    """A GaussianRBM class provides the basic implementation for Gaussian-Bernoulli Restricted Boltzmann Machines (with standardization).
+    """A GaussianRBM class provides the basic implementation for
+    Gaussian-Bernoulli Restricted Boltzmann Machines (with standardization).
 
-    Note that this classes requires standardization of data as it uses variance equals to one throughout its learning procedure.
-    This is a trick to ease the calculations of the hidden and visible layer samplings, as well as the cost function.
+    Note that this classes requires standardization of data
+    as it uses variance equals to one throughout its learning procedure.
+
+    This is a trick to ease the calculations of the hidden and
+    visible layer samplings, as well as the cost function.
 
     References:
-        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
+        K. Cho, A. Ilin, T. Raiko.
+        Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
         International conference on artificial neural networks (2011).
 
     """
@@ -44,7 +52,7 @@ class GaussianRBM(RBM):
                                           momentum, decay, temperature, use_gpu)
 
         logger.info('Class overrided.')
-        
+
     def energy(self, samples):
         """Calculates and frees the system's energy.
 
@@ -71,7 +79,7 @@ class GaussianRBM(RBM):
         # Finally, gathers the system's energy
         energy = v - h
 
-        return energy     
+        return energy
 
     def visible_sampling(self, h, scale=False):
         """Performs the visible layer sampling, i.e., P(v|h).
@@ -102,9 +110,11 @@ class GaussianRBM(RBM):
 
 
 class GaussianReluRBM(GaussianRBM):
-    """A GaussianReluRBM class provides the basic implementation for Gaussian-ReLU Restricted Boltzmann Machines (for raw pixels values).
+    """A GaussianReluRBM class provides the basic implementation for
+    Gaussian-ReLU Restricted Boltzmann Machines (for raw pixels values).
 
-    Note that this class requires raw data (integer-valued) in order to model the image covariance into a latent ReLU layer.
+    Note that this class requires raw data (integer-valued)
+    in order to model the image covariance into a latent ReLU layer.
 
     References:
         G. Hinton. A practical guide to training restricted Boltzmann machines.
@@ -135,7 +145,6 @@ class GaussianReluRBM(GaussianRBM):
                                               momentum, decay, temperature, use_gpu)
 
         logger.info('Class overrided.')
-
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling, i.e., P(h|v).
@@ -169,13 +178,18 @@ class GaussianReluRBM(GaussianRBM):
 
 
 class VarianceGaussianRBM(RBM):
-    """A VarianceGaussianRBM class provides the basic implementation for Gaussian-Bernoulli Restricted Boltzmann Machines (without standardization).
+    """A VarianceGaussianRBM class provides the basic implementation for
+    Gaussian-Bernoulli Restricted Boltzmann Machines (without standardization).
 
-    Note that this class implements a new cost function that takes in account a new learning parameter: variance (sigma). Therefore,
-    there is no need to standardize the data, as the variance will be trained throughout the learning procedure.
+    Note that this class implements a new cost function that takes in account
+    a new learning parameter: variance (sigma).
+
+    Therefore, there is no need to standardize the data, as the variance
+    will be trained throughout the learning procedure.
 
     References:
-        K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
+        K. Cho, A. Ilin, T. Raiko.
+        Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
         International conference on artificial neural networks (2011).
 
     """
@@ -279,7 +293,8 @@ class VarianceGaussianRBM(RBM):
         # Checks if device is CPU-based
         if self.device == 'cpu':
             # If yes, variance needs to have size equal to (batch_size, n_visible)
-            sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
+            sigma = torch.repeat_interleave(
+                self.sigma, activations.size(0), dim=0)
 
         # If it is GPU-based
         else:
@@ -316,7 +331,8 @@ class VarianceGaussianRBM(RBM):
 
         # Calculate the visible term
         # Note that this might be improved
-        v = torch.sum(torch.div(torch.pow(samples - self.a, 2), 2 * sigma), dim=1)
+        v = torch.sum(
+            torch.div(torch.pow(samples - self.a, 2), 2 * sigma), dim=1)
 
         # Finally, gathers the system's energy
         energy = -v - h

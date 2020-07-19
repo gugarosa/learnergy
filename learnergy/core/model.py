@@ -1,3 +1,6 @@
+"""Standard model-related implementation.
+"""
+
 import torch
 
 import learnergy.utils.exception as e
@@ -39,7 +42,7 @@ class Model(torch.nn.Module):
         # Setting default tensor type to float
         torch.set_default_tensor_type(torch.FloatTensor)
 
-        logger.debug(f'Device: {self.device}.')
+        logger.debug('Device: %s.', self.device)
 
     @property
     def device(self):

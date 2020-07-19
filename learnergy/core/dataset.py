@@ -1,3 +1,6 @@
+"""Dataset-related classes.
+"""
+
 import numpy as np
 import torch
 
@@ -34,7 +37,8 @@ class Dataset(torch.utils.data.Dataset):
         self.transform = transform
 
         logger.info('Class created.')
-        logger.debug(f'Data: {self.data.shape} | Targets: {self.targets.shape} | Transforms: {self.transform}.')
+        logger.debug('Data: %s | Targets: %s | Transforms: %s.',
+                     self.data.shape, self.targets.shape, self.transform)
 
     @property
     def data(self):
@@ -54,7 +58,7 @@ class Dataset(torch.utils.data.Dataset):
     @property
     def targets(self):
         """np.array: An 1-dimensional array containing the data's labels.
-        
+
         """
 
         return self._targets
@@ -69,7 +73,7 @@ class Dataset(torch.utils.data.Dataset):
     @property
     def transform(self):
         """callable: Optional transform to be applied over a sample.
-        
+
         """
 
         return self._transform

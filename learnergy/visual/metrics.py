@@ -1,3 +1,6 @@
+"""Metrics-related visualization.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -23,7 +26,7 @@ def plot(*args, labels=None, title='', subtitle='', grid=True, legend=True):
     ticks = np.arange(1, len(args[0]) + 1)
 
     # Creating figure and axis subplots
-    fig, ax = plt.subplots(figsize=(7, 5))
+    _, ax = plt.subplots(figsize=(7, 5))
 
     # Defining some properties, such as axis labels
     ax.set(xlabel='epoch', ylabel='value')

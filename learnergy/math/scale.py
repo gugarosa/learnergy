@@ -1,3 +1,6 @@
+"""Scaling-related mathematical functions.
+"""
+
 import learnergy.utils.constants as c
 
 

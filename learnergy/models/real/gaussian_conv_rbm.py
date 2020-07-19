@@ -1,3 +1,6 @@
+"""Gaussian-based Convolutional Restricted Boltzmann Machine.
+"""
+
 import torch
 import torch.nn.functional as F
 
@@ -8,10 +11,12 @@ logger = l.get_logger(__name__)
 
 
 class GaussianConvRBM(ConvRBM):
-    """A GaussianConvRBM class provides the basic implementation for Gaussian-based Convolutional Restricted Boltzmann Machines.
+    """A GaussianConvRBM class provides the basic implementation for
+    Gaussian-based Convolutional Restricted Boltzmann Machines.
 
     References:
-        H. Lee, et al. Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations.
+        H. Lee, et al.
+        Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations.
         Proceedings of the 26th annual international conference on machine learning (2009).
 
     """
@@ -36,8 +41,8 @@ class GaussianConvRBM(ConvRBM):
         logger.info('Overriding class: ConvRBM -> GaussianConvRBM.')
 
         # Override its parent class
-        super(GaussianConvRBM, self).__init__(visible_shape, filter_shape, n_filters, n_channels, steps,
-                                              learning_rate, momentum, decay, use_gpu)
+        super(GaussianConvRBM, self).__init__(visible_shape, filter_shape, n_filters, n_channels,
+                                              steps, learning_rate, momentum, decay, use_gpu)
 
         logger.info('Class overrided.')
 

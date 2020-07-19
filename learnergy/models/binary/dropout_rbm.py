@@ -1,3 +1,6 @@
+"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout.
+"""
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -12,8 +15,8 @@ logger = l.get_logger(__name__)
 
 
 class DropoutRBM(RBM):
-    """A DropoutRBM class provides the basic implementation for Bernoulli-Bernoulli Restricted Boltzmann Machines
-    along with a Dropout regularization.
+    """A DropoutRBM class provides the basic implementation for
+    Bernoulli-Bernoulli Restricted Boltzmann Machines along with a Dropout regularization.
 
     References:
         N. Srivastava, et al. Dropout: a simple way to prevent neural networks from overfitting.
@@ -48,7 +51,7 @@ class DropoutRBM(RBM):
         self.p = dropout
 
         logger.info('Class overrided.')
-        logger.debug(f'Additional hyperparameters: p = {self.p}.')
+        logger.debug('Additional hyperparameters: p = %f.', self.p)
 
     @property
     def p(self):
@@ -60,7 +63,7 @@ class DropoutRBM(RBM):
 
     @p.setter
     def p(self, p):
-        if not (isinstance(p, float) or isinstance(p, int)):
+        if not isinstance(p, (float, int)):
             raise e.TypeError('`p` should be a float or integer')
         if p < 0 or p > 1:
             raise e.ValueError('`p` should be between 0 and 1')
@@ -113,7 +116,7 @@ class DropoutRBM(RBM):
 
         """
 
-        logger.info(f'Reconstructing new samples ...')
+        logger.info('Reconstructing new samples ...')
 
         # Resetting mse to zero
         mse = 0
@@ -143,7 +146,7 @@ class DropoutRBM(RBM):
                 samples = samples.cuda()
 
             # Calculating positive phase hidden probabilities and states
-            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
+            _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(
@@ -162,6 +165,6 @@ class DropoutRBM(RBM):
         # Recovering initial dropout rate
         self.p = p
 
-        logger.info(f'MSE: {mse}')
+        logger.info('MSE: %f', mse)
 
         return mse, visible_probs

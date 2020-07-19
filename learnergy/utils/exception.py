@@ -1,3 +1,6 @@
+"""Exceptions.
+"""
+
 import learnergy.utils.logging as l
 
 logger = l.get_logger(__name__)
@@ -19,8 +22,11 @@ class Error(Exception):
 
         """
 
+        # Override its parent class
+        super(Error, self).__init__()
+
         # Logs the error in a formatted way
-        logger.error(f'{cls}: {msg}.')
+        logger.error('%s: %s.', cls, msg)
 
 
 class ArgumentError(Error):

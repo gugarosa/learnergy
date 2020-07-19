@@ -1,3 +1,6 @@
+"""Tensor-related visualization.
+"""
+
 import matplotlib.pyplot as plt
 
 import learnergy.utils.logging as l
@@ -13,7 +16,7 @@ def show_tensor(tensor):
 
     """
 
-    logger.debug(f'Showing tensor ...')
+    logger.debug('Showing tensor ...')
 
     # Creates a matplotlib figure
     plt.figure()
@@ -29,7 +32,7 @@ def show_tensor(tensor):
     # If the tensor is grayscale
     else:
         # Plots the numpy version of the tensor (grayscale)
-        plt.imshow(tensor.cpu().detach().numpy(), cmap=plt.cm.gray)
+        plt.imshow(tensor.cpu().detach().numpy(), cmap=plt.cm.get_cmap('gray'))
 
     # Disables all axis' ticks
     plt.xticks([])

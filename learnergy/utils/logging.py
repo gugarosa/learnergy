@@ -1,3 +1,6 @@
+"""Logging-based methods and helpers.
+"""
+
 import logging
 import sys
 from logging.handlers import TimedRotatingFileHandler

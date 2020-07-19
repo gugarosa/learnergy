@@ -1,7 +1,10 @@
+"""Image-related visualization.
+"""
+
 import numpy as np
 from PIL import Image
 
-import learnergy.math.scale as s
+import learnergy.math.scale as scl
 import learnergy.utils.logging as l
 
 logger = l.get_logger(__name__)
@@ -71,59 +74,57 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
 
         return out_array
 
-    # Asserts if input array is not a tuple
-    else:
-        # Gathers the image shape
-        H, W = img_shape
+    # Gathers the image shape
+    H, W = img_shape
 
-        # Also gathers the tile spacing
-        Hs, Ws = tile_spacing
+    # Also gathers the tile spacing
+    Hs, Ws = tile_spacing
 
-        # Checks the current input dtype
-        dt = x.dtype
+    # Checks the current input dtype
+    dt = x.dtype
 
-        # If output boolean is true
-        if output:
-            # Output type should be an unsigned integer
-            dt = 'uint8'
+    # If output boolean is true
+    if output:
+        # Output type should be an unsigned integer
+        dt = 'uint8'
 
-        # Creates a zeros array based on output shape
-        out_array = np.zeros(out_shape, dtype=dt)
+    # Creates a zeros array based on output shape
+    out_array = np.zeros(out_shape, dtype=dt)
 
-        # For every row of tiles
-        for tile_row in range(tile_shape[0]):
-            # For every column of tiles
-            for tile_col in range(tile_shape[1]):
-                # Checks if belongs to an specific row
-                if tile_row * tile_shape[1] + tile_col < x.shape[0]:
-                    # Replace its value
-                    x1 = x[tile_row * tile_shape[1] + tile_col]
+    # For every row of tiles
+    for tile_row in range(tile_shape[0]):
+        # For every column of tiles
+        for tile_col in range(tile_shape[1]):
+            # Checks if belongs to an specific row
+            if tile_row * tile_shape[1] + tile_col < x.shape[0]:
+                # Replace its value
+                x1 = x[tile_row * tile_shape[1] + tile_col]
 
-                    # If scale boolean is true
-                    if scale:
-                        # We should scale values to be between 0 and 1
-                        img = s.unitary_scale(x1.reshape(img_shape))
+                # If scale boolean is true
+                if scale:
+                    # We should scale values to be between 0 and 1
+                    img = scl.unitary_scale(x1.reshape(img_shape))
 
-                    # If not
-                    else:
-                        # We just reshape the image to the input shape
-                        img = x1.reshape(img_shape)
+                # If not
+                else:
+                    # We just reshape the image to the input shape
+                    img = x1.reshape(img_shape)
 
-                    # Add the slice to the corresponding position in the output array
-                    c = 1
+                # Add the slice to the corresponding position in the output array
+                c = 1
 
-                    # If output boolean is true
-                    if output:
-                        # The slice should be a maximum pixel value
-                        c = 255
+                # If output boolean is true
+                if output:
+                    # The slice should be a maximum pixel value
+                    c = 255
 
-                    # Creates the output array
-                    out_array[
-                        tile_row * (H + Hs): tile_row * (H + Hs) + H,
-                        tile_col * (W + Ws): tile_col * (W + Ws) + W
-                    ] = img * c
+                # Creates the output array
+                out_array[
+                    tile_row * (H + Hs): tile_row * (H + Hs) + H,
+                    tile_col * (W + Ws): tile_col * (W + Ws) + W
+                ] = img * c
 
-        return out_array
+    return out_array
 
 
 def create_mosaic(tensor):
@@ -134,7 +135,7 @@ def create_mosaic(tensor):
 
     """
 
-    logger.debug(f'Creating mosaic ...')
+    logger.debug('Creating mosaic ...')
 
     # Gets the numpy array from the tensor
     array = tensor.detach().numpy()

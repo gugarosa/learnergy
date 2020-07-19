@@ -1,7 +1,9 @@
+"""Sigmoid-Bernoulli Restricted Boltzmann Machine.
+"""
+
 import torch
 import torch.nn.functional as F
 
-import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.models.binary import RBM
 
@@ -9,7 +11,8 @@ logger = l.get_logger(__name__)
 
 
 class SigmoidRBM(RBM):
-    """A SigmoidRBM class provides the basic implementation for Sigmoid-Bernoulli Restricted Boltzmann Machines.
+    """A SigmoidRBM class provides the basic implementation for
+    Sigmoid-Bernoulli Restricted Boltzmann Machines.
 
     References:
         G. Hinton. A practical guide to training restricted Boltzmann machines.

@@ -1,3 +1,6 @@
+"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Energy-based Dropout.
+"""
+
 import time
 
 import torch
@@ -5,7 +8,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import learnergy.utils.exception as e
+import learnergy.utils.exception as ex
 import learnergy.utils.logging as l
 from learnergy.models.binary import RBM
 
@@ -13,12 +16,13 @@ logger = l.get_logger(__name__)
 
 
 class EDropoutRBM(RBM):
-    """An EDropoutRBM class provides the basic implementation for Bernoulli-Bernoulli Restricted Boltzmann Machines
-    along with a Energy-based Dropout regularization.
+    """An EDropoutRBM class provides the basic implementation for
+    Bernoulli-Bernoulli Restricted Boltzmann Machines along with a Energy-based Dropout regularization.
 
     References:
         M. Roder, G. H. de Rosa, A. L. D. Rossi, J. P. Papa.
-        Energy-based Dropout in Restricted Boltzmann Machines: Why Do Not Go Random. Publication pending (2020).
+        Energy-based Dropout in Restricted Boltzmann Machines: Why Do Not Go Random.
+        Publication pending (2020).
 
     """
 
@@ -60,7 +64,7 @@ class EDropoutRBM(RBM):
     @M.setter
     def M(self, M):
         if not isinstance(M, torch.Tensor):
-            raise e.TypeError('`M` should be a PyTorch tensor')
+            raise ex.TypeError('`M` should be a PyTorch tensor')
 
         self._M = M
 
@@ -160,8 +164,8 @@ class EDropoutRBM(RBM):
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
         # For every epoch
-        for e in range(epochs):
-            logger.info(f'Epoch {e+1}/{epochs}')
+        for epoch in range(epochs):
+            logger.info('Epoch %d/%d', epoch+1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -240,7 +244,7 @@ class EDropoutRBM(RBM):
             # Dumps the desired variables to the model's history
             self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
 
-            logger.info(f'MSE: {mse} | log-PL: {pl}')
+            logger.info('MSE: %f | log-PL: %f', mse, pl)
 
         return mse, pl
 
@@ -255,7 +259,7 @@ class EDropoutRBM(RBM):
 
         """
 
-        logger.info(f'Reconstructing new samples ...')
+        logger.info('Reconstructing new samples ...')
 
         # Resetting MSE to zero
         mse = 0
@@ -281,7 +285,7 @@ class EDropoutRBM(RBM):
                 samples = samples.cuda()
 
             # Calculating positive phase hidden probabilities and states
-            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
+            _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(
@@ -297,6 +301,6 @@ class EDropoutRBM(RBM):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info(f'MSE: {mse}')
+        logger.info('MSE: %f', mse)
 
         return mse, visible_probs
