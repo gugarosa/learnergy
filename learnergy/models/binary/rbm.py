@@ -1,3 +1,6 @@
+"""Bernoulli-Bernoulli Restricted Boltzmann Machine.
+"""
+
 import time
 
 import torch
@@ -85,9 +88,9 @@ class RBM(Model):
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug(
-            f'Size: ({self.n_visible}, {self.n_hidden}) | Learning: CD-{self.steps} | '
-            f'Hyperparameters: lr = {self.lr}, momentum = {self.momentum}, decay = {self.decay}, T = {self.T}.')
+        logger.debug('Size: (%d, %d) | Learning: CD-%d | ' +
+                     'Hyperparameters: lr = %f, momentum = %f, decay = %f, T = %f.',
+                     self.n_visible, self.n_hidden, self.steps, self.lr, self.momentum, self.decay, self.T)
 
     @property
     def n_visible(self):
@@ -150,7 +153,7 @@ class RBM(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not (isinstance(lr, float) or isinstance(lr, int)):
+        if not isinstance(lr, (float, int)):
             raise e.TypeError('`lr` should be a float or integer')
         if lr < 0:
             raise e.ValueError('`lr` should be >= 0')
@@ -167,7 +170,7 @@ class RBM(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not (isinstance(momentum, float) or isinstance(momentum, int)):
+        if not isinstance(momentum, (float, int)):
             raise e.TypeError('`momentum` should be a float or integer')
         if momentum < 0:
             raise e.ValueError('`momentum` should be >= 0')
@@ -184,7 +187,7 @@ class RBM(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not (isinstance(decay, float) or isinstance(decay, int)):
+        if not isinstance(decay, (float, int)):
             raise e.TypeError('`decay` should be a float or integer')
         if decay < 0:
             raise e.ValueError('`decay` should be >= 0')
@@ -201,7 +204,7 @@ class RBM(Model):
 
     @T.setter
     def T(self, T):
-        if not (isinstance(T, float) or isinstance(T, int)):
+        if not isinstance(T, (float, int)):
             raise e.TypeError('`T` should be a float or integer')
         if T < 0 or T > 1:
             raise e.ValueError('`T` should be between 0 and 1')
@@ -287,7 +290,7 @@ class RBM(Model):
         if scale:
             # Scales the activations with temperature
             activations = torch.div(activations, self.T)
-        
+
         return activations
 
     def hidden_sampling(self, v, scale=False):
@@ -359,7 +362,7 @@ class RBM(Model):
         Returns:
             The probabilities and states of the hidden layer sampling (positive),
             the probabilities and states of the hidden layer sampling (negative)
-            and the states of the visible layer sampling (negative). 
+            and the states of the visible layer sampling (negative).
 
         """
 
@@ -372,7 +375,7 @@ class RBM(Model):
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
+            _, visible_states = self.visible_sampling(
                 neg_hidden_states, True)
 
             # Calculating hidden probabilities and states
@@ -424,7 +427,7 @@ class RBM(Model):
         samples_binary = torch.round(samples)
 
         # Calculates the energy of samples before flipping the bits
-        e = self.energy(samples_binary)
+        energy = self.energy(samples_binary)
 
         # Samples an array of indexes to flip the bits
         indexes = torch.randint(0, self.n_visible, size=(
@@ -442,14 +445,14 @@ class RBM(Model):
             bits == 0, samples_binary, 1 - samples_binary)
 
         # Calculates the energy after flipping the bits
-        e1 = self.energy(samples_binary)
+        energy1 = self.energy(samples_binary)
 
         # Calculate the logarithm of the pseudo-likelihood
         pl = torch.mean(self.n_visible *
-                        torch.log(torch.sigmoid(e1 - e) + c.EPSILON))
+                        torch.log(torch.sigmoid(energy1 - energy) + c.EPSILON))
 
         return pl
-    
+
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
 
@@ -464,11 +467,12 @@ class RBM(Model):
         """
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=True, num_workers=1)
 
         # For every epoch
-        for e in range(epochs):
-            logger.info(f'Epoch {e+1}/{epochs}')
+        for epoch in range(epochs):
+            logger.info('Epoch %d/%d', epoch+1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -494,7 +498,8 @@ class RBM(Model):
                 visible_states = visible_states.detach()
 
                 # Calculates the loss for further gradients' computation
-                cost = torch.mean(self.energy(samples)) - torch.mean(self.energy(visible_states))
+                cost = torch.mean(self.energy(samples)) - \
+                    torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -529,7 +534,7 @@ class RBM(Model):
             # Dumps the desired variables to the model's history
             self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
 
-            logger.info(f'MSE: {mse} | log-PL: {pl}')
+            logger.info('MSE: %f | log-PL: %f', mse, pl)
 
         return mse, pl
 
@@ -544,7 +549,7 @@ class RBM(Model):
 
         """
 
-        logger.info(f'Reconstructing new samples ...')
+        logger.info('Reconstructing new samples ...')
 
         # Resetting MSE to zero
         mse = 0
@@ -553,7 +558,8 @@ class RBM(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -566,7 +572,7 @@ class RBM(Model):
                 samples = samples.cuda()
 
             # Calculating positive phase hidden probabilities and states
-            pos_hidden_probs, pos_hidden_states = self.hidden_sampling(samples)
+            _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(
@@ -582,7 +588,7 @@ class RBM(Model):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info(f'MSE: {mse}')
+        logger.info('MSE: %f', mse)
 
         return mse, visible_probs
 

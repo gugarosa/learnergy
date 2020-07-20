@@ -1,8 +1,10 @@
+"""Deep Belief Network.
+"""
+
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.core import Dataset, Model
@@ -32,19 +34,19 @@ class DBN(Model):
 
     """
 
-    def __init__(self, model='bernoulli', n_visible=128, n_hidden=[128], steps=[1],
-                 learning_rate=[0.1], momentum=[0], decay=[0], temperature=[1], use_gpu=False):
+    def __init__(self, model='bernoulli', n_visible=128, n_hidden=(128,), steps=(1,),
+                 learning_rate=(0.1,), momentum=(0,), decay=(0,), temperature=(1,), use_gpu=False):
         """Initialization method.
 
         Args:
             model (str): Indicates which type of RBM should be used to compose the DBN.
             n_visible (int): Amount of visible units.
-            n_hidden (list): Amount of hidden units per layer.
-            steps (list): Number of Gibbs' sampling steps per layer.
-            learning_rate (list): Learning rate per layer.
-            momentum (list): Momentum parameter per layer.
-            decay (list): Weight decay used for penalization per layer.
-            temperature (list): Temperature factor per layer.
+            n_hidden (tuple): Amount of hidden units per layer.
+            steps (tuple): Number of Gibbs' sampling steps per layer.
+            learning_rate (tuple): Learning rate per layer.
+            momentum (tuple): Momentum parameter per layer.
+            decay (tuple): Weight decay used for penalization per layer.
+            temperature (tuple): Temperature factor per layer.
             use_gpu (boolean): Whether GPU should be used or not.
 
         """
@@ -81,8 +83,6 @@ class DBN(Model):
         # List of models (RBMs)
         self.models = []
 
-        # self.fc = torch.nn.Linear(self.n_hidden[self.n_layers-1], 10)
-
         # For every possible layer
         for i in range(self.n_layers):
             # If it is the first layer
@@ -111,7 +111,7 @@ class DBN(Model):
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug(f'Number of layers: {self.n_layers}.')
+        logger.debug('Number of layers: %d.', self.n_layers)
 
     @property
     def n_visible(self):
@@ -132,7 +132,7 @@ class DBN(Model):
 
     @property
     def n_hidden(self):
-        """list: List of hidden units.
+        """tuple: Tuple of hidden units.
 
         """
 
@@ -140,8 +140,10 @@ class DBN(Model):
 
     @n_hidden.setter
     def n_hidden(self, n_hidden):
-        if not isinstance(n_hidden, list):
-            raise e.TypeError('`n_hidden` should be a list')
+        print(n_hidden)
+        print(type(n_hidden))
+        if not isinstance(n_hidden, tuple):
+            raise e.TypeError('`n_hidden` should be a tuple')
 
         self._n_hidden = n_hidden
 
@@ -164,7 +166,7 @@ class DBN(Model):
 
     @property
     def steps(self):
-        """list: Number of steps Gibbs' sampling steps per layer.
+        """tuple: Number of steps Gibbs' sampling steps per layer.
 
         """
 
@@ -172,8 +174,8 @@ class DBN(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, list):
-            raise e.TypeError('`steps` should be a list')
+        if not isinstance(steps, tuple):
+            raise e.TypeError('`steps` should be a tuple')
         if len(steps) != self.n_layers:
             raise e.SizeError(
                 f'`steps` should have size equal as {self.n_layers}')
@@ -182,7 +184,7 @@ class DBN(Model):
 
     @property
     def lr(self):
-        """list: Learning rate per layer.
+        """tuple: Learning rate per layer.
 
         """
 
@@ -190,8 +192,8 @@ class DBN(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not isinstance(lr, list):
-            raise e.TypeError('`lr` should be a list')
+        if not isinstance(lr, tuple):
+            raise e.TypeError('`lr` should be a tuple')
         if len(lr) != self.n_layers:
             raise e.SizeError(
                 f'`lr` should have size equal as {self.n_layers}')
@@ -200,7 +202,7 @@ class DBN(Model):
 
     @property
     def momentum(self):
-        """list: Momentum parameter per layer.
+        """tuple: Momentum parameter per layer.
 
         """
 
@@ -208,8 +210,8 @@ class DBN(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not isinstance(momentum, list):
-            raise e.TypeError('`momentum` should be a list')
+        if not isinstance(momentum, tuple):
+            raise e.TypeError('`momentum` should be a tuple')
         if len(momentum) != self.n_layers:
             raise e.SizeError(
                 f'`momentum` should have size equal as {self.n_layers}')
@@ -218,7 +220,7 @@ class DBN(Model):
 
     @property
     def decay(self):
-        """list: Weight decay per layer.
+        """tuple: Weight decay per layer.
 
         """
 
@@ -226,8 +228,8 @@ class DBN(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not isinstance(decay, list):
-            raise e.TypeError('`decay` should be a list')
+        if not isinstance(decay, tuple):
+            raise e.TypeError('`decay` should be a tuple')
         if len(decay) != self.n_layers:
             raise e.SizeError(
                 f'`decay` should have size equal as {self.n_layers}')
@@ -236,7 +238,7 @@ class DBN(Model):
 
     @property
     def T(self):
-        """list: Temperature factor per layer.
+        """tuple: Temperature factor per layer.
 
         """
 
@@ -244,8 +246,8 @@ class DBN(Model):
 
     @T.setter
     def T(self, T):
-        if not isinstance(T, list):
-            raise e.TypeError('`T` should be a list')
+        if not isinstance(T, tuple):
+            raise e.TypeError('`T` should be a tuple')
         if len(T) != self.n_layers:
             raise e.SizeError(f'`T` should have size equal as {self.n_layers}')
 
@@ -266,13 +268,13 @@ class DBN(Model):
 
         self._models = models
 
-    def fit(self, dataset, batch_size=128, epochs=[10]):
+    def fit(self, dataset, batch_size=128, epochs=(10)):
         """Fits a new DBN model.
 
         Args:
             dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
             batch_size (int): Amount of samples per batch.
-            epochs (list): Number of training epochs per layer.
+            epochs (tuple): Number of training epochs per layer.
 
         Returns:
             MSE (mean squared error) and log pseudo-likelihood from the training step.
@@ -282,18 +284,18 @@ class DBN(Model):
         # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
             # If not, raises an error
-            raise e.SizeError(
-                f'`epochs` should have size equal as {self.n_layers}')
+            raise e.SizeError(('`epochs` should have size equal as %d', self.n_layers))
 
         # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = dataset.data.numpy(
+        ), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (RBM)
         for i, model in enumerate(self.models):
-            logger.info(f'Fitting layer {i+1}/{self.n_layers} ...')
+            logger.info('Fitting layer %d/%d ...', i+1, self.n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -353,7 +355,7 @@ class DBN(Model):
 
         """
 
-        logger.info(f'Reconstructing new samples ...')
+        logger.info('Reconstructing new samples ...')
 
         # Resetting MSE to zero
         mse = 0
@@ -362,7 +364,8 @@ class DBN(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -378,23 +381,27 @@ class DBN(Model):
             hidden_probs = samples
 
             # For every possible model (RBM)
-            for i, model in enumerate(self.models):
+            for model in self.models:
                 # Flattening the hidden probabilities
-                hidden_probs = hidden_probs.reshape(batch_size, model.n_visible)
+                hidden_probs = hidden_probs.reshape(
+                    batch_size, model.n_visible)
 
                 # Performing a hidden layer sampling
-                hidden_probs, hidden_states = model.hidden_sampling(hidden_probs)
+                hidden_probs, _ = model.hidden_sampling(
+                    hidden_probs)
 
             # Applying the initial visible probabilities as the hidden probabilities
             visible_probs = hidden_probs
 
             # For every possible model (RBM)
-            for i, model in enumerate(reversed(self.models)):
+            for model in reversed(self.models):
                 # Flattening the visible probabilities
-                visible_probs = visible_probs.reshape(batch_size, model.n_hidden)
+                visible_probs = visible_probs.reshape(
+                    batch_size, model.n_hidden)
 
                 # Performing a visible layer sampling
-                visible_probs, visible_states = model.visible_sampling(visible_probs)
+                visible_probs, visible_states = model.visible_sampling(
+                    visible_probs)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
@@ -406,7 +413,7 @@ class DBN(Model):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info(f'MSE: {mse}')
+        logger.info('MSE: %f', mse)
 
         return mse, visible_probs
 
@@ -418,7 +425,7 @@ class DBN(Model):
 
         Returns:
             A tensor containing the DBN's outputs.
-       
+
         """
 
         # For every possible model

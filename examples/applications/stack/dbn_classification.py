@@ -19,17 +19,17 @@ test = torchvision.datasets.MNIST(
     root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
 # Creating a DBN
-model = DBN(model='bernoulli', n_visible=784, n_hidden=[256, 256], steps=[1, 1],
-            learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1],
+model = DBN(model='bernoulli', n_visible=784, n_hidden=(256, 256), steps=(1, 1),
+            learning_rate=(0.1, 0.1), momentum=(0, 0), decay=(0, 0), temperature=(1, 1),
             use_gpu=True)
 
 # Or you may create a ResidualDBN
-# model = ResidualDBN(model='bernoulli', n_visible=784, n_hidden=[256, 256], steps=[1, 1],
-#                     learning_rate=[0.1, 0.1], momentum=[0, 0], decay=[0, 0], temperature=[1, 1],
+# model = ResidualDBN(model='bernoulli', n_visible=784, n_hidden=(256, 256), steps=(1, 1),
+#                     learning_rate=(0.1, 0.1), momentum=(0, 0), decay=(0, 0), temperature=(1, 1),
 #                     zetta1=1, zetta2=1, use_gpu=True)
 
 # Training a DBN
-model.fit(train, batch_size=batch_size, epochs=[5, 5])
+model.fit(train, batch_size=batch_size, epochs=(5, 5))
 
 # Creating the Fully Connected layer to append on top of DBNs
 fc = torch.nn.Linear(model.n_hidden[model.n_layers - 1], n_classes)

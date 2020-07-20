@@ -1,3 +1,6 @@
+"""Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machine.
+"""
+
 import time
 
 import torch
@@ -45,9 +48,9 @@ class DiscriminativeRBM(RBM):
         # Override its parent class
         super(DiscriminativeRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                                 momentum, decay, temperature, use_gpu)
-    
+
         # Number of classes
-        self.n_classes = n_classes 
+        self.n_classes = n_classes
 
         # Class weights matrix
         self.U = nn.Parameter(torch.randn(n_classes, n_hidden) * 0.05)
@@ -145,10 +148,8 @@ class DiscriminativeRBM(RBM):
         """
 
         # Creating an empty tensor for holding the probabilities per class
-        probs = torch.zeros(samples.size(0), self.n_classes, device=self.device)
-
-        # Creating an empty tensor for holding the probabilities considering all classes
-        probs_sum = torch.zeros(samples.size(0), device=self.device)
+        probs = torch.zeros(samples.size(
+            0), self.n_classes, device=self.device)
 
         # Calculate samples' activations
         activations = F.linear(samples, self.W.t(), self.b)
@@ -159,7 +160,8 @@ class DiscriminativeRBM(RBM):
         # Iterating through every possible class
         for i in range(self.n_classes):
             # Calculates the logit-probability for the particular class
-            probs[:, i] = self.c[i] + torch.sum(s(activations + self.U[i, :]), dim=1)
+            probs[:, i] = self.c[i] + \
+                torch.sum(s(activations + self.U[i, :]), dim=1)
 
         # Recovering the predictions based on the logit-probabilities
         preds = torch.argmax(probs.detach(), 1)
@@ -180,11 +182,12 @@ class DiscriminativeRBM(RBM):
         """
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=True, num_workers=1)
 
         # For every epoch
-        for e in range(epochs):
-            logger.info(f'Epoch {e+1}/{epochs}')
+        for epoch in range(epochs):
+            logger.info('Epoch %d/%d', epoch+1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -226,7 +229,8 @@ class DiscriminativeRBM(RBM):
                 batch_size = samples.size(0)
 
                 # Calculating current's batch accuracy
-                batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
+                batch_acc = torch.mean(
+                    (torch.sum(preds == labels).float()) / batch_size)
 
                 # Summing up to epochs' loss and accuracy
                 loss += cost.detach()
@@ -242,7 +246,7 @@ class DiscriminativeRBM(RBM):
             # Dumps the desired variables to the model's history
             self.dump(loss=loss.item(), acc=acc.item(), time=end-start)
 
-            logger.info(f'Loss: {loss} | Accuracy: {acc}')
+            logger.info('Loss: %f | Accuracy: %f', loss, acc)
 
         return loss, acc
 
@@ -257,7 +261,7 @@ class DiscriminativeRBM(RBM):
 
         """
 
-        logger.info(f'Predicting new samples ...')
+        logger.info('Predicting new samples ...')
 
         # Resetting accuracy to zero
         acc = 0
@@ -266,7 +270,8 @@ class DiscriminativeRBM(RBM):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=1)
 
         # For every batch
         for samples, labels in tqdm(batches):
@@ -283,7 +288,8 @@ class DiscriminativeRBM(RBM):
             probs, preds = self.labels_sampling(samples)
 
             # Calculating current's batch accuracy
-            batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
+            batch_acc = torch.mean(
+                (torch.sum(preds == labels).float()) / batch_size)
 
             # Summing up the prediction accuracy
             acc += batch_acc
@@ -291,9 +297,10 @@ class DiscriminativeRBM(RBM):
         # Normalizing the accuracy with the number of batches
         acc /= len(batches)
 
-        logger.info(f'Accuracy: {acc}')
+        logger.info('Accuracy: %f', acc)
 
         return acc, probs, preds
+
 
 class HybridDiscriminativeRBM(DiscriminativeRBM):
     """A HybridDiscriminativeRBM class provides the basic implementation for
@@ -323,7 +330,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
-        logger.info('Overriding class: DiscriminativeRBM -> HybridDiscriminativeRBM.')
+        logger.info(
+            'Overriding class: DiscriminativeRBM -> HybridDiscriminativeRBM.')
 
         # Override its parent class
         super(HybridDiscriminativeRBM, self).__init__(n_visible, n_hidden, n_classes, steps,
@@ -343,7 +351,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
     @alpha.setter
     def alpha(self, alpha):
-        if not (isinstance(alpha, float) or isinstance(alpha, int)):
+        if not isinstance(alpha, (float, int)):
             raise e.TypeError('`alpha` should be a float or integer')
         if alpha < 0:
             raise e.ValueError('`alpha` should be >= 0')
@@ -397,10 +405,12 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         # Normalizing activations to calculate probabilities
         # probs = torch.nn.functional.normalize(activations, p=1, dim=1)
-        probs = torch.div(activations, torch.sum(activations, dim=1).unsqueeze(1))
+        probs = torch.div(activations, torch.sum(
+            activations, dim=1).unsqueeze(1))
 
         # Sampling current states
-        states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), num_classes=self.n_classes).float()
+        states = torch.nn.functional.one_hot(torch.argmax(
+            probs, dim=1), num_classes=self.n_classes).float()
 
         return probs, states
 
@@ -414,7 +424,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         Returns:
             The probabilities and states of the hidden layer sampling (positive),
             the probabilities and states of the hidden layer sampling (negative)
-            and the states of the visible layer sampling (negative). 
+            and the states of the visible layer sampling (negative).
 
         """
 
@@ -430,11 +440,11 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
+            _, visible_states = self.visible_sampling(
                 neg_hidden_states, True)
 
             # Calculating class probabilities and states
-            class_probs, class_states = self.class_sampling(neg_hidden_states)
+            _, class_states = self.class_sampling(neg_hidden_states)
 
             # Calculating hidden probabilities and states
             neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
@@ -456,11 +466,12 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         """
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=True, num_workers=1)
 
         # For every epoch
-        for e in range(epochs):
-            logger.info(f'Epoch {e+1}/{epochs}')
+        for epoch in range(epochs):
+            logger.info('Epoch %d/%d', epoch+1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -481,7 +492,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                     labels = labels.cuda()
 
                 # Performs the Gibbs sampling procedure
-                _, _, _, _, visible_states = self.gibbs_sampling(samples, labels)
+                _, _, _, _, visible_states = self.gibbs_sampling(
+                    samples, labels)
 
                 # Detaching the visible states from GPU for further computation
                 visible_states = visible_states.detach()
@@ -490,10 +502,10 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                 disc_probs, _ = self.labels_sampling(samples)
 
                 # Calculates the discriminator loss for further gradients' computation
-                d_cost = self.loss(disc_probs, labels)   
+                d_cost = self.loss(disc_probs, labels)
 
                 # Calculates the generator loss for further gradients' computation
-                g_cost = -self.pseudo_likelihood(samples)             
+                g_cost = -self.pseudo_likelihood(samples)
 
                 # Calculates the total loss
                 cost = d_cost + self.alpha * g_cost
@@ -514,7 +526,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                 batch_size = samples.size(0)
 
                 # Calculating current's batch accuracy
-                batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
+                batch_acc = torch.mean(
+                    (torch.sum(preds == labels).float()) / batch_size)
 
                 # Summing up to epochs' genator, discriminator and total loss, and accuracy
                 d_loss += d_cost
@@ -535,6 +548,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             self.dump(d_loss=d_loss.item(), g_loss=g_loss.item(), loss=loss.item(),
                       acc=acc.item(), time=end-start)
 
-            logger.info(f'Loss(D): {d_loss} | Loss(G): {g_loss} | Loss: {loss} | Accuracy: {acc}')
+            logger.info(
+                'Loss(D): %f | Loss(G): %f | Loss: %f | Accuracy: %f', d_loss, g_loss, loss, acc)
 
         return loss, acc

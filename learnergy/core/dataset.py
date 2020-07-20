@@ -50,8 +50,8 @@ class Dataset(torch.utils.data.Dataset):
 
     @data.setter
     def data(self, data):
-        if not isinstance(data, np.ndarray):
-            raise e.TypeError('`data` should be a numpy array')
+        if not isinstance(data, (np.ndarray, torch.Tensor)):
+            raise e.TypeError('`data` should be a numpy array or a tensor')
 
         self._data = data
 
@@ -80,8 +80,8 @@ class Dataset(torch.utils.data.Dataset):
 
     @transform.setter
     def transform(self, transform):
-        if not hasattr(transform, '__call__'):
-            raise e.TypeError('`transform` should be a callable')
+        if not (hasattr(transform, '__call__') or transform is None):
+            raise e.TypeError('`transform` should be a callable or None')
 
         self._transform = transform
 
