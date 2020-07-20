@@ -98,8 +98,8 @@ class ConvRBM(Model):
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug('Visible: %s | Filters: %d x %s | Hidden: %s | ' +
-                     'Channels: %d| Learning: CD-%d | ' +
+        logger.debug('Visible: %s | Filters: %d x %s | Hidden: %s | '
+                     'Channels: %d| Learning: CD-%d | '
                      'Hyperparameters: lr = %f, momentum = %f, decay = %f.',
                      self.visible_shape, self.n_filters, self.filter_shape,
                      self.hidden_shape, self.n_channels, self.steps,

@@ -88,7 +88,7 @@ class RBM(Model):
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug('Size: (%d, %d) | Learning: CD-%d | ' +
+        logger.debug('Size: (%d, %d) | Learning: CD-%d | '
                      'Hyperparameters: lr = %f, momentum = %f, decay = %f, T = %f.',
                      self.n_visible, self.n_hidden, self.steps, self.lr, self.momentum, self.decay, self.T)
 
