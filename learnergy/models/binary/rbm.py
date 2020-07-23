@@ -89,7 +89,7 @@ class RBM(Model):
 
         logger.info('Class overrided.')
         logger.debug('Size: (%d, %d) | Learning: CD-%d | '
-                     'Hyperparameters: lr = %f, momentum = %f, decay = %f, T = %f.',
+                     'Hyperparameters: lr = %s, momentum = %s, decay = %s, T = %s.',
                      self.n_visible, self.n_hidden, self.steps, self.lr, self.momentum, self.decay, self.T)
 
     @property

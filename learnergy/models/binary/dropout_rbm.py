@@ -51,7 +51,7 @@ class DropoutRBM(RBM):
         self.p = dropout
 
         logger.info('Class overrided.')
-        logger.debug('Additional hyperparameters: p = %f.', self.p)
+        logger.debug('Additional hyperparameters: p = %s.', self.p)
 
     @property
     def p(self):
