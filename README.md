@@ -35,7 +35,7 @@ Learnergy is compatible with: **Python 3.6+**.
 
 If you use Learnergy to fulfill any of your needs, please cite us:
 
-```
+```BibTex
 @misc{roder2020learnergy,
     title={Learnergy: Energy-based Machine Learners},
     author={Mateus Roder and Gustavo Henrique de Rosa and João Paulo Papa},
@@ -56,7 +56,7 @@ Alternatively, if you wish to learn even more, please take a minute:
 
 Learnergy is based on the following structure, and you should pay attention to its tree:
 
-```
+```yaml
 - learnergy
     - core
         - dataset
@@ -113,13 +113,13 @@ Everyone needs images and plots to help visualize what is happening, correct? Th
 
 We believe that everything has to be easy. Not tricky or daunting, Learnergy will be the one-to-go package that you will need, from the very first installation to the daily-tasks implementing needs. If you may just run the following under your most preferred Python environment (raw, conda, virtualenv, whatever):
 
-```Python
+```bash
 pip install learnergy
 ```
 
 Alternatively, if you prefer to install the bleeding-edge version, please clone this repository and use:
 
-```Python
+```bash
 pip install .
 ```
 
