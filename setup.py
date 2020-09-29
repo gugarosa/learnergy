@@ -17,8 +17,8 @@ setup(name='learnergy',
                         'Pillow>=7.1.2',
                         'pylint>=2.5.2',
                         'pytest>=5.4.2',
-                        'torch>=1.5.0',
-                        'torchvision>=0.6.0',
+                        'torch>=1.6.0',
+                        'torchvision>=0.7.0',
                         'tqdm>=4.46.0'
                        ],
       extras_require={
