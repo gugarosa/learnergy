@@ -37,3 +37,9 @@ def test_create_mosaic():
     t = torch.zeros(64, 64)
 
     image.create_mosaic(t)
+
+
+def test_create_rgb_mosaic():
+    t = torch.zeros(1, 3, 64, 64)
+
+    image.create_rgb_mosaic(t, 1)

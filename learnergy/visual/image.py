@@ -3,6 +3,7 @@
 
 import numpy as np
 from PIL import Image
+import matplotlib.pyplot as plt
 
 import learnergy.math.scale as scl
 import learnergy.utils.logging as l
@@ -152,30 +153,30 @@ def create_mosaic(tensor):
     img.show()
 
     logger.debug('Mosaic created.')
-    
-    
-def vis_square(data, dim=15):
-    """Creates a suqared mosaic for RGB images.
+
+
+def create_rgb_mosaic(tensor, n_samples=1):
+    """Creates a squared mosaic for RGB images.
 
     Args:
-        data (Tensor): An input tensor to have its mosaic created;
-        dim (int): The square dimension to plot
-
-    Returns:
-        The entire plot
+        tensor (Tensor): An input tensor to have its mosaic created.
+        n_samples (int): The amount of samples to be plotted (width or height).
 
     """
-    
-    data = data.permute(0, 2, 3, 1).numpy()
-    
-    from matplotlib import pyplot
+
+    # Permutes the tensor and transforms into numpy-based array
+    array = tensor.detach().permute(0, 2, 3, 1).numpy()
+
     # plot images from the dataset
-    for i in range(dim*dim):
-        # define subplot
-        pyplot.subplot(dim, dim, 1 + i)
-        # turn off axis
-        pyplot.axis('off')
-        # plot raw pixel data
-        pyplot.imshow(data[i])
-    
-    return pyplot    
+    for i in range(n_samples * n_samples):
+        # Creates the subplots
+        plt.subplot(n_samples, n_samples, 1 + i)
+
+        # Removes the axis
+        plt.axis('off')
+
+        # Plots the raw data
+        plt.imshow(array[i])
+
+    # Shows the plot
+    plt.show()
