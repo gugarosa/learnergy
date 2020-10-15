@@ -152,3 +152,30 @@ def create_mosaic(tensor):
     img.show()
 
     logger.debug('Mosaic created.')
+    
+    
+def vis_square(data, dim=15):
+    """Creates a suqared mosaic for RGB images.
+
+    Args:
+        data (Tensor): An input tensor to have its mosaic created;
+        dim (int): The square dimension to plot
+
+    Returns:
+        The entire plot
+
+    """
+    
+    data = data.permute(0, 2, 3, 1).numpy()
+    
+    from matplotlib import pyplot
+    # plot images from the dataset
+    for i in range(dim*dim):
+        # define subplot
+        pyplot.subplot(dim, dim, 1 + i)
+        # turn off axis
+        pyplot.axis('off')
+        # plot raw pixel data
+        pyplot.imshow(data[i])
+    
+    return pyplot    
