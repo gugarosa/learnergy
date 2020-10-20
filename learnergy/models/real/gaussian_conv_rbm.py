@@ -3,6 +3,8 @@
 
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import learnergy.utils.logging as l
 from learnergy.models.binary import ConvRBM
@@ -61,7 +63,7 @@ class GaussianConvRBM(ConvRBM):
         activations = F.conv2d(v, self.W, bias=self.b)
 
         # Calculate probabilities
-        probs = F.relu6(activations)
+        probs = F.relu6(activations).detach()
 
         return probs, probs
 
@@ -80,6 +82,47 @@ class GaussianConvRBM(ConvRBM):
         activations = F.conv_transpose2d(h, self.W, bias=self.a)
 
         # Calculate probabilities
-        probs = torch.clamp(F.relu(activations), 0, 1)
+        probs = torch.clamp(F.relu(activations), 0, 1).detach()
 
         return probs, probs
+
+    def propagate(self, dataset):
+        """Reconstructs batches of new samples.
+
+        Args:
+            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+
+        Returns:
+            Reconstruction error and visible probabilities, i.e., P(v|h).
+
+        """
+
+        logger.info('Propagating through hidden map ...')
+
+
+        # Defining the new dataset for convolutions
+        ds = torch.ones((len(dataset), self.n_filters, self.hidden_shape[0], self.hidden_shape[1]), dtype=torch.float, device=self.device)
+
+        batch_size = 200
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, drop_last=False, num_workers=0)
+
+        # For every batch
+        j = 0
+        for samples, _ in tqdm(batches):
+            # Flattening the samples' batch
+            samples = samples.reshape(
+                len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
+
+            # Calculating positive phase hidden probabilities and states
+            _, ds[j:(j + batch_size), :, :, :] = self.hidden_sampling(samples)
+            j += batch_size
+
+        return ds.detach()
