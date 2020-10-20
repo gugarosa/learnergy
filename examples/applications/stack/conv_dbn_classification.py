@@ -21,7 +21,7 @@ n_classes = 10
 fine_tune_epochs = 100//2
 
 # Creating training and validation/testing dataset
-banco = 'cifar'
+banco = 'cifar' # Dataset name for saving and loading informations
 train = torchvision.datasets.CIFAR10(
 #train = torchvision.datasets.MNIST(
     root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
@@ -41,13 +41,14 @@ try:
     model.cuda()
     print("Model loaded")
 except:
-    # Training a ConvRBM
+    # Training a CDBN
     model.fit(train, batch_size=batch_size, epochs=(50, 50))
 
     torch.save(model, banco+'_cdbn_model.pth')
 
 rec_mse, v = model.reconstruct(test)
 
+# Reconstructing and saving some test images...
 img = im.vis_square(torch.from_numpy(test.data[:1000]), 10)
 #img = im.vis_square(test.data[:1000], 10)
 img.savefig(banco+"_orig.jpg", dpi=300, quality=95, bbox_inches='tight')
@@ -55,7 +56,7 @@ img = im.vis_square(v[:1000].detach().cpu(), 10)
 img.savefig(banco+"_rec.jpg", dpi=300, quality=95, bbox_inches='tight')
 
 
-# Creating the Fully Connected layer to append on top of RBM
+# Creating the Fully Connected layer to append on top of CDBN
 in_shape = model.hidden_shape[0] * model.hidden_shape[1] * n_filters[len(n_filters)-1]
 fc = nn.Linear(in_shape, n_classes)
 
