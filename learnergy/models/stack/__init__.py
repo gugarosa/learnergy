@@ -3,4 +3,4 @@
 
 from learnergy.models.stack.dbn import DBN
 from learnergy.models.stack.residual_dbn import ResidualDBN
-from learnergy.models.stack.conv_dbn import CDBN
+from learnergy.models.stack.conv_dbn import ConvDBN

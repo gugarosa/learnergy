@@ -1,9 +1,9 @@
 """Image-related visualization.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 
 import learnergy.math.scale as scl
 import learnergy.utils.logging as l

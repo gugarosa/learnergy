@@ -87,10 +87,10 @@ class GaussianConvRBM(ConvRBM):
         return probs, probs
 
     def propagate(self, dataset):
-        """Reconstructs batches of new samples.
+        """Propagates batches of samples.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+            dataset (torch.utils.data.Dataset): A Dataset object containing the data.
 
         Returns:
             Reconstruction error and visible probabilities, i.e., P(v|h).

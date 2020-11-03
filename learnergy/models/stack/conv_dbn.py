@@ -1,29 +1,27 @@
-"""Continuous-based Convolutional Deep Belief Network.
+"""Convolutional Deep Belief Network.
 """
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as opt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import learnergy.utils.exception as e
 import learnergy.utils.logging as l
+from learnergy.core import Dataset, Model
 from learnergy.models.binary import ConvRBM
 from learnergy.models.real import GaussianConvRBM
-from learnergy.core import Dataset, Model
 
 logger = l.get_logger(__name__)
 
 MODELS = {
-    'conv_rbm': ConvRBM,
-    'cont_conv_rbm': GaussianConvRBM
+    'bernoulli': ConvRBM,
+    'gaussian': GaussianConvRBM
 }
 
 
-class CDBN(Model):
-    """A Continuous ConvDBN class provides the basic implementation for
-    Continuous-based input Convolutional DBNs.
+class ConvDBN(Model):
+    """A ConvDBN class provides the basic implementation for Convolutional DBNs.
 
     References:
         H. Lee, et al.
@@ -32,28 +30,27 @@ class CDBN(Model):
 
     """
 
-    def __init__(self, visible_shape=(28, 28), filter_shape=[(7, 7), (7, 7)], n_filters=[16, 16], n_channels=1,
-                 n_layers=2, steps=1, learning_rate=(0.1,), momentum=(0,), decay=(0,), use_gpu=False):
+    def __init__(self, model='bernoulli', visible_shape=(28, 28), filter_shape=((7, 7),), n_filters=(16,),
+                 n_channels=1, steps=(1,), learning_rate=(0.1,), momentum=(0,), decay=(0,), use_gpu=False):
         """Initialization method.
 
         Args:
             visible_shape (tuple): Shape of visible units.
-            filter_shape (list of tuple): Shape of filters for each CRBM.
-            n_filters (list of int): Number of filters for each CRBM.
+            filter_shape (tuple of tuples): Shape of filters per layer.
+            n_filters (tuple): Number of filters per layer.
             n_channels (int): Number of channels.
-            n_layers (int): Number of layers
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
+            steps (tuple): Number of Gibbs' sampling steps per layer.
+            learning_rate (tuple): Learning rate per layer.
+            momentum (tuple): Momentum parameter per layer.
+            decay (tuple): Weight decay used for penalization per layer.
             use_gpu (boolean): Whether GPU should be used or not.
 
         """
 
-        logger.info('Overriding class: Model -> CDBN.')
+        logger.info('Overriding class: Model -> ConvDBN.')
 
         # Override its parent class
-        super(CDBN, self).__init__(use_gpu=use_gpu)
+        super(ConvDBN, self).__init__(use_gpu=use_gpu)
 
         # Shape of visible units
         self.visible_shape = visible_shape
@@ -68,7 +65,7 @@ class CDBN(Model):
         self.n_channels = n_channels
 
         # Number of layers
-        self.n_layers = n_layers
+        self.n_layers = len(n_filters)
 
         # Number of steps Gibbs' sampling steps
         self.steps = steps
@@ -87,7 +84,7 @@ class CDBN(Model):
 
         # For every possible layer
         for i in range(self.n_layers):
-            model = 'cont_conv_rbm'
+            model = 'gaussian'
 
             # Shape of hidden units
             self.hidden_shape = (
@@ -113,69 +110,31 @@ class CDBN(Model):
 
         logger.info('Class overrided.')
 
-    def hidden_sampling(self, v):
-        """Performs the hidden layer sampling, i.e., P(h|v).
-
-        Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-
-        Returns:
-            The probabilities and states of the hidden layer sampling.
-
-        """
-
-        # Calculating neurons' activations
-        activations = F.conv2d(v, self.W, bias=self.b)
-
-        # Calculate probabilities
-        probs = F.relu6(activations)
-
-        return probs, probs
-
-    def visible_sampling(self, h):
-        """Performs the visible layer sampling, i.e., P(v|h).
-
-        Args:
-            h (torch.Tensor): A tensor incoming from the hidden layer.
-
-        Returns:
-            The probabilities and states of the visible layer sampling.
-
-        """
-
-        # Calculating neurons' activations
-        activations = F.conv_transpose2d(h, self.W, bias=self.a)
-
-        # Calculate probabilities
-        probs = torch.clamp(F.relu(activations), 0, 1)
-        # probs = torch.sigmoid(activations)
-
-        return probs, probs
-
     def fit(self, dataset, batch_size=128, epochs=(10, 10)):
-        """Fits a new CDBN model.
+        """Fits a new ConvDBN model.
+
         Args:
             dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
             batch_size (int): Amount of samples per batch.
             epochs (tuple): Number of training epochs per layer.
+
         Returns:
             MSE (mean squared error) from the training step.
+
         """
 
-        # Initializing MSE and pseudo-likelihood as lists
-        mse, pl = [], []
+        # Checking if the length of number of epochs' list is correct
+        if len(epochs) != self.n_layers:
+            # If not, raises an error
+            raise e.SizeError(('`epochs` should have size equal as %d', self.n_layers))
+
+        # Initializing MSE as a list
+        mse = []
 
         # Initializing the dataset's variables
-        try:
-            samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
-        except:
-            # If the dataset is not a numpy array
-            import numpy as np
-            samples, targets, transform = dataset.data, dataset.targets, dataset.transform
-            samples = np.array(samples)
-            targets = np.array(targets)
+        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
 
-        # For every possible model (CRBM)
+        # For every possible model (ConvRBM)
         for i, model in enumerate(self.models):
             logger.info('Fitting layer %d/%d ...', i + 1, self.n_layers)
 
@@ -187,18 +146,21 @@ class CDBN(Model):
 
             # Appending the metrics
             mse.append(model_mse)
-            # pl.append(model_pl)
 
-            # If is not the last model
-            if i < len(self.models) - 1:
-                # If the dataset has a transform
-                if d.transform:
-                    # Applies the transform over the samples
-                    samples = torch.tensor(samples, dtype=torch.float).detach()
-                # If there is no transform
-                else:
-                    # Just gather the samples
-                    samples = d.data
+            # If the dataset has a transform
+            if d.transform:
+                # Applies the transform over the samples
+                samples = d.transform(d.data)
+
+            # If there is no transform
+            else:
+                # Just gather the samples
+                samples = d.data
+
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
 
                 # Gathers the targets
                 targets = d.targets
@@ -207,7 +169,7 @@ class CDBN(Model):
                 transform = None
 
                 # Performs a forward pass over the samples to get their probabilities
-                samples = model.propagate(d)
+                samples, _ = model.hidden_sampling(samples)
 
                 # Checking whether GPU is being used
                 if self.device == 'cuda':
@@ -217,7 +179,7 @@ class CDBN(Model):
             # Detaches the variable from the computing graph
             samples = samples.detach()
 
-        return mse  # , pl
+        return mse
 
     def reconstruct(self, dataset):
         """Reconstructs batches of new samples.
@@ -291,7 +253,7 @@ class CDBN(Model):
             x (torch.Tensor): An input tensor for computing the forward pass.
 
         Returns:
-            A tensor containing the Convolutional RBM's outputs.
+            A tensor containing the ConvDBN's outputs.
 
         """
 

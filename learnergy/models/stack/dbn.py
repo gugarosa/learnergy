@@ -140,8 +140,6 @@ class DBN(Model):
 
     @n_hidden.setter
     def n_hidden(self, n_hidden):
-        print(n_hidden)
-        print(type(n_hidden))
         if not isinstance(n_hidden, tuple):
             raise e.TypeError('`n_hidden` should be a tuple')
 
@@ -268,7 +266,7 @@ class DBN(Model):
 
         self._models = models
 
-    def fit(self, dataset, batch_size=128, epochs=(10)):
+    def fit(self, dataset, batch_size=128, epochs=(10,)):
         """Fits a new DBN model.
 
         Args:
@@ -290,8 +288,7 @@ class DBN(Model):
         mse, pl = [], []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(
-        ), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (RBM)
         for i, model in enumerate(self.models):
