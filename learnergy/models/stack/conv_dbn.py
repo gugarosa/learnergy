@@ -2,7 +2,6 @@
 """
 
 import torch
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -35,6 +34,7 @@ class ConvDBN(Model):
         """Initialization method.
 
         Args:
+            model (str): Indicates which type of ConvRBM should be used to compose the DBN.
             visible_shape (tuple): Shape of visible units.
             filter_shape (tuple of tuples): Shape of filters per layer.
             n_filters (tuple): Number of filters per layer.
@@ -84,21 +84,16 @@ class ConvDBN(Model):
 
         # For every possible layer
         for i in range(self.n_layers):
-            model = 'gaussian'
-
-            # Shape of hidden units
-            self.hidden_shape = (
-                visible_shape[0] - filter_shape[i][0] + 1,
-                visible_shape[1] - filter_shape[i][1] + 1)
-
             # Creates an CRBM
-            m = MODELS[model](visible_shape=visible_shape, filter_shape=filter_shape[i], n_filters=n_filters[i],
-                              n_channels=n_channels, steps=1, learning_rate=learning_rate[i],
-                              momentum=momentum[i], decay=decay[i], use_gpu=use_gpu)
+            m = MODELS[model](visible_shape, self.filter_shape[i], self.n_filters[i],
+                              n_channels, self.steps[i], self.lr[i], self.momentum[i], self.decay[i], use_gpu)
 
-            # The new visible input stands for the hidden output incoming from the previous RBM
-            visible_shape = (visible_shape[0] - filter_shape[i][0] + 1, visible_shape[1] - filter_shape[i][1] + 1)
-            n_channels = n_filters[i]
+            # Re-defines the visible shape
+            visible_shape = (visible_shape[0] - self.filter_shape[i][0] + 1,
+                             visible_shape[1] - self.filter_shape[i][1] + 1)
+
+            # Also defines the new number of channels
+            n_channels = self.n_filters[i]
 
             # Appends the model to the list
             self.models.append(m)
@@ -162,19 +157,22 @@ class ConvDBN(Model):
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-                # Gathers the targets
-                targets = d.targets
+            # Reshape the samples into an appropriate shape
+            samples = samples.reshape(len(dataset), model.n_channels, model.visible_shape[0], model.visible_shape[1])
 
-                # Gathers the transform callable from current dataset
-                transform = None
+            # Gathers the targets
+            targets = d.targets
 
-                # Performs a forward pass over the samples to get their probabilities
-                samples, _ = model.hidden_sampling(samples)
+            # Gathers the transform callable from current dataset
+            transform = None
 
-                # Checking whether GPU is being used
-                if self.device == 'cuda':
-                    # If yes, get samples back to the CPU
-                    samples = samples.cpu()
+            # Performs a forward pass over the samples to get their probabilities
+            samples, _ = model.hidden_sampling(samples)
+
+            # Checking whether GPU is being used
+            if self.device == 'cuda':
+                # If yes, get samples back to the CPU
+                samples = samples.cpu()
 
             # Detaches the variable from the computing graph
             samples = samples.detach()
@@ -201,8 +199,7 @@ class ConvDBN(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=False, num_workers=0)
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -229,8 +226,7 @@ class ConvDBN(Model):
             # For every possible model (CRBM)
             for model in reversed(self.models):
                 # Performing a visible layer sampling
-                visible_probs, visible_states = model.visible_sampling(
-                    visible_probs)
+                visible_probs, visible_states = model.visible_sampling(visible_probs)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(

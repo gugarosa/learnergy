@@ -361,8 +361,7 @@ class DBN(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=False, num_workers=1)
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -380,12 +379,10 @@ class DBN(Model):
             # For every possible model (RBM)
             for model in self.models:
                 # Flattening the hidden probabilities
-                hidden_probs = hidden_probs.reshape(
-                    batch_size, model.n_visible)
+                hidden_probs = hidden_probs.reshape(batch_size, model.n_visible)
 
                 # Performing a hidden layer sampling
-                hidden_probs, _ = model.hidden_sampling(
-                    hidden_probs)
+                hidden_probs, _ = model.hidden_sampling(hidden_probs)
 
             # Applying the initial visible probabilities as the hidden probabilities
             visible_probs = hidden_probs
