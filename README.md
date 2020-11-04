@@ -75,6 +75,7 @@ Learnergy is based on the following structure, and you should pay attention to i
             - gaussian_rbm
             - sigmoid_rbm
         - stack
+            - conv_dbn
             - dbn
             - residual_dbn
     - utils
