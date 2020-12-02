@@ -1,6 +1,6 @@
+import torch
 import torchvision
 
-import learnergy.visual.tensor as t
 from learnergy.models.bernoulli import RBM
 
 # Creating training and testing dataset
@@ -14,10 +14,13 @@ model = RBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1,
             momentum=0, decay=0, temperature=1, use_gpu=True)
 
 # Training an RBM
-model.fit(train, epochs=1)
+mse, pl = model.fit(train, batch_size=128, epochs=5)
 
 # Reconstructing test set
-_, v = model.reconstruct(test)
+rec_mse, v = model.reconstruct(test)
 
-# Showing a reconstructed sample
-t.show_tensor(v[0].reshape(28, 28))
+# Saving model
+torch.save(model, 'model.pth')
+
+# Checking the model's history
+print(model.history)

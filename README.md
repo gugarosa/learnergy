@@ -65,20 +65,21 @@ Learnergy is based on the following structure, and you should pay attention to i
     - math
         - scale
     - models
-        - binary
+        - bernoulli
             - conv_rbm
             - discriminative_rbm
             - dropout_rbm
             - e_dropout_rbm
             - rbm
-        - real
-            - gaussian_conv_rbm        
-            - gaussian_rbm
-            - sigmoid_rbm
-        - stack
+        - deep
             - conv_dbn
             - dbn
             - residual_dbn
+        - extra
+            - sigmoid_rbm
+        - gaussian
+            - gaussian_conv_rbm        
+            - gaussian_rbm
     - utils
         - constants
         - exception
