@@ -1,11 +1,15 @@
 """Gaussian-based Convolutional Restricted Boltzmann Machine.
 """
 
+import time
+
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
+import learnergy.utils.constants as c
+import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.models.bernoulli import ConvRBM
 
@@ -39,13 +43,10 @@ class GaussianConvRBM(ConvRBM):
             use_gpu (boolean): Whether GPU should be used or not.
 
         """
-        
-        # Setting Dropout probability to zero for further implementation.
-        self.p = 0.0
-        
-        # Enabling inner data normalization.
+
+        # Inner data normalization
         self.normalize = True
-        
+
         logger.info('Overriding class: ConvRBM -> GaussianConvRBM.')
 
         # Override its parent class
@@ -53,6 +54,21 @@ class GaussianConvRBM(ConvRBM):
                                               steps, learning_rate, momentum, decay, use_gpu)
 
         logger.info('Class overrided.')
+
+    @property
+    def normalize(self):
+        """bool: Inner data normalization.
+
+        """
+
+        return self._normalize
+
+    @normalize.setter
+    def normalize(self, normalize):
+        if not isinstance(normalize, bool):
+            raise e.TypeError('`normalize` should be a boolean')
+
+        self._normalize = normalize
 
     def hidden_sampling(self, v):
         """Performs the hidden layer sampling, i.e., P(h|v).
@@ -82,31 +98,38 @@ class GaussianConvRBM(ConvRBM):
             The probabilities and states of the visible layer sampling.
 
         """
-        
+
         # Calculating neurons' activations
         activations = F.conv_transpose2d(h, self.W, bias=self.a)
 
-        # Calculate probabilities
+        # Checks it is supposed to perform the normalization
         if self.normalize:
+            # Uses the previously calculated activations
             probs = activations.detach()
+
+        # If it is not supposed to normalize
         else:
+            # Applies a non-linear function
             probs = F.relu6(activations).detach()
 
         return probs, probs
-    
+
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
+
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
             batch_size (int): Amount of samples per batch.
             epochs (int): Number of training epochs.
+
         Returns:
             MSE (mean squared error) from the training step.
+
         """
 
         # Transforming the dataset into training batches
         batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=True, num_workers=0)
+                             shuffle=True, num_workers=1)
 
         # For every epoch
         for epoch in range(epochs):
@@ -121,17 +144,19 @@ class GaussianConvRBM(ConvRBM):
             # For every batch
             for samples, _ in tqdm(batches):
                 # Guarantee the samples' batch
-                samples = samples.reshape(
-                    len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+                samples = samples.reshape(len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
 
                 # Checking whether GPU is avaliable and if it should be used
                 if self.device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
+                # If it is supposed to use normalization
                 if self.normalize:
-                    samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6))
-            
+                    # Performs the normalization
+                    samples = ((samples - torch.mean(samples, 0, True)) /
+                               (torch.std(samples, 0, True) + c.EPSILON))
+
                 # Performs the Gibbs sampling procedure
                 _, _, _, _, visible_states = self.gibbs_sampling(samples)
 
@@ -169,4 +194,4 @@ class GaussianConvRBM(ConvRBM):
 
             logger.info('MSE: %f', mse)
 
-        return mse    
+        return mse
