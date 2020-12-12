@@ -183,7 +183,7 @@ class DiscriminativeRBM(RBM):
 
         # Transforming the dataset into training batches
         batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=True, num_workers=1)
+                             shuffle=True, num_workers=0)
 
         # For every epoch
         for epoch in range(epochs):
@@ -271,7 +271,7 @@ class DiscriminativeRBM(RBM):
 
         # Transforming the dataset into training batches
         batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=False, num_workers=1)
+                             shuffle=False, num_workers=0)
 
         # For every batch
         for samples, labels in tqdm(batches):
@@ -467,7 +467,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         # Transforming the dataset into training batches
         batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=True, num_workers=1)
+                             shuffle=True, num_workers=0)
 
         # For every epoch
         for epoch in range(epochs):
