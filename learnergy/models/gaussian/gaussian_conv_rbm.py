@@ -129,7 +129,7 @@ class GaussianConvRBM(ConvRBM):
 
         # Transforming the dataset into training batches
         batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=True, num_workers=1)
+                             shuffle=True, num_workers=0)
 
         # For every epoch
         for epoch in range(epochs):
