@@ -4,6 +4,8 @@ import learnergy.utils.logging as l
 
 from skimage.metrics import structural_similarity as ssim
 
+logger = l.get_logger(__name__)
+
 def make_ssim(v, test):
     """A function to make the SSIM among images.
     
