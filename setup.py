@@ -19,7 +19,8 @@ setup(name='learnergy',
                         'pytest>=6.1.0',
                         'torch>=1.6.0',
                         'torchvision>=0.7.0',
-                        'tqdm>=4.50.0'
+                        'tqdm>=4.50.0',
+                        'scikit-image>=0.16'
                        ],
       extras_require={
           'tests': ['coverage',
