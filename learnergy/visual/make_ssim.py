@@ -1,5 +1,7 @@
 import numpy as np
 
+import learnergy.utils.logging as l
+
 from skimage.metrics import structural_similarity as ssim
 
 def make_ssim(v, test):
@@ -22,5 +24,7 @@ def make_ssim(v, test):
         ssim_rec += ssim(img, new, data_range=img.max() - img.min())
         
     mean = ssim_rec/v.shape[0]
+    
+    logger.info('Mean SSIM: %f', np.round(mean, 4))
     
     return np.round(mean, 4)
