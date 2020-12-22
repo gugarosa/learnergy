@@ -15,8 +15,8 @@ def make_ssim(v, test):
     ssim_rec = 0
     v = v.cpu().detach().numpy()
     test = test.cpu().numpy()
-    dx = test.shape[0]
-    dy = test.shape[1]
+    dx = test.shape[1]
+    dy = test.shape[2]
     
     for z in range(v.shape[0]):
         img = (test[z, :, :]/255.0).round()
