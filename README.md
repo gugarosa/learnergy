@@ -88,6 +88,7 @@ Learnergy is based on the following structure, and you should pay attention to i
         - image
         - metrics
         - tensor
+        - make_ssim
 ```
 
 ### Core
