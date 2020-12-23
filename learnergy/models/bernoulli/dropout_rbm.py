@@ -1,4 +1,4 @@
-"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout.
+"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout and DropConnect.
 """
 
 import torch
@@ -202,7 +202,7 @@ class DropConnectRBM(RBM):
         super(DropConnectRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                          momentum, decay, temperature, use_gpu)
 
-        # Intensity of dropout
+        # Intensity of dropconnect
         self.p = dropout
 
         logger.info('Class overrided.')
@@ -210,7 +210,7 @@ class DropConnectRBM(RBM):
 
     @property
     def p(self):
-        """float: Probability of applying dropout.
+        """float: Probability of applying dropconnect.
 
         """
 
@@ -226,7 +226,7 @@ class DropConnectRBM(RBM):
         self._p = p
 
     def hidden_sampling(self, v, scale=False):
-        """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).
+        """Performs the hidden layer sampling using a dropconnect mask, i.e., P(h|r,v).
 
         Args:
             v (torch.Tensor): A tensor incoming from the visible layer.
@@ -333,4 +333,4 @@ class DropConnectRBM(RBM):
 
         logger.info('MSE: %f', mse)
 
-        return mse, visible_    
+        return mse
