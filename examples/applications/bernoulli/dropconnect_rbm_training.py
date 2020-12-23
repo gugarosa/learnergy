@@ -11,7 +11,8 @@ test = torchvision.datasets.MNIST(
 
 # Creating a DropConnectRBM
 model = DropConnectRBM(n_visible=784, n_hidden=128, steps=1,
-                       learning_rate=0.1, momentum=0, decay=0, temperature=1, dropout=0.5, use_gpu=True)
+                       learning_rate=0.1, momentum=0, decay=0, temperature=1,
+                       dropout=0.5, use_gpu=True)
 
 # Training an RBM
 mse, pl = model.fit(train, batch_size=128, epochs=5)

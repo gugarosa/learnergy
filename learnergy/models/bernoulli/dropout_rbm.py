@@ -124,8 +124,6 @@ class DropoutRBM(RBM):
         # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
 
-        self.W = nn.Parameter(self.W * self.p)
-
         # Saving dropout rate to an auxiliary variable
         p = self.p
 
@@ -169,7 +167,7 @@ class DropoutRBM(RBM):
 
         return mse, visible_probs
 
-class DropConnectRBM(RBM):
+class DropConnectRBM(DropoutRBM):
     """A DropConnectRBM class provides the basic implementation for
     Bernoulli-Bernoulli Restricted Boltzmann Machines along with a DropConnect regularization.
 
@@ -196,34 +194,11 @@ class DropConnectRBM(RBM):
 
         """
 
-        logger.info('Overriding class: RBM -> DropConnectRBM.')
+        logger.info('Overriding class: DropoutRBM -> DropConnectRBM.')
 
         # Override its parent class
         super(DropConnectRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
-                                         momentum, decay, temperature, use_gpu)
-
-        # Intensity of dropconnect
-        self.p = dropout
-
-        logger.info('Class overrided.')
-        logger.debug('Additional hyperparameters: p = %s.', self.p)
-
-    @property
-    def p(self):
-        """float: Probability of applying dropconnect.
-
-        """
-
-        return self._p
-
-    @p.setter
-    def p(self, p):
-        if not isinstance(p, (float, int)):
-            raise e.TypeError('`p` should be a float or integer')
-        if p < 0 or p > 1:
-            raise e.ValueError('`p` should be between 0 and 1')
-
-        self._p = p
+                                             momentum, decay, temperature, dropout, use_gpu)
 
     def hidden_sampling(self, v, scale=False):
         """Performs the hidden layer sampling using a dropconnect mask, i.e., P(h|r,v).
@@ -237,16 +212,12 @@ class DropConnectRBM(RBM):
 
         """
 
+        # Sampling a dropconnect mask from Bernoulli's distribution
+        mask = (torch.full((self.W.size(0), self.W.size(1)),
+                           1 - self.p, dtype=torch.float, device=self.device)).bernoulli()
+
         # Calculating neurons' activations
-        activations = F.linear(v, self.W.t(), self.b)
-
-        for sp in range(v.size(0)):
-            # Sampling a dropout mask from Bernoulli's distribution
-            mask = (torch.full((self.W.size(0), self.W.size(1)),
-                               1 - self.p, dtype=torch.float, device=self.device)).bernoulli()
-
-            # Calculating neurons' activations
-            activations[sp] = F.linear(v[sp], torch.mul(mask, self.W).t(), self.b)
+        activations = F.linear(v, torch.mul(self.W, mask).t(), self.b)
 
         # If scaling is true
         if scale:
@@ -261,76 +232,4 @@ class DropConnectRBM(RBM):
         # Sampling current states
         states = torch.bernoulli(probs)
 
-        return probs.detach(), states.detach()
-
-    def reconstruct(self, dataset):
-        """Reconstructs batches of new samples.
-
-        Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-
-        Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
-
-        """
-
-        logger.info('Reconstructing new samples ...')
-
-        # Resetting mse to zero
-        mse = 0
-
-        visible_ = torch.zeros((len(dataset), self.n_visible), dtype=torch.float, device=self.device)
-
-        # Defining the batch size as the amount of samples in the dataset
-        #batch_size = len(dataset)
-        batch_size = 256
-
-        #self.W = nn.Parameter(self.W * self.p)
-
-        # Saving dropout rate to an auxiliary variable
-        p = self.p
-
-        # Temporarily disabling dropout
-        self.p = 0
-
-        # Transforming the dataset into testing batches
-        batches = DataLoader(dataset, batch_size=batch_size, drop_last=True, shuffle=False, num_workers=1)
-
-        jj = 0
-        # For every batch
-        for samples, _ in tqdm(batches):
-            # Flattening the samples' batch
-            samples = samples.reshape(len(samples), self.n_visible)
-
-            # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
-                # Applies the GPU usage to the data
-                samples = samples.cuda()
-
-            # Calculating positive phase hidden probabilities and states
-            _, pos_hidden_states = self.hidden_sampling(samples)
-
-            # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                pos_hidden_states)
-
-            visible_[jj:jj+batch_size, :] = visible_probs
-
-            jj+=batch_size
-
-            # Calculating current's batch reconstruction MSE
-            batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
-
-            # Summing up the reconstruction's MSE
-            mse += batch_mse
-
-        # Normalizing the MSE with the number of batches
-        mse /= len(batches)
-
-        # Recovering initial dropout rate
-        self.p = p
-
-        logger.info('MSE: %f', mse)
-
-        return mse
+        return probs, states
