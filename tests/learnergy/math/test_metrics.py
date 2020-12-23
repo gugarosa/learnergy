@@ -9,4 +9,4 @@ def test_calculate_ssim():
 
     ssim = metrics.calculate_ssim(v, x)
 
-    assert ssim >= 0
+    assert ssim != 0
