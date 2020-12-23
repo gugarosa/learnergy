@@ -20,19 +20,29 @@ def calculate_ssim(v, x):
 
     """
 
-    ssim_rec = 0
+    # Defines the total structural similarity
+    total_ssim = 0.0
+
+    # Detaches and sends to numpy both tensors
     v = v.cpu().detach().numpy()
-    x = x.cpu().numpy()
-    dx = x.shape[1]
-    dy = x.shape[2]
+    x = x.cpu().detach().numpy()
 
+    # Gathers the width and height of original images
+    width = x.shape[1]
+    height = x.shape[2]
+
+    # Iterates through every image
     for z in range(v.shape[0]):
-        img = (x[z, :, :]/255.0).round()
-        new = v[z, :].reshape((dx, dy))
-        ssim_rec += ssim(img, new, data_range=img.max() - img.min())
+        # Gathers the actual image
+        x_indexed = x[z]
 
-    mean = ssim_rec/v.shape[0]
+        # Reshapes the reconstructed image
+        v_indexed = v[z, :].reshape((width, height))
 
-    logger.info('Mean SSIM: %f', mean)
+        # Sums up to the total similarity
+        total_ssim += ssim(x_indexed, v_indexed,
+                           data_range=x_indexed.max()-x_indexed.min())
+        
+        
 
-    return mean
+    return total_ssim / v.shape[0]

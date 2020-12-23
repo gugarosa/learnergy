@@ -3,7 +3,6 @@
 
 import torch
 import torch.nn.functional as F
-from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -131,7 +130,8 @@ class DropoutRBM(RBM):
         self.p = 0
 
         # Transforming the dataset into testing batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=0)
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -167,6 +167,7 @@ class DropoutRBM(RBM):
 
         return mse, visible_probs
 
+
 class DropConnectRBM(DropoutRBM):
     """A DropConnectRBM class provides the basic implementation for
     Bernoulli-Bernoulli Restricted Boltzmann Machines along with a DropConnect regularization.
@@ -201,7 +202,7 @@ class DropConnectRBM(DropoutRBM):
                                              momentum, decay, temperature, dropout, use_gpu)
 
     def hidden_sampling(self, v, scale=False):
-        """Performs the hidden layer sampling using a dropconnect mask, i.e., P(h|r,v).
+        """Performs the hidden layer sampling using a dropconnect mask, i.e., P(h|m,v).
 
         Args:
             v (torch.Tensor): A tensor incoming from the visible layer.
