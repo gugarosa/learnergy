@@ -63,6 +63,7 @@ Learnergy is based on the following structure, and you should pay attention to i
         - dataset
         - model
     - math
+        - metrics
         - scale
     - models
         - bernoulli
@@ -85,10 +86,9 @@ Learnergy is based on the following structure, and you should pay attention to i
         - exception
         - logging
     - visual
+        - convergence
         - image
-        - metrics
         - tensor
-        - make_ssim
 ```
 
 ### Core

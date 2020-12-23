@@ -17,10 +17,10 @@ setup(name='learnergy',
                         'Pillow>=7.2.0',
                         'pylint>=2.6.0',
                         'pytest>=6.1.0',
-                        'torch>=1.6.0',
-                        'torchvision>=0.7.0',
+                        'scikit-image>=0.18.1',
+                        'torch>=1.7.0',
+                        'torchvision>=0.8.0',
                         'tqdm>=4.50.0',
-                        'scikit-image>=0.16'
                        ],
       extras_require={
           'tests': ['coverage',

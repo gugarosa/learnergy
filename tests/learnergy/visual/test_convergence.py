@@ -1,7 +1,7 @@
-from learnergy.visual import metrics
+from learnergy.visual import convergence
 
 
-def test_metrics_plot():
+def test_convergence_plot():
     new_model = {
         'mse': [1, 2, 3],
         'pl': [1.5, 2, 2.5],
@@ -9,15 +9,15 @@ def test_metrics_plot():
     }
 
     try:
-        metrics.plot(
+        convergence.plot(
             new_model['mse'], new_model['pl'], new_model['time'], labels=1)
     except:
-        metrics.plot(new_model['mse'], new_model['pl'],
+        convergence.plot(new_model['mse'], new_model['pl'],
                      new_model['time'], labels=['MSE', 'log-PL', 'time (s)'])
 
     try:
-        metrics.plot(new_model['mse'], new_model['pl'],
+        convergence.plot(new_model['mse'], new_model['pl'],
                      new_model['time'], labels=['MSE'])
     except:
-        metrics.plot(
+        convergence.plot(
             new_model['mse'], new_model['pl'], new_model['time'])

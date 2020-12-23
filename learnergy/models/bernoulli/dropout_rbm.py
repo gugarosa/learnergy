@@ -169,8 +169,8 @@ class DropoutRBM(RBM):
 
         return mse, visible_probs
 
-class DropConnRBM(RBM):
-    """A DropConnRBM class provides the basic implementation for
+class DropConnectRBM(RBM):
+    """A DropConnectRBM class provides the basic implementation for
     Bernoulli-Bernoulli Restricted Boltzmann Machines along with a DropConnect regularization.
 
     References:
@@ -196,10 +196,10 @@ class DropConnRBM(RBM):
 
         """
 
-        logger.info('Overriding class: RBM -> DropConnRBM.')
+        logger.info('Overriding class: RBM -> DropConnectRBM.')
 
         # Override its parent class
-        super(DropConnRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+        super(DropConnectRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                          momentum, decay, temperature, use_gpu)
 
         # Intensity of dropout

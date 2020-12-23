@@ -1,4 +1,4 @@
-"""Metrics-related visualization.
+"""Convergence-related visualization.
 """
 
 import matplotlib.pyplot as plt

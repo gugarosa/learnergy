@@ -1,7 +1,7 @@
-learnergy.visual.metrics
+learnergy.math.metrics
 ==========================
 
-.. autoapimodule:: learnergy.visual.metrics
+.. autoapimodule:: learnergy.math.metrics
     :members:
     :private-members:
     :special-members:
