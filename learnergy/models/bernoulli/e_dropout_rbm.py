@@ -22,7 +22,7 @@ class EDropoutRBM(RBM):
     References:
         M. Roder, G. H. de Rosa, A. L. D. Rossi, J. P. Papa.
         Energy-based Dropout in Restricted Boltzmann Machines: Why Do Not Go Random.
-        Publication pending (2020).
+        IEEE Transactions on Emerging Topics in Computational Intelligence (2020).
 
     """
 
