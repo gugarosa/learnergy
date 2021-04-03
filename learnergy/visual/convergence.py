@@ -7,7 +7,7 @@ import numpy as np
 import learnergy.utils.exception as e
 
 
-def plot(*args, labels=None, title='', subtitle='', grid=True, legend=True):
+def plot(*args, labels=None, title='', subtitle='', xlabel='epoch', ylabel='value', grid=True, legend=True):
     """Plots the convergence graph of desired variables.
 
     Essentially, each variable is a list or numpy array
@@ -17,6 +17,8 @@ def plot(*args, labels=None, title='', subtitle='', grid=True, legend=True):
         labels (list): Labels to be applied for each plot in legend.
         title (str): The title of the plot.
         subtitle (str): The subtitle of the plot.
+        xlabel (str): The `x` axis label.
+        ylabel (str): The `y` axis label.
         grid (bool): If grid should be used or not.
         legend (bool): If legend should be displayed or not.
 
@@ -29,7 +31,7 @@ def plot(*args, labels=None, title='', subtitle='', grid=True, legend=True):
     _, ax = plt.subplots(figsize=(7, 5))
 
     # Defining some properties, such as axis labels
-    ax.set(xlabel='epoch', ylabel='value')
+    ax.set(xlabel=xlabel, ylabel=ylabel)
 
     # Setting the amount of ticks
     ax.set_xticks(ticks)
