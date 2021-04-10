@@ -21,7 +21,7 @@ setup(name='learnergy',
                         'scikit-image>=0.17.2',
                         'torch>=1.8.0',
                         'torchvision>=0.9.0',
-                        'tqdm>=4.59.0',
+                        'tqdm>=4.49.0',
                        ],
       extras_require={
           'tests': ['coverage',
