@@ -3,10 +3,8 @@ from torch.utils.data import DataLoader
 
 from learnergy.core import Dataset
 
-# Declaring samples
+# Declaring samples and labels
 data = np.asarray([[1, 2], [2, 4]])
-
-# Declaring labels
 targets = np.asarray([1, 2])
 
 # Creating the dataset object

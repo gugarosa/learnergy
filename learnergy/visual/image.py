@@ -75,10 +75,8 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
 
         return out_array
 
-    # Gathers the image shape
+    # Gathers the image shape and its tile spacing
     H, W = img_shape
-
-    # Also gathers the tile spacing
     Hs, Ws = tile_spacing
 
     # Checks the current input dtype

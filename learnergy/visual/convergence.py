@@ -30,13 +30,9 @@ def plot(*args, labels=None, title='', subtitle='', xlabel='epoch', ylabel='valu
     # Creating figure and axis subplots
     _, ax = plt.subplots(figsize=(7, 5))
 
-    # Defining some properties, such as axis labels
+    # Defining some properties, such as axis labels, ticks and limits
     ax.set(xlabel=xlabel, ylabel=ylabel)
-
-    # Setting the amount of ticks
     ax.set_xticks(ticks)
-
-    # Setting minimum and maximum possible ticks
     ax.set_xlim(xmin=1, xmax=ticks[-1])
 
     # Setting both title and subtitles

@@ -93,10 +93,8 @@ class Dataset(torch.utils.data.Dataset):
 
         """
 
-        # Gets a sample based on its index
+        # Gets a sample and its label based on its index
         x = self.data[idx]
-
-        # Gets a sample's label based on its index
         y = self.targets[idx]
 
         # If there is any transform to be applied

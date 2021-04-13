@@ -42,7 +42,5 @@ def calculate_ssim(v, x):
         # Sums up to the total similarity
         total_ssim += ssim(x_indexed, v_indexed,
                            data_range=x_indexed.max()-x_indexed.min())
-        
-        
 
     return total_ssim / v.shape[0]
