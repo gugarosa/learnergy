@@ -3,10 +3,6 @@
 
 import matplotlib.pyplot as plt
 
-import learnergy.utils.logging as l
-
-logger = l.get_logger(__name__)
-
 
 def save_tensor(tensor, output_path):
     """Saves a tensor in grayscale mode using Matplotlib.
@@ -16,8 +12,6 @@ def save_tensor(tensor, output_path):
         output_path (str): An outputh path to save the tensor.
 
     """
-
-    logger.debug('Saving tensor ...')
 
     # Creates a matplotlib figure
     plt.figure()
@@ -42,9 +36,6 @@ def save_tensor(tensor, output_path):
     # Shows the plot
     plt.savefig(output_path)
 
-    logger.debug('Tensor saved.')
-
-
 
 def show_tensor(tensor):
     """Plots a tensor in grayscale mode using Matplotlib.
@@ -53,8 +44,6 @@ def show_tensor(tensor):
         tensor (Tensor): An input tensor to be plotted.
 
     """
-
-    logger.debug('Showing tensor ...')
 
     # Creates a matplotlib figure
     plt.figure()
@@ -78,5 +67,3 @@ def show_tensor(tensor):
 
     # Shows the plot
     plt.show()
-
-    logger.debug('Tensor showed.')

@@ -285,7 +285,7 @@ def test_rbm_pseudo_likelihood():
 
 
 def test_rbm_fit():
-    train = torchvision.datasets.MNIST(
+    train = torchvision.datasets.KMNIST(
         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
     new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
@@ -298,7 +298,7 @@ def test_rbm_fit():
 
 
 def test_rbm_reconstruct():
-    test = torchvision.datasets.MNIST(
+    test = torchvision.datasets.KMNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,

@@ -6,9 +6,6 @@ import numpy as np
 from PIL import Image
 
 import learnergy.math.scale as scl
-import learnergy.utils.logging as l
-
-logger = l.get_logger(__name__)
 
 
 def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=True):
@@ -134,8 +131,6 @@ def create_mosaic(tensor):
 
     """
 
-    logger.debug('Creating mosaic ...')
-
     # Gets the numpy array from the tensor
     array = tensor.detach().numpy()
 
@@ -149,8 +144,6 @@ def create_mosaic(tensor):
 
     # Shows the image
     img.show()
-
-    logger.debug('Mosaic created.')
 
 
 def create_rgb_mosaic(tensor, n_samples=1):

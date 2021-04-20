@@ -403,10 +403,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         # Calculating neurons' activations
         activations = torch.exp(F.linear(h, self.U, self.c))
 
-        # Normalizing activations to calculate probabilities
-        # probs = torch.nn.functional.normalize(activations, p=1, dim=1)
-        probs = torch.div(activations, torch.sum(
-            activations, dim=1).unsqueeze(1))
+        # Calculating activations
+        probs = torch.div(activations, torch.sum(activations, dim=1).unsqueeze(1))
 
         # Sampling current states
         states = torch.nn.functional.one_hot(torch.argmax(
@@ -477,8 +475,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             start = time.time()
 
             # Resetting epoch's losses and accuracy to zero
-            d_loss, g_loss, loss = 0, 0, 0
-            acc = 0
+            d_loss, g_loss, loss, acc = 0, 0, 0, 0
 
             # For every batch
             for samples, labels in tqdm(batches):

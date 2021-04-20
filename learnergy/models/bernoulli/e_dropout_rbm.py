@@ -171,8 +171,7 @@ class EDropoutRBM(RBM):
             start = time.time()
 
             # Resetting epoch's MSE and pseudo-likelihood to zero
-            mse = 0
-            pl = 0
+            mse, pl = 0, 0
 
             # For every batch
             for samples, _ in tqdm(batches):

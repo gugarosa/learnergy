@@ -207,7 +207,7 @@ def test_dbn_models_setter():
 
 
 # def test_dbn_fit():
-#     train = torchvision.datasets.MNIST(
+#     train = torchvision.datasets.KMNIST(
 #         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
 #     new_dbn = dbn.DBN(n_visible=784, n_hidden=(128, 128), steps=(1, 1),
@@ -219,7 +219,7 @@ def test_dbn_models_setter():
 #     assert len(pl) == 2
 
 def test_dbn_reconstruct():
-    test = torchvision.datasets.MNIST(
+    test = torchvision.datasets.KMNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     new_dbn = dbn.DBN(n_visible=784, n_hidden=(128, 128), steps=(1, 1),

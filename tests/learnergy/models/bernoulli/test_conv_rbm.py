@@ -307,7 +307,7 @@ def test_conv_rbm_energy():
 
 
 def test_conv_rbm_fit():
-    train = torchvision.datasets.MNIST(
+    train = torchvision.datasets.KMNIST(
         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
     new_conv_rbm = conv_rbm.ConvRBM(visible_shape=(28, 28), filter_shape=(1, 1), n_filters=1, n_channels=1,
@@ -319,7 +319,7 @@ def test_conv_rbm_fit():
 
 
 def test_conv_rbm_reconstruct():
-    test = torchvision.datasets.MNIST(
+    test = torchvision.datasets.KMNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     new_conv_rbm = conv_rbm.ConvRBM(visible_shape=(28, 28), filter_shape=(1, 1), n_filters=1, n_channels=1,

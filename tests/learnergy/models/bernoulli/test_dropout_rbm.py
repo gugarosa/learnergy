@@ -45,7 +45,7 @@ def test_dropout_rbm_hidden_sampling():
 
 
 def test_dropout_rbm_reconstruct():
-    test = torchvision.datasets.MNIST(
+    test = torchvision.datasets.KMNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     new_dropout_rbm = dropout_rbm.DropoutRBM(
@@ -74,7 +74,7 @@ def test_dropconnect_rbm_hidden_sampling():
 
 
 def test_dropconnect_rbm_reconstruct():
-    test = torchvision.datasets.MNIST(
+    test = torchvision.datasets.KMNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     new_dropconnect_rbm = dropout_rbm.DropConnectRBM(

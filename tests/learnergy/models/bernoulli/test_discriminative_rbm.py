@@ -94,7 +94,7 @@ def test_discriminative_rbm_labels_sampling():
 
 
 def test_discriminative_rbm_fit():
-    train = torchvision.datasets.MNIST(
+    train = torchvision.datasets.KMNIST(
         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
@@ -107,7 +107,7 @@ def test_discriminative_rbm_fit():
 
 
 def test_discriminative_rbm_predict():
-    test = torchvision.datasets.MNIST(
+    test = torchvision.datasets.KMNIST(
         root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
@@ -170,7 +170,7 @@ def test_hybrid_discriminative_rbm_class_sampling():
 
 
 def test_hybrid_discriminative_rbm_fit():
-    train = torchvision.datasets.MNIST(
+    train = torchvision.datasets.KMNIST(
         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
     new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,

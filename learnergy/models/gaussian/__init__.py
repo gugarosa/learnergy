@@ -2,5 +2,6 @@
 """
 
 from learnergy.models.gaussian.gaussian_conv_rbm import GaussianConvRBM
-from learnergy.models.gaussian.gaussian_rbm import (GaussianRBM, GaussianReluRBM,
-                                                VarianceGaussianRBM)
+from learnergy.models.gaussian.gaussian_rbm import (GaussianRBM,
+                                                    GaussianReluRBM,
+                                                    VarianceGaussianRBM)

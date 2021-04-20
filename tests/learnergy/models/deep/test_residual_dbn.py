@@ -64,7 +64,7 @@ def test_residual_dbn_calculate_residual():
 
 
 # def test_residual_dbn_fit():
-#     train = torchvision.datasets.MNIST(
+#     train = torchvision.datasets.KMNIST(
 #         root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
 
 #     new_residual_dbn = residual_dbn.ResidualDBN(n_visible=784, n_hidden=(128, 128), steps=(1, 1),
