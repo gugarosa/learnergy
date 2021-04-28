@@ -1,7 +1,7 @@
 # Learnergy: Energy-based Machine Learners
 
 [![Latest release](https://img.shields.io/github/release/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/releases)
-[![DOI](https://zenodo.org/badge/189021939.svg)](https://zenodo.org/badge/latestdoi/189021939)
+[![DOI](http://img.shields.io/badge/DOI-10.5281/zenodo.4390744-006DB9.svg)](https://doi.org/10.5281/zenodo.4390744)
 [![Build status](https://img.shields.io/travis/com/gugarosa/learnergy/master.svg)](https://github.com/gugarosa/learnergy/releases)
 [![Open issues](https://img.shields.io/github/issues/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/issues)
 [![License](https://img.shields.io/github/license/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/blob/master/LICENSE)
