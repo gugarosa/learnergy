@@ -1,13 +1,21 @@
 """Gaussian-Bernoulli Restricted Boltzmann Machine.
 """
 
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as opt
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
+import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 import learnergy.utils.logging as l
 from learnergy.models.bernoulli import RBM
+
+from torch.utils.data import DataLoader
 
 logger = l.get_logger(__name__)
 
@@ -16,7 +24,7 @@ class GaussianRBM(RBM):
     """A GaussianRBM class provides the basic implementation for
     Gaussian-Bernoulli Restricted Boltzmann Machines (with standardization).
 
-    Note that this classes requires standardization of data
+    Note that this classes normalize the data
     as it uses variance equals to one throughout its learning procedure.
 
     This is a trick to ease the calculations of the hidden and
@@ -106,7 +114,177 @@ class GaussianRBM(RBM):
             # Gathers the states as usual
             states = activations
 
-        return states, activations
+        proba = torch.sigmoid(activations)
+
+        return proba, activations
+        #return states, activations
+
+    def fit(self, dataset, batch_size=128, epochs=10):
+        """Fits a new RBM model.
+
+        Args:
+            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            batch_size (int): Amount of samples per batch.
+            epochs (int): Number of training epochs.
+
+        Returns:
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
+
+        """
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=0)
+
+        # For every epoch
+        for epoch in range(epochs):
+            logger.info('Epoch %d/%d', epoch+1, epochs)
+
+            # Calculating the time of the epoch's starting
+            start = time.time()
+
+            # Resetting epoch's MSE and pseudo-likelihood to zero
+            mse = 0
+            pl = 0
+
+            # For every batch
+            for samples, _ in tqdm(batches):
+
+                # Normalizing the samples' batch
+                samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6)).detach()
+
+                # Flattening the samples' batch    
+                samples = samples.reshape(len(samples), self.n_visible)
+
+                # Checking whether GPU is avaliable and if it should be used
+                if self.device == 'cuda':
+                    # Applies the GPU usage to the data
+                    samples = samples.cuda()
+
+                # Performs the Gibbs sampling procedure
+                _, _, _, _, visible_states = self.gibbs_sampling(samples)
+
+                # Detaching the visible states from GPU for further computation
+                visible_states = visible_states.detach()
+
+                # Calculates the loss for further gradients' computation
+                cost = torch.mean(self.energy(samples)) - \
+                    torch.mean(self.energy(visible_states))
+
+                # Initializing the gradient
+                self.optimizer.zero_grad()
+
+                # Computing the gradients
+                cost.backward()
+
+                # Updating the parameters
+                self.optimizer.step()
+
+                # Gathering the size of the batch
+                batch_size = samples.size(0)
+
+                # Calculating current's batch MSE
+                batch_mse = torch.div(
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
+
+                # Calculating the current's batch logarithm pseudo-likelihood
+                batch_pl = self.pseudo_likelihood(samples).detach()
+
+                # Summing up to epochs' MSE and pseudo-likelihood
+                mse += batch_mse
+                pl += batch_pl
+
+            # Normalizing the MSE and pseudo-likelihood with the number of batches
+            mse /= len(batches)
+            pl /= len(batches)
+
+            # Calculating the time of the epoch's ending
+            end = time.time()
+
+            # Dumps the desired variables to the model's history
+            self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
+
+            logger.info('MSE: %f | log-PL: %f', mse, pl)
+
+        return mse, pl
+
+    def forward(self, x):
+        """Performs a forward pass over the data.
+
+        Args:
+            x (torch.Tensor): An input tensor for computing the forward pass.
+
+        Returns:
+            A tensor containing the RBM's outputs.
+
+        """
+
+        # Normalizing the samples'
+        x = ((x - torch.mean(x, 0, True)) / (torch.std(x, 0, True) + 1e-6)).detach()
+
+        # Calculates the outputs of the model
+        x, _ = self.hidden_sampling(x)
+
+        return x
+
+    def reconstruct(self, dataset):
+        """Reconstructs batches of new samples.
+
+        Args:
+            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+
+        Returns:
+            Reconstruction error and visible probabilities, i.e., P(v|h).
+
+        """
+
+        logger.info('Reconstructing new samples ...')
+
+        # Resetting MSE to zero
+        mse = 0
+
+        # Defining the batch size as the amount of samples in the dataset
+        batch_size = len(dataset)
+
+        # Transforming the dataset into training batches
+        batches = DataLoader(dataset, batch_size=batch_size,
+                             shuffle=False, num_workers=0)
+
+        # For every batch
+        for samples, _ in tqdm(batches):
+
+            # Normalizing the samples' batch
+            samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6)).detach()
+
+            # Flattening the samples' batch
+            samples = samples.reshape(len(samples), self.n_visible)
+
+            # Checking whether GPU is avaliable and if it should be used
+            if self.device == 'cuda':
+                # Applies the GPU usage to the data
+                samples = samples.cuda()
+
+            # Calculating positive phase hidden probabilities and states
+            _, pos_hidden_states = self.hidden_sampling(samples)
+
+            # Calculating visible probabilities and states
+            visible_probs, visible_states = self.visible_sampling(
+                pos_hidden_states)
+
+            # Calculating current's batch reconstruction MSE
+            batch_mse = torch.div(
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+
+            # Summing up the reconstruction's MSE
+            mse += batch_mse
+
+        # Normalizing the MSE with the number of batches
+        mse /= len(batches)
+
+        logger.info('MSE: %f', mse)
+
+        return mse, visible_probs
+
 
 
 class GaussianReluRBM(GaussianRBM):
