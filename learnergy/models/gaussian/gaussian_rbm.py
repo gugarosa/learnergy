@@ -114,10 +114,10 @@ class GaussianRBM(RBM):
             # Gathers the states as usual
             states = activations
 
-        proba = torch.sigmoid(activations)
+        # Passes states through a Sigmoid function 
+        probs = torch.sigmoid(states)
 
-        return proba, activations
-        #return states, activations
+        return probs, states
 
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
@@ -149,7 +149,6 @@ class GaussianRBM(RBM):
 
             # For every batch
             for samples, _ in tqdm(batches):
-
                 # Normalizing the samples' batch
                 samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6)).detach()
 
