@@ -45,7 +45,6 @@ class DiscriminativeRBM(RBM):
 
         logger.info('Overriding class: RBM -> DiscriminativeRBM.')
 
-        # Override its parent class
         super(DiscriminativeRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                                 momentum, decay, temperature, use_gpu)
 

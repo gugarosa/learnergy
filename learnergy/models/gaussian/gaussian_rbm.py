@@ -55,7 +55,6 @@ class GaussianRBM(RBM):
 
         logger.info('Overriding class: RBM -> GaussianRBM.')
 
-        # Override its parent class
         super(GaussianRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                           momentum, decay, temperature, use_gpu)
 

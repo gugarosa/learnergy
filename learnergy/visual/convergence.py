@@ -39,33 +39,24 @@ def plot(*args, labels=None, title='', subtitle='', xlabel='epoch', ylabel='valu
     ax.set_title(title, loc='left', fontsize=14)
     ax.set_title(subtitle, loc='right', fontsize=8, color='grey')
 
-    # If grid usage is true
     if grid:
-        # Adds the grid property to the axis
         ax.grid()
 
-    # Check if labels argument exists
     if labels:
-        # Also check if it is a list
         if not isinstance(labels, list):
             raise e.TypeError('`labels` should be a list')
 
-        # And check if it has the same size of arguments
         if len(labels) != len(args):
             raise e.SizeError('`args` and `labels` should have the same size')
 
-    # If labels argument does not exists
     else:
-        # Creates a list with indicators
         labels = [f'variable_{i}' for i in range(len(args))]
 
     # Plotting the axis
     for (arg, label) in zip(args, labels):
         ax.plot(ticks, arg, label=label)
 
-    # If legend usage is true
     if legend:
-        # Adds the legend property to the axis
         ax.legend()
 
     # Displaying the plot

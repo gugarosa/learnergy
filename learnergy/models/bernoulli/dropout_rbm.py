@@ -42,7 +42,6 @@ class DropoutRBM(RBM):
 
         logger.info('Overriding class: RBM -> DropoutRBM.')
 
-        # Override its parent class
         super(DropoutRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                          momentum, decay, temperature, use_gpu)
 

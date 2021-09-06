@@ -43,7 +43,6 @@ class ResidualDBN(DBN):
 
         logger.info('Overriding class: DBN -> ResidualDBN.')
 
-        # Override its parent class
         super(ResidualDBN, self).__init__(model, n_visible, n_hidden, steps, learning_rate,
                                           momentum, decay, temperature, use_gpu)
 

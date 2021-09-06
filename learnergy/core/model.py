@@ -25,7 +25,6 @@ class Model(torch.nn.Module):
 
         """
 
-        # Override its parent class
         super(Model, self).__init__()
 
         # Creates a cpu-based device property
@@ -33,7 +32,6 @@ class Model(torch.nn.Module):
 
         # Checks if GPU is avaliable
         if torch.cuda.is_available() and use_gpu:
-            # If yes, change the device property to `cuda`
             self.device = 'cuda'
 
         # Creating an empty dictionary to hold historical values
@@ -79,12 +77,8 @@ class Model(torch.nn.Module):
 
         """
 
-        # Iterate through key-word arguments
         for k, v in kwargs.items():
-            # Check if there is already an instance of current
             if k not in self.history.keys():
-                # If not, creates an empty list
                 self.history[k] = []
 
-            # Appends the new value to the list
             self.history[k].append(v)

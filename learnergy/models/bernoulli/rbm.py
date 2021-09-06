@@ -45,7 +45,6 @@ class RBM(Model):
 
         logger.info('Overriding class: Model -> RBM.')
 
-        # Override its parent class
         super(RBM, self).__init__(use_gpu=use_gpu)
 
         # Amount of visible units

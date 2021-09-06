@@ -38,7 +38,6 @@ class SigmoidRBM(RBM):
 
         logger.info('Overriding class: RBM -> SigmoidRBM.')
 
-        # Override its parent class
         super(SigmoidRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                          momentum, decay, temperature, use_gpu)
 

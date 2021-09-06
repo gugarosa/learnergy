@@ -44,14 +44,13 @@ class GaussianConvRBM(ConvRBM):
 
         """
 
-        # Inner data normalization
-        self.normalize = True
-
         logger.info('Overriding class: ConvRBM -> GaussianConvRBM.')
 
-        # Override its parent class
         super(GaussianConvRBM, self).__init__(visible_shape, filter_shape, n_filters, n_channels,
                                               steps, learning_rate, momentum, decay, use_gpu)
+
+        # Inner data normalization
+        self.normalize = True
 
         logger.info('Class overrided.')
 

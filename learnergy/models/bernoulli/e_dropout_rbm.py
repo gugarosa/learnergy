@@ -44,7 +44,6 @@ class EDropoutRBM(RBM):
 
         logger.info('Overriding class: RBM -> EDropoutRBM.')
 
-        # Override its parent class
         super(EDropoutRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
                                           momentum, decay, temperature, use_gpu)
 

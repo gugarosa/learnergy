@@ -54,7 +54,6 @@ class DBN(Model):
 
         logger.info('Overriding class: Model -> DBN.')
 
-        # Override its parent class
         super(DBN, self).__init__(use_gpu=use_gpu)
 
         # Amount of visible units

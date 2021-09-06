@@ -49,7 +49,6 @@ class ConvDBN(Model):
 
         logger.info('Overriding class: Model -> ConvDBN.')
 
-        # Override its parent class
         super(ConvDBN, self).__init__(use_gpu=use_gpu)
 
         # Shape of visible units

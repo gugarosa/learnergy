@@ -47,7 +47,6 @@ class ConvRBM(Model):
 
         logger.info('Overriding class: Model -> ConvRBM.')
 
-        # Override its parent class
         super(ConvRBM, self).__init__(use_gpu=use_gpu)
 
         # Shape of visible units
