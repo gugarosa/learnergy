@@ -205,7 +205,7 @@ class RBM(Model):
     def T(self, T):
         if not isinstance(T, (float, int)):
             raise e.TypeError('`T` should be a float or integer')
-        if T < 0 or T > 1:
+        if T <= 0 or T > 1:
             raise e.ValueError('`T` should be between 0 and 1')
 
         self._T = T
