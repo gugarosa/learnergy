@@ -48,7 +48,7 @@ class EDropoutRBM(RBM):
                                           momentum, decay, temperature, use_gpu)
 
         # Initializes the Energy-based Dropout mask
-        self.M = torch.Tensor()
+        self._M = torch.Tensor()
 
         logger.info('Class overrided.')
 
@@ -80,18 +80,18 @@ class EDropoutRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v, self.W.t(), self.b)
+        activations = F.linear(v, self._W.t(), self._b)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
             probs = torch.mul(torch.sigmoid(
-                torch.div(activations, self.T)), self.M)
+                torch.div(activations, self._T)), self._M)
 
         # If scaling is false
         else:
             # Calculate probabilities as usual
-            probs = torch.mul(torch.sigmoid(activations), self.M)
+            probs = torch.mul(torch.sigmoid(activations), self._M)
 
         # Sampling current states
         states = torch.bernoulli(probs)
@@ -111,13 +111,13 @@ class EDropoutRBM(RBM):
         """
 
         # Calculates the energy of the hidden layer
-        e_h = -torch.mv(h, self.b)
+        e_h = -torch.mv(h, self._b)
 
         # Calculates the energy of the visible layer
-        e_v = -torch.mv(v, self.a)
+        e_v = -torch.mv(v, self._a)
 
         # Calculates the energy of the reconstruction
-        e_rec = -torch.mean(torch.mm(v, torch.mm(self.W, h.t())), dim=1)
+        e_rec = -torch.mean(torch.mm(v, torch.mm(self._W, h.t())), dim=1)
 
         # Calculates the total energy
         energy = torch.mean(e_h + e_v + e_rec)
@@ -141,10 +141,10 @@ class EDropoutRBM(RBM):
         I = torch.div(I, torch.max(I, 0)[0])
 
         # Samples a probability tensor
-        p = torch.rand((I.size(0), I.size(1)), device=self.device)
+        p = torch.rand((I.size(0), I.size(1)), device=self._device)
 
         # Calculates the Energy-based Dropout mask
-        self.M = (I < p).float()
+        self._M = (I < p).float()
 
     def fit(self, dataset, batch_size=128, epochs=10):
         """Fits a new RBM model.
@@ -178,14 +178,14 @@ class EDropoutRBM(RBM):
                 batch_size = samples.size(0)
 
                 # Returns the Energy-based Dropout mask to one
-                self.M = torch.ones(
-                    (batch_size, self.n_hidden), device=self.device)
+                self._M = torch.ones(
+                    (batch_size, self._n_hidden), device=self._device)
 
                 # Flattening the samples' batch
-                samples = samples.reshape(len(samples), self.n_visible)
+                samples = samples.reshape(len(samples), self._n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self._device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
@@ -213,13 +213,13 @@ class EDropoutRBM(RBM):
                     torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
-                self.optimizer.zero_grad()
+                self._optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self.optimizer.step()
+                self._optimizer.step()
 
                 # Calculating current's batch MSE
                 batch_mse = torch.div(
@@ -271,14 +271,14 @@ class EDropoutRBM(RBM):
         # For every batch
         for samples, _ in tqdm(batches):
             # Returns the Energy-based Dropout mask to one
-            self.M = torch.ones(
-                (batch_size, self.n_hidden), device=self.device)
+            self._M = torch.ones(
+                (batch_size, self._n_hidden), device=self._device)
 
             # Flattening the samples' batch
-            samples = samples.reshape(len(samples), self.n_visible)
+            samples = samples.reshape(len(samples), self._n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 

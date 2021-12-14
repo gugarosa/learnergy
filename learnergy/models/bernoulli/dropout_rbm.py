@@ -46,10 +46,10 @@ class DropoutRBM(RBM):
                                          momentum, decay, temperature, use_gpu)
 
         # Intensity of dropout
-        self.p = dropout
+        self._p = dropout
 
         logger.info('Class overrided.')
-        logger.debug('Additional hyperparameters: p = %s.', self.p)
+        logger.debug('Additional hyperparameters: p = %s.', self._p)
 
     @property
     def p(self):
@@ -81,17 +81,17 @@ class DropoutRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v, self.W.t(), self.b)
+        activations = F.linear(v, self._W.t(), self._b)
 
         # Sampling a dropout mask from Bernoulli's distribution
         mask = (torch.full((activations.size(0), activations.size(1)),
-                           1 - self.p, dtype=torch.float, device=self.device)).bernoulli()
+                           1 - self._p, dtype=torch.float, device=self._device)).bernoulli()
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
             probs = torch.mul(torch.sigmoid(
-                torch.div(activations, self.T)), mask)
+                torch.div(activations, self._T)), mask)
 
         # If scaling is false
         else:
@@ -123,10 +123,10 @@ class DropoutRBM(RBM):
         batch_size = len(dataset)
 
         # Saving dropout rate to an auxiliary variable
-        p = self.p
+        p = self._p
 
         # Temporarily disabling dropout
-        self.p = 0
+        self._p = 0
 
         # Transforming the dataset into testing batches
         batches = DataLoader(dataset, batch_size=batch_size,
@@ -135,10 +135,10 @@ class DropoutRBM(RBM):
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.reshape(len(samples), self.n_visible)
+            samples = samples.reshape(len(samples), self._n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -160,7 +160,7 @@ class DropoutRBM(RBM):
         mse /= len(batches)
 
         # Recovering initial dropout rate
-        self.p = p
+        self._p = p
 
         logger.info('MSE: %f', mse)
 
@@ -213,16 +213,16 @@ class DropConnectRBM(DropoutRBM):
         """
 
         # Sampling a dropconnect mask from Bernoulli's distribution
-        mask = (torch.full((self.W.size(0), self.W.size(1)),
-                           1 - self.p, dtype=torch.float, device=self.device)).bernoulli()
+        mask = (torch.full((self._W.size(0), self._W.size(1)),
+                           1 - self._p, dtype=torch.float, device=self._device)).bernoulli()
 
         # Calculating neurons' activations
-        activations = F.linear(v, torch.mul(self.W, mask).t(), self.b)
+        activations = F.linear(v, torch.mul(self._W, mask).t(), self._b)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(torch.div(activations, self.T))
+            probs = torch.sigmoid(torch.div(activations, self._T))
 
         # If scaling is false
         else:

@@ -52,53 +52,53 @@ class ConvDBN(Model):
         super(ConvDBN, self).__init__(use_gpu=use_gpu)
 
         # Shape of visible units
-        self.visible_shape = visible_shape
+        self._visible_shape = visible_shape
 
         # Shape of filters
-        self.filter_shape = filter_shape
+        self._filter_shape = filter_shape
 
         # Number of filters
-        self.n_filters = n_filters
+        self._n_filters = n_filters
 
         # Number of channels
-        self.n_channels = n_channels
+        self._n_channels = n_channels
 
         # Number of layers
-        self.n_layers = len(n_filters)
+        self._n_layers = len(n_filters)
 
         # Number of steps Gibbs' sampling steps
-        self.steps = steps
+        self._steps = steps
 
         # Learning rate
-        self.lr = learning_rate
+        self._lr = learning_rate
 
         # Momentum parameter
-        self.momentum = momentum
+        self._momentum = momentum
 
         # Weight decay
-        self.decay = decay
+        self._decay = decay
 
         # List of models (RBMs)
-        self.models = []
+        self._models = []
 
         # For every possible layer
-        for i in range(self.n_layers):
+        for i in range(self._n_layers):
             # Creates an CRBM
-            m = MODELS[model](visible_shape, self.filter_shape[i], self.n_filters[i],
-                              n_channels, self.steps[i], self.lr[i], self.momentum[i], self.decay[i], use_gpu)
+            m = MODELS[model](visible_shape, self._filter_shape[i], self._n_filters[i],
+                              n_channels, self._steps[i], self._lr[i], self._momentum[i], self._decay[i], use_gpu)
 
             # Re-defines the visible shape
-            visible_shape = (visible_shape[0] - self.filter_shape[i][0] + 1,
-                             visible_shape[1] - self.filter_shape[i][1] + 1)
+            visible_shape = (visible_shape[0] - self._filter_shape[i][0] + 1,
+                             visible_shape[1] - self._filter_shape[i][1] + 1)
 
             # Also defines the new number of channels
-            n_channels = self.n_filters[i]
+            n_channels = self._n_filters[i]
 
             # Appends the model to the list
-            self.models.append(m)
+            self._models.append(m)
 
         # Checks if current device is CUDA-based
-        if self.device == 'cuda':
+        if self._device == 'cuda':
             # If yes, uses CUDA in the whole class
             self.cuda()
 
@@ -195,7 +195,7 @@ class ConvDBN(Model):
     def steps(self, steps):
         if not isinstance(steps, tuple):
             raise e.TypeError('`steps` should be a tuple')
-        if len(steps) != self.n_layers:
+        if len(steps) != self._n_layers:
             raise e.SizeError(
                 f'`steps` should have size equal as {self.n_layers}')
 
@@ -213,7 +213,7 @@ class ConvDBN(Model):
     def lr(self, lr):
         if not isinstance(lr, tuple):
             raise e.TypeError('`lr` should be a tuple')
-        if len(lr) != self.n_layers:
+        if len(lr) != self._n_layers:
             raise e.SizeError(
                 f'`lr` should have size equal as {self.n_layers}')
 
@@ -231,7 +231,7 @@ class ConvDBN(Model):
     def momentum(self, momentum):
         if not isinstance(momentum, tuple):
             raise e.TypeError('`momentum` should be a tuple')
-        if len(momentum) != self.n_layers:
+        if len(momentum) != self._n_layers:
             raise e.SizeError(
                 f'`momentum` should have size equal as {self.n_layers}')
 
@@ -249,7 +249,7 @@ class ConvDBN(Model):
     def decay(self, decay):
         if not isinstance(decay, tuple):
             raise e.TypeError('`decay` should be a tuple')
-        if len(decay) != self.n_layers:
+        if len(decay) != self._n_layers:
             raise e.SizeError(
                 f'`decay` should have size equal as {self.n_layers}')
 
@@ -284,9 +284,9 @@ class ConvDBN(Model):
         """
 
         # Checking if the length of number of epochs' list is correct
-        if len(epochs) != self.n_layers:
+        if len(epochs) != self._n_layers:
             # If not, raises an error
-            raise e.SizeError(('`epochs` should have size equal as %d', self.n_layers))
+            raise e.SizeError(('`epochs` should have size equal as %d', self._n_layers))
 
         # Initializing MSE as a list
         mse = []
@@ -295,8 +295,8 @@ class ConvDBN(Model):
         samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (ConvRBM)
-        for i, model in enumerate(self.models):
-            logger.info('Fitting layer %d/%d ...', i + 1, self.n_layers)
+        for i, model in enumerate(self._models):
+            logger.info('Fitting layer %d/%d ...', i + 1, self._n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -318,7 +318,7 @@ class ConvDBN(Model):
                 samples = d.data
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -335,7 +335,7 @@ class ConvDBN(Model):
             samples, _ = model.hidden_sampling(samples)
 
             # Checking whether GPU is being used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # If yes, get samples back to the CPU
                 samples = samples.cpu()
 
@@ -370,10 +370,10 @@ class ConvDBN(Model):
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
             samples = samples.reshape(
-                len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+                len(samples), self._n_channels, self._visible_shape[0], self._visible_shape[1])
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -381,7 +381,7 @@ class ConvDBN(Model):
             hidden_probs = samples
 
             # For every possible model (CRBM)
-            for model in self.models:
+            for model in self._models:
                 # Performing a hidden layer sampling
                 hidden_probs, _ = model.hidden_sampling(hidden_probs)
 
@@ -389,7 +389,7 @@ class ConvDBN(Model):
             visible_probs = hidden_probs
 
             # For every possible model (CRBM)
-            for model in reversed(self.models):
+            for model in reversed(self._models):
                 # Performing a visible layer sampling
                 visible_probs, visible_states = model.visible_sampling(visible_probs)
 
@@ -419,7 +419,7 @@ class ConvDBN(Model):
         """
 
         # For every possible model
-        for model in self.models:
+        for model in self._models:
             # Calculates the outputs of the model
             x, _ = model.hidden_sampling(x)
 

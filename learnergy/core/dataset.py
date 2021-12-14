@@ -28,17 +28,17 @@ class Dataset(torch.utils.data.Dataset):
         logger.info('Creating class: Dataset.')
 
         # Samples array
-        self.data = data
+        self._data = data
 
         # Labels array
-        self.targets = targets
+        self._targets = targets
 
         # Transform callable
-        self.transform = transform
+        self._transform = transform
 
         logger.info('Class created.')
         logger.debug('Data: %s | Targets: %s | Transforms: %s.',
-                     self.data.shape, self.targets.shape, self.transform)
+                     self._data.shape, self._targets.shape, self._transform)
 
     @property
     def data(self):
@@ -93,11 +93,11 @@ class Dataset(torch.utils.data.Dataset):
 
         """
 
-        x = self.data[idx]
-        y = self.targets[idx]
+        x = self._data[idx]
+        y = self._targets[idx]
 
-        if self.transform:
-            x = self.transform(x)
+        if self._transform:
+            x = self._transform(x)
 
         return x, y
 
@@ -106,4 +106,4 @@ class Dataset(torch.utils.data.Dataset):
 
         """
 
-        return len(self.data)
+        return len(self._data)

@@ -48,48 +48,48 @@ class RBM(Model):
         super(RBM, self).__init__(use_gpu=use_gpu)
 
         # Amount of visible units
-        self.n_visible = n_visible
+        self._n_visible = n_visible
 
         # Amount of hidden units
-        self.n_hidden = n_hidden
+        self._n_hidden = n_hidden
 
         # Number of steps Gibbs' sampling steps
-        self.steps = steps
+        self._steps = steps
 
         # Learning rate
-        self.lr = learning_rate
+        self._lr = learning_rate
 
         # Momentum parameter
-        self.momentum = momentum
+        self._momentum = momentum
 
         # Weight decay
-        self.decay = decay
+        self._decay = decay
 
         # Temperature factor
-        self.T = temperature
+        self._T = temperature
 
         # Weights matrix
-        self.W = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01)
+        self._W = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01)
 
         # Visible units bias
-        self.a = nn.Parameter(torch.zeros(n_visible))
+        self._a = nn.Parameter(torch.zeros(n_visible))
 
         # Hidden units bias
-        self.b = nn.Parameter(torch.zeros(n_hidden))
+        self._b = nn.Parameter(torch.zeros(n_hidden))
 
         # Creating the optimizer object
-        self.optimizer = opt.SGD(
+        self._optimizer = opt.SGD(
             self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
 
         # Checks if current device is CUDA-based
-        if self.device == 'cuda':
+        if self._device == 'cuda':
             # If yes, uses CUDA in the whole class
             self.cuda()
 
         logger.info('Class overrided.')
         logger.debug('Size: (%d, %d) | Learning: CD-%d | '
                      'Hyperparameters: lr = %s, momentum = %s, decay = %s, T = %s.',
-                     self.n_visible, self.n_hidden, self.steps, self.lr, self.momentum, self.decay, self.T)
+                     self._n_visible, self._n_hidden, self._steps, self._lr, self._momentum, self._decay, self._T)
 
     @property
     def n_visible(self):
@@ -283,12 +283,12 @@ class RBM(Model):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v, self.W.t(), self.b)
+        activations = F.linear(v, self._W.t(), self._b)
 
         # If scaling is true
         if scale:
             # Scales the activations with temperature
-            activations = torch.div(activations, self.T)
+            activations = torch.div(activations, self._T)
 
         return activations
 
@@ -305,12 +305,12 @@ class RBM(Model):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v, self.W.t(), self.b)
+        activations = F.linear(v, self._W.t(), self._b)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(torch.div(activations, self.T))
+            probs = torch.sigmoid(torch.div(activations, self._T))
 
         # If scaling is false
         else:
@@ -335,12 +335,12 @@ class RBM(Model):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(h, self.W, self.a)
+        activations = F.linear(h, self._W, self._a)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(torch.div(activations, self.T))
+            probs = torch.sigmoid(torch.div(activations, self._T))
 
         # If scaling is false
         else:
@@ -372,7 +372,7 @@ class RBM(Model):
         neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
-        for _ in range(self.steps):
+        for _ in range(self._steps):
             # Calculating visible probabilities and states
             _, visible_states = self.visible_sampling(
                 neg_hidden_states, True)
@@ -395,7 +395,7 @@ class RBM(Model):
         """
 
         # Calculate samples' activations
-        activations = F.linear(samples, self.W.t(), self.b)
+        activations = F.linear(samples, self._W.t(), self._b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -404,7 +404,7 @@ class RBM(Model):
         h = torch.sum(s(activations), dim=1)
 
         # Calculate the visible term
-        v = torch.mv(samples, self.a)
+        v = torch.mv(samples, self._a)
 
         # Finally, gathers the system's energy
         energy = -v - h
@@ -429,12 +429,12 @@ class RBM(Model):
         energy = self.energy(samples_binary)
 
         # Samples an array of indexes to flip the bits
-        indexes = torch.randint(0, self.n_visible, size=(
-            samples.size(0), 1), device=self.device)
+        indexes = torch.randint(0, self._n_visible, size=(
+            samples.size(0), 1), device=self._device)
 
         # Creates an empty vector for filling the indexes
         bits = torch.zeros(samples.size(
-            0), samples.size(1), device=self.device)
+            0), samples.size(1), device=self._device)
 
         # Fills the sampled indexes with 1
         bits = bits.scatter_(1, indexes, 1)
@@ -447,7 +447,7 @@ class RBM(Model):
         energy1 = self.energy(samples_binary)
 
         # Calculate the logarithm of the pseudo-likelihood
-        pl = torch.mean(self.n_visible *
+        pl = torch.mean(self._n_visible *
                         torch.log(torch.sigmoid(energy1 - energy) + c.EPSILON))
 
         return pl
@@ -482,10 +482,10 @@ class RBM(Model):
             # For every batch
             for samples, _ in tqdm(batches):
                 # Flattening the samples' batch
-                samples = samples.reshape(len(samples), self.n_visible)
+                samples = samples.reshape(len(samples), self._n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self._device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
@@ -500,13 +500,13 @@ class RBM(Model):
                     torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
-                self.optimizer.zero_grad()
+                self._optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self.optimizer.step()
+                self._optimizer.step()
 
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
@@ -562,10 +562,10 @@ class RBM(Model):
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.reshape(len(samples), self.n_visible)
+            samples = samples.reshape(len(samples), self._n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 

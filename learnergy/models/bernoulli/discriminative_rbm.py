@@ -49,25 +49,25 @@ class DiscriminativeRBM(RBM):
                                                 momentum, decay, temperature, use_gpu)
 
         # Number of classes
-        self.n_classes = n_classes
+        self._n_classes = n_classes
 
         # Class weights matrix
-        self.U = nn.Parameter(torch.randn(n_classes, n_hidden) * 0.05)
+        self._U = nn.Parameter(torch.randn(n_classes, n_hidden) * 0.05)
 
         # Class bias
-        self.c = nn.Parameter(torch.zeros(n_classes))
+        self._c = nn.Parameter(torch.zeros(n_classes))
 
         # Creating the loss function for the DRBM
-        self.loss = nn.CrossEntropyLoss()
+        self._loss = nn.CrossEntropyLoss()
 
         # Updating optimizer's parameters with `U`
-        self.optimizer.add_param_group({'params': self.U})
+        self._optimizer.add_param_group({'params': self._U})
 
         # Updating optimizer's parameters with `c`
-        self.optimizer.add_param_group({'params': self.c})
+        self._optimizer.add_param_group({'params': self._c})
 
         # Re-checks if current device is CUDA-based due to new parameter
-        if self.device == 'cuda':
+        if self._device == 'cuda':
             # If yes, re-uses CUDA in the whole class
             self.cuda()
 
@@ -148,19 +148,19 @@ class DiscriminativeRBM(RBM):
 
         # Creating an empty tensor for holding the probabilities per class
         probs = torch.zeros(samples.size(
-            0), self.n_classes, device=self.device)
+            0), self._n_classes, device=self._device)
 
         # Calculate samples' activations
-        activations = F.linear(samples, self.W.t(), self.b)
+        activations = F.linear(samples, self._W.t(), self._b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
 
         # Iterating through every possible class
-        for i in range(self.n_classes):
+        for i in range(self._n_classes):
             # Calculates the logit-probability for the particular class
-            probs[:, i] = self.c[i] + \
-                torch.sum(s(activations + self.U[i, :]), dim=1)
+            probs[:, i] = self._c[i] + \
+                torch.sum(s(activations + self._U[i, :]), dim=1)
 
         # Recovering the predictions based on the logit-probabilities
         preds = torch.argmax(probs.detach(), 1)
@@ -198,10 +198,10 @@ class DiscriminativeRBM(RBM):
             # For every batch
             for samples, labels in tqdm(batches):
                 # Flattening the samples' batch
-                samples = samples.reshape(len(samples), self.n_visible)
+                samples = samples.reshape(len(samples), self._n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self._device == 'cuda':
                     # Applies the GPU usage to the data and labels
                     samples = samples.cuda()
                     labels = labels.cuda()
@@ -213,13 +213,13 @@ class DiscriminativeRBM(RBM):
                 cost = self.loss(probs, labels)
 
                 # Initializing the gradient
-                self.optimizer.zero_grad()
+                self._optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self.optimizer.step()
+                self._optimizer.step()
 
                 # Calculating labels predictions by sampling
                 _, preds = self.labels_sampling(samples)
@@ -275,10 +275,10 @@ class DiscriminativeRBM(RBM):
         # For every batch
         for samples, labels in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.reshape(len(samples), self.n_visible)
+            samples = samples.reshape(len(samples), self._n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data and labels
                 samples = samples.cuda()
                 labels = labels.cuda()
@@ -338,7 +338,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                                                       use_gpu)
 
         # Defining a property for the generative loss penalization
-        self.alpha = alpha
+        self._alpha = alpha
 
     @property
     def alpha(self):
@@ -371,12 +371,12 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v, self.W.t(), self.b) + torch.matmul(y, self.U)
+        activations = F.linear(v, self._W.t(), self._b) + torch.matmul(y, self._U)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(torch.div(activations, self.T))
+            probs = torch.sigmoid(torch.div(activations, self._T))
 
         # If scaling is false
         else:
@@ -400,14 +400,14 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         """
 
         # Calculating neurons' activations
-        activations = torch.exp(F.linear(h, self.U, self.c))
+        activations = torch.exp(F.linear(h, self._U, self._c))
 
         # Calculating activations
         probs = torch.div(activations, torch.sum(activations, dim=1).unsqueeze(1))
 
         # Sampling current states
         states = torch.nn.functional.one_hot(torch.argmax(
-            probs, dim=1), num_classes=self.n_classes).float()
+            probs, dim=1), num_classes=self._n_classes).float()
 
         return probs, states
 
@@ -426,7 +426,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         """
 
         # Transforming labels to one-hot encoding
-        y = torch.nn.functional.one_hot(y, num_classes=self.n_classes).float()
+        y = torch.nn.functional.one_hot(y, num_classes=self._n_classes).float()
 
         # Calculating positive phase hidden probabilities and states
         pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v, y)
@@ -435,7 +435,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
-        for _ in range(self.steps):
+        for _ in range(self._steps):
             # Calculating visible probabilities and states
             _, visible_states = self.visible_sampling(
                 neg_hidden_states, True)
@@ -479,10 +479,10 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             # For every batch
             for samples, labels in tqdm(batches):
                 # Flattening the samples' batch
-                samples = samples.reshape(len(samples), self.n_visible)
+                samples = samples.reshape(len(samples), self._n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self._device == 'cuda':
                     # Applies the GPU usage to the data and labels
                     samples = samples.cuda()
                     labels = labels.cuda()
@@ -504,16 +504,16 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                 g_cost = -self.pseudo_likelihood(samples)
 
                 # Calculates the total loss
-                cost = d_cost + self.alpha * g_cost
+                cost = d_cost + self._alpha * g_cost
 
                 # Initializing the gradient
-                self.optimizer.zero_grad()
+                self._optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self.optimizer.step()
+                self._optimizer.step()
 
                 # Calculating labels predictions by sampling
                 _, preds = self.labels_sampling(samples)

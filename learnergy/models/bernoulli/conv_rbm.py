@@ -50,49 +50,49 @@ class ConvRBM(Model):
         super(ConvRBM, self).__init__(use_gpu=use_gpu)
 
         # Shape of visible units
-        self.visible_shape = visible_shape
+        self._visible_shape = visible_shape
 
         # Shape of filters
-        self.filter_shape = filter_shape
+        self._filter_shape = filter_shape
 
         # Shape of hidden units
-        self.hidden_shape = (
+        self._hidden_shape = (
             visible_shape[0] - filter_shape[0] + 1, visible_shape[1] - filter_shape[1] + 1)
 
         # Number of filters
-        self.n_filters = n_filters
+        self._n_filters = n_filters
 
         # Number of channels
-        self.n_channels = n_channels
+        self._n_channels = n_channels
 
         # Number of steps Gibbs' sampling steps
-        self.steps = steps
+        self._steps = steps
 
         # Learning rate
-        self.lr = learning_rate
+        self._lr = learning_rate
 
         # Momentum parameter
-        self.momentum = momentum
+        self._momentum = momentum
 
         # Weight decay
-        self.decay = decay
+        self._decay = decay
 
         # Filters' matrix
-        self.W = nn.Parameter(torch.randn(
+        self._W = nn.Parameter(torch.randn(
             n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01)
 
         # Visible units bias
-        self.a = nn.Parameter(torch.zeros(n_channels))
+        self._a = nn.Parameter(torch.zeros(n_channels))
 
         # Hidden units bias
-        self.b = nn.Parameter(torch.zeros(n_filters))
+        self._b = nn.Parameter(torch.zeros(n_filters))
 
         # Creating the optimizer object
-        self.optimizer = opt.SGD(
+        self._optimizer = opt.SGD(
             self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
 
         # Checks if current device is CUDA-based
-        if self.device == 'cuda':
+        if self._device == 'cuda':
             # If yes, uses CUDA in the whole class
             self.cuda()
 
@@ -100,9 +100,9 @@ class ConvRBM(Model):
         logger.debug('Visible: %s | Filters: %d x %s | Hidden: %s | '
                      'Channels: %d | Learning: CD-%d | '
                      'Hyperparameters: lr = %s, momentum = %s, decay = %s.',
-                     self.visible_shape, self.n_filters, self.filter_shape,
-                     self.hidden_shape, self.n_channels, self.steps,
-                     self.lr, self.momentum, self.decay)
+                     self._visible_shape, self._n_filters, self._filter_shape,
+                     self._hidden_shape, self._n_channels, self._steps,
+                     self._lr, self._momentum, self._decay)
 
     @property
     def visible_shape(self):
@@ -131,7 +131,7 @@ class ConvRBM(Model):
     def filter_shape(self, filter_shape):
         if not isinstance(filter_shape, tuple):
             raise e.TypeError('`filter_shape` should be a tuple')
-        if (filter_shape[0] >= self.visible_shape[0]) or (filter_shape[1] >= self.visible_shape[1]):
+        if (filter_shape[0] >= self._visible_shape[0]) or (filter_shape[1] >= self._visible_shape[1]):
             raise e.ValueError(
                 '`filter_shape` should be smaller than `visible_shape`')
 
@@ -326,7 +326,7 @@ class ConvRBM(Model):
         """
 
         # Calculating neurons' activations
-        activations = F.conv2d(v, self.W, bias=self.b)
+        activations = F.conv2d(v, self._W, bias=self._b)
 
         # Calculates probabilities
         probs = torch.sigmoid(activations)
@@ -348,7 +348,7 @@ class ConvRBM(Model):
         """
 
         # Calculating neurons' activations
-        activations = F.conv_transpose2d(h, self.W, bias=self.a)
+        activations = F.conv_transpose2d(h, self._W, bias=self._a)
 
         # Calculates probabilities
         probs = torch.sigmoid(activations)
@@ -378,7 +378,7 @@ class ConvRBM(Model):
         neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
-        for _ in range(self.steps):
+        for _ in range(self._steps):
             # Calculating visible probabilities and states
             _, visible_states = self.visible_sampling(
                 neg_hidden_states)
@@ -401,7 +401,7 @@ class ConvRBM(Model):
         """
 
         # Calculate samples' activations
-        activations = F.conv2d(samples, self.W, bias=self.b)
+        activations = F.conv2d(samples, self._W, bias=self._b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -410,7 +410,7 @@ class ConvRBM(Model):
         h = torch.sum(s(activations), dim=(1, 2, 3))
 
         # Calculate the visible term
-        v = torch.sum(samples, dim=(1, 2, 3)) * torch.mean(self.a)
+        v = torch.sum(samples, dim=(1, 2, 3)) * torch.mean(self._a)
 
         # Finally, gathers the system's energy
         energy = -v - h
@@ -448,10 +448,10 @@ class ConvRBM(Model):
             for samples, _ in tqdm(batches):
                 # Flattening the samples' batch
                 samples = samples.reshape(
-                    len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+                    len(samples), self._n_channels, self._visible_shape[0], self._visible_shape[1])
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self._device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
@@ -466,13 +466,13 @@ class ConvRBM(Model):
                     torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
-                self.optimizer.zero_grad()
+                self._optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self.optimizer.step()
+                self._optimizer.step()
 
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
@@ -524,10 +524,10 @@ class ConvRBM(Model):
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
             samples = samples.reshape(
-                len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+                len(samples), self._n_channels, self._visible_shape[0], self._visible_shape[1])
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 

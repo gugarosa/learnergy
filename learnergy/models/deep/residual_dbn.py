@@ -47,10 +47,10 @@ class ResidualDBN(DBN):
                                           momentum, decay, temperature, use_gpu)
 
         # Defining a property for holding the original learning's penalization
-        self.zetta1 = zetta1
+        self._zetta1 = zetta1
 
         # Defining a property for holding the residual learning's penalization
-        self.zetta2 = zetta2
+        self._zetta2 = zetta2
 
     @property
     def zetta1(self):
@@ -119,7 +119,7 @@ class ResidualDBN(DBN):
         """
 
         # Checking if the length of number of epochs' list is correct
-        if len(epochs) != self.n_layers:
+        if len(epochs) != self._n_layers:
             # If not, raises an error
             raise e.SizeError(
                 f'`epochs` should have size equal as {self.n_layers}')
@@ -132,8 +132,8 @@ class ResidualDBN(DBN):
         ), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (RBM)
-        for i, model in enumerate(self.models):
-            logger.info('Fitting layer %d/%d ...', i+1, self.n_layers)
+        for i, model in enumerate(self._models):
+            logger.info('Fitting layer %d/%d ...', i+1, self._n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -156,7 +156,7 @@ class ResidualDBN(DBN):
                 samples = d.data
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -177,13 +177,13 @@ class ResidualDBN(DBN):
 
             # Aggregates the residual learning
             samples = torch.mul(
-                samples, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
+                samples, self._zetta1) + torch.mul(self.calculate_residual(pre_activation), self._zetta2)
 
             # Normalizes the input for the next layer
             samples = torch.div(samples, torch.max(samples))
 
             # Checking whether GPU is being used
-            if self.device == 'cuda':
+            if self._device == 'cuda':
                 # If yes, get samples back to the CPU
                 samples = samples.cpu()
 
@@ -204,7 +204,7 @@ class ResidualDBN(DBN):
         """
 
         # For every possible model
-        for model in self.models:
+        for model in self._models:
             # Calculates the pre-activations of current model
             pre_activation = model.pre_activation(x)
 
@@ -213,7 +213,7 @@ class ResidualDBN(DBN):
 
             # Aggregates the residual learning
             x = torch.mul(
-                x, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
+                x, self._zetta1) + torch.mul(self.calculate_residual(pre_activation), self._zetta2)
 
             # Normalizes the input for the next layer
             x = torch.div(x, torch.max(x))

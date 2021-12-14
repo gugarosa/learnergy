@@ -56,12 +56,12 @@ class SigmoidRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(h, self.W, self.a)
+        activations = F.linear(h, self._W, self._a)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(torch.div(activations, self.T))
+            probs = torch.sigmoid(torch.div(activations, self._T))
 
         # If scaling is false
         else:
