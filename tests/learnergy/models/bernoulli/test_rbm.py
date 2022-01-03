@@ -183,9 +183,9 @@ def test_rbm_W_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.W = 1
+        new_rbm._W = 1
     except:
-        new_rbm.W = torch.nn.Parameter(torch.randn(128, 128) * 0.01)
+        new_rbm._W = torch.nn.Parameter(torch.randn(128, 128) * 0.01)
 
     assert new_rbm.W.size(0) == 128
     assert new_rbm.W.size(1) == 128
@@ -201,9 +201,9 @@ def test_rbm_a_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.a = 1
+        new_rbm._a = 1
     except:
-        new_rbm.a = torch.nn.Parameter(torch.zeros(128))
+        new_rbm._a = torch.nn.Parameter(torch.zeros(128))
 
     assert new_rbm.a.size(0) == 128
 
@@ -218,9 +218,9 @@ def test_rbm_b_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.b = 1
+        new_rbm._b = 1
     except:
-        new_rbm.b = torch.nn.Parameter(torch.zeros(128))
+        new_rbm._b = torch.nn.Parameter(torch.zeros(128))
 
     assert new_rbm.b.size(0) == 128
 

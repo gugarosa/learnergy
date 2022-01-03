@@ -45,9 +45,9 @@ def test_variance_gaussian_rbm_sigma_setter():
     new_variance_gaussian_rbm = gaussian_rbm.VarianceGaussianRBM()
 
     try:
-        new_variance_gaussian_rbm.sigma = 1
+        new_variance_gaussian_rbm._sigma = 1
     except:
-        new_variance_gaussian_rbm.sigma = torch.nn.Parameter(torch.zeros(128))
+        new_variance_gaussian_rbm._sigma = torch.nn.Parameter(torch.zeros(128))
 
     assert new_variance_gaussian_rbm.sigma.size(0) == 128
 
