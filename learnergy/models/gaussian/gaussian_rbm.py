@@ -38,7 +38,7 @@ class GaussianRBM(RBM):
     """
 
     def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, use_gpu=False):
+                 momentum=0, decay=0, temperature=1, use_gpu=False, normalize=True, input_normalize=True):
         """Initialization method.
 
         Args:
@@ -50,8 +50,13 @@ class GaussianRBM(RBM):
             decay (float): Weight decay used for penalization.
             temperature (float): Temperature factor.
             use_gpu (boolean): Whether GPU should be used or not.
+            normalize (boolean): Whether or not to use batch normalization
+            input_normalize (boolean): Whether or not to normalize inputs
 
         """
+
+        self._normalize = normalize
+        self._input_normalize = input_normalize
 
         logger.info('Overriding class: RBM -> GaussianRBM.')
 
@@ -59,6 +64,34 @@ class GaussianRBM(RBM):
                                           momentum, decay, temperature, use_gpu)
 
         logger.info('Class overrided.')
+
+ 
+    @property
+    def normalize(self):
+        """boolean: Whether or not to use batch normalization.
+
+        """
+
+        return self._normalize
+
+    @normalize.setter
+    def normalize(self, normalize):
+
+        self._normalize = normalize
+
+    @property
+    def input_normalize(self):
+        """boolean: Whether or not to use input normalization.
+
+        """
+
+        return self._input_normalize
+
+    @input_normalize.setter
+    def input_normalize(self, input_normalize):
+
+        self._input_normalize = input_normalize
+
 
     def energy(self, samples):
         """Calculates and frees the system's energy.
@@ -148,8 +181,9 @@ class GaussianRBM(RBM):
 
             # For every batch
             for samples, _ in tqdm(batches):
-                # Normalizing the samples' batch
-                samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6)).detach()
+                if self.normalize:
+                    # Normalizing the samples' batch
+                    samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6)).detach()
 
                 # Flattening the samples' batch    
                 samples = samples.reshape(len(samples), self.n_visible)
@@ -217,8 +251,9 @@ class GaussianRBM(RBM):
 
         """
 
-        # Normalizing the samples'
-        x = ((x - torch.mean(x, 0, True)) / (torch.std(x, 0, True) + 1e-6)).detach()
+        if self.input_normalize:
+            # Normalizing the samples'
+            x = ((x - torch.mean(x, 0, True)) / (torch.std(x, 0, True) + 1e-6)).detach()
 
         # Calculates the outputs of the model
         x, _ = self.hidden_sampling(x)
@@ -299,7 +334,7 @@ class GaussianReluRBM(GaussianRBM):
     """
 
     def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.001,
-                 momentum=0, decay=0, temperature=1, use_gpu=False):
+                 momentum=0, decay=0, temperature=1, use_gpu=False, normalize=True, input_normalize=True):
         """Initialization method.
 
         Args:
@@ -311,6 +346,8 @@ class GaussianReluRBM(GaussianRBM):
             decay (float): Weight decay used for penalization.
             temperature (float): Temperature factor.
             use_gpu (boolean): Whether GPU should be used or not.
+            normalize (boolean): Whether or not to use batch normalization
+            input_normalize (boolean): Whether or not to normalize inputs
 
         """
 
@@ -318,7 +355,7 @@ class GaussianReluRBM(GaussianRBM):
 
         # Override its parent class
         super(GaussianReluRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
-                                              momentum, decay, temperature, use_gpu)
+                                              momentum, decay, temperature, use_gpu, normalize, input_normalize)
 
         logger.info('Class overrided.')
 
@@ -351,6 +388,79 @@ class GaussianReluRBM(GaussianRBM):
         states = probs
 
         return probs, states
+
+
+class GaussianSeluRBM(GaussianRBM):
+    """A GaussianSeluRBM class provides the basic implementation for
+    Gaussian-SeLU Restricted Boltzmann Machines (for raw pixels values).
+
+    Note that this class requires raw data (integer-valued)
+    in order to model the image covariance into a latent ReLU layer.
+
+    References:
+        G. Hinton. A practical guide to training restricted Boltzmann machines.
+        Neural networks: Tricks of the trade (2012).
+
+        G. Klambauer et al. Self-normalizing neural networks.
+        Proceedings, NIPS (2017).
+    """
+
+    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.001,
+                 momentum=0, decay=0, temperature=1, use_gpu=False, normalize=False, input_normalize=True):
+        """Initialization method.
+
+        Args:
+            n_visible (int): Amount of visible units.
+            n_hidden (int): Amount of hidden units.
+            steps (int): Number of Gibbs' sampling steps.
+            learning_rate (float): Learning rate.
+            momentum (float): Momentum parameter.
+            decay (float): Weight decay used for penalization.
+            temperature (float): Temperature factor.
+            use_gpu (boolean): Whether GPU should be used or not.
+            normalize (boolean): Whether or not to use batch normalization
+            input_normalize (boolean): Whether or not to normalize inputs
+
+        """
+
+        logger.info('Overriding class: GaussianRBM -> GaussianSeluRBM.')
+
+        # Override its parent class
+        super(GaussianSeluRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
+                                              momentum, decay, temperature, use_gpu, normalize, input_normalize)
+
+        logger.info('Class overrided.')
+
+    def hidden_sampling(self, v, scale=False):
+        """Performs the hidden layer sampling, i.e., P(h|v).
+
+        Args:
+            v (torch.Tensor): A tensor incoming from the visible layer.
+            scale (bool): A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            The probabilities and states of the hidden layer sampling.
+
+        """
+
+        # Calculating neurons' activations
+        activations = F.linear(v, self.W.t(), self.b)
+
+        # If scaling is true
+        if scale:
+            # Calculate probabilities with temperature
+            probs = F.selu(torch.div(activations, self.T))
+
+        # If scaling is false
+        else:
+            # Calculate probabilities as usual
+            probs = F.selu(activations)
+
+        # Current states equals probabilities
+        states = probs
+
+        return probs, states
+
 
 
 class VarianceGaussianRBM(RBM):
