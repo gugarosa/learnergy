@@ -141,50 +141,52 @@ class ResidualDBN(DBN):
             mse.append(model_mse)
             pl.append(model_pl)
 
-            # If the dataset has a transform
-            if d.transform:
-                # Applies the transform over the samples
-                samples = d.transform(d.data)
+            #Run for all but last layer
+            if i < len(self.models)-1:
+                # If the dataset has a transform
+                if d.transform:
+                    # Applies the transform over the samples
+                    samples = d.transform(d.data)
     
-            # If there is no transform
-            else:
-                # Just gather the samples
-                samples = d.data
+                # If there is no transform
+                else:
+                    # Just gather the samples
+                    samples = d.data
     
-            # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
-                # Applies the GPU usage to the data
-                samples = samples.cuda()
+                # Checking whether GPU is avaliable and if it should be used
+                if self.device == 'cuda':
+                    # Applies the GPU usage to the data
+                    samples = samples.cuda()
 
-            # Reshape the samples into an appropriate shape
-            samples = samples.reshape(len(dataset), model.n_visible)
+                # Reshape the samples into an appropriate shape
+                samples = samples.reshape(len(dataset), model.n_visible)
 
-            # Gathers the targets
-            targets = d.targets
+                # Gathers the targets
+                targets = d.targets
 
-            # Gathers the transform callable from current dataset
-            transform = None
+                # Gathers the transform callable from current dataset
+                transform = None
 
-            # Calculates pre-activation values
-            pre_activation = model.pre_activation(samples)
+                # Calculates pre-activation values
+                pre_activation = model.pre_activation(samples)
 
-            # Performs a forward pass over the samples
-            samples, _ = model.hidden_sampling(samples)
+                # Performs a forward pass over the samples
+                samples, _ = model.hidden_sampling(samples)
 
-            # Aggregates the residual learning
-            samples = torch.mul(
-                samples, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
+                # Aggregates the residual learning
+                samples = torch.mul(
+                    samples, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
 
-            # Normalizes the input for the next layer
-            samples = torch.div(samples, torch.max(samples))
+                # Normalizes the input for the next layer
+                samples = torch.div(samples, torch.max(samples))
 
-            # Checking whether GPU is being used
-            if self.device == 'cuda':
-                # If yes, get samples back to the CPU
-                samples = samples.cpu()
+                # Checking whether GPU is being used
+                if self.device == 'cuda':
+                    # If yes, get samples back to the CPU
+                    samples = samples.cpu()
 
-            # Detaches the variable from the computing graph
-            samples = samples.detach()
+                # Detaches the variable from the computing graph
+                samples = samples.detach()
 
         return mse, pl
 

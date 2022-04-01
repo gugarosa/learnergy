@@ -287,40 +287,41 @@ class ConvDBN(Model):
             # Appending the metrics
             mse.append(model_mse)
 
-            # If the dataset has a transform
-            if d.transform:
-                # Applies the transform over the samples
-                samples = d.transform(d.data)
+            if i < len(self.models)-1:
+                # If the dataset has a transform
+                if d.transform:
+                    # Applies the transform over the samples
+                    samples = d.transform(d.data)
 
-            # If there is no transform
-            else:
-                # Just gather the samples
-                samples = d.data
+                # If there is no transform
+                else:
+                    # Just gather the samples
+                    samples = d.data
 
-            # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
-                # Applies the GPU usage to the data
-                samples = samples.cuda()
+                # Checking whether GPU is avaliable and if it should be used
+                if self.device == 'cuda':
+                    # Applies the GPU usage to the data
+                    samples = samples.cuda()
 
-            # Reshape the samples into an appropriate shape
-            samples = samples.reshape(len(dataset), model.n_channels, model.visible_shape[0], model.visible_shape[1])
+                # Reshape the samples into an appropriate shape
+                samples = samples.reshape(len(dataset), model.n_channels, model.visible_shape[0], model.visible_shape[1])
 
-            # Gathers the targets
-            targets = d.targets
+                # Gathers the targets
+                targets = d.targets
 
-            # Gathers the transform callable from current dataset
-            transform = None
+                # Gathers the transform callable from current dataset
+                transform = None
 
-            # Performs a forward pass over the samples to get their probabilities
-            samples, _ = model.hidden_sampling(samples)
+                # Performs a forward pass over the samples to get their probabilities
+                samples, _ = model.hidden_sampling(samples)
 
-            # Checking whether GPU is being used
-            if self.device == 'cuda':
-                # If yes, get samples back to the CPU
-                samples = samples.cpu()
+                # Checking whether GPU is being used
+                if self.device == 'cuda':
+                    # If yes, get samples back to the CPU
+                    samples = samples.cpu()
 
-            # Detaches the variable from the computing graph
-            samples = samples.detach()
+                # Detaches the variable from the computing graph
+                samples = samples.detach()
 
         return mse
 
