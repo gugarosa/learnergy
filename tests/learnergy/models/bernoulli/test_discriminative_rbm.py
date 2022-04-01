@@ -39,9 +39,9 @@ def test_discriminative_rbm_U_setter():
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM()
 
     try:
-        new_discriminative_rbm._U = 1
+        new_discriminative_rbm.U = 1
     except:
-        new_discriminative_rbm._U = torch.nn.Parameter(
+        new_discriminative_rbm.U = torch.nn.Parameter(
             torch.randn(10, 128) * 0.01)
 
     assert new_discriminative_rbm.U.size(0) == 10
@@ -58,9 +58,9 @@ def test_discriminative_rbm_c_setter():
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM()
 
     try:
-        new_discriminative_rbm._c = 1
+        new_discriminative_rbm.c = 1
     except:
-        new_discriminative_rbm._c = torch.nn.Parameter(torch.zeros(10))
+        new_discriminative_rbm.c = torch.nn.Parameter(torch.zeros(10))
 
     assert new_discriminative_rbm.c.size(0) == 10
 

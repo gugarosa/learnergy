@@ -212,9 +212,9 @@ def test_conv_rbm_W_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm._W = 1
+        new_conv_rbm.W = 1
     except:
-        new_conv_rbm._W = torch.nn.Parameter(torch.randn(5, 1, 7, 7) * 0.01)
+        new_conv_rbm.W = torch.nn.Parameter(torch.randn(5, 1, 7, 7) * 0.01)
 
     assert new_conv_rbm.W.size(0) == 5
     assert new_conv_rbm.W.size(1) == 1
@@ -232,9 +232,9 @@ def test_conv_rbm_a_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm._a = 1
+        new_conv_rbm.a = 1
     except:
-        new_conv_rbm._a = torch.nn.Parameter(torch.zeros(1))
+        new_conv_rbm.a = torch.nn.Parameter(torch.zeros(1))
 
     assert new_conv_rbm.a.size(0) == 1
 
@@ -249,9 +249,9 @@ def test_conv_rbm_b_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm._b = 1
+        new_conv_rbm.b = 1
     except:
-        new_conv_rbm._b = torch.nn.Parameter(torch.zeros(5))
+        new_conv_rbm.b = torch.nn.Parameter(torch.zeros(5))
 
     assert new_conv_rbm.b.size(0) == 5
 
