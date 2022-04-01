@@ -47,10 +47,10 @@ class ResidualDBN(DBN):
                                           momentum, decay, temperature, use_gpu)
 
         # Defining a property for holding the original learning's penalization
-        self._zetta1 = zetta1
+        self.zetta1 = zetta1
 
         # Defining a property for holding the residual learning's penalization
-        self._zetta2 = zetta2
+        self.zetta2 = zetta2
 
     @property
     def zetta1(self):
@@ -62,8 +62,6 @@ class ResidualDBN(DBN):
 
     @zetta1.setter
     def zetta1(self, zetta1):
-        if not isinstance(zetta1, (float, int)):
-            raise e.TypeError('`zetta1` should be a float or integer')
         if zetta1 < 0:
             raise e.ValueError('`zetta1` should be >= 0')
 
@@ -79,8 +77,6 @@ class ResidualDBN(DBN):
 
     @zetta2.setter
     def zetta2(self, zetta2):
-        if not isinstance(zetta2, (float, int)):
-            raise e.TypeError('`zetta2` should be a float or integer')
         if zetta2 < 0:
             raise e.ValueError('`zetta2` should be >= 0')
 
@@ -119,7 +115,7 @@ class ResidualDBN(DBN):
         """
 
         # Checking if the length of number of epochs' list is correct
-        if len(epochs) != self._n_layers:
+        if len(epochs) != self.n_layers:
             # If not, raises an error
             raise e.SizeError(
                 f'`epochs` should have size equal as {self.n_layers}')
@@ -132,8 +128,8 @@ class ResidualDBN(DBN):
         ), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (RBM)
-        for i, model in enumerate(self._models):
-            logger.info('Fitting layer %d/%d ...', i+1, self._n_layers)
+        for i, model in enumerate(self.models):
+            logger.info('Fitting layer %d/%d ...', i+1, self.n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -149,14 +145,14 @@ class ResidualDBN(DBN):
             if d.transform:
                 # Applies the transform over the samples
                 samples = d.transform(d.data)
-
+    
             # If there is no transform
             else:
                 # Just gather the samples
                 samples = d.data
-
+    
             # Checking whether GPU is avaliable and if it should be used
-            if self._device == 'cuda':
+            if self.device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -177,13 +173,13 @@ class ResidualDBN(DBN):
 
             # Aggregates the residual learning
             samples = torch.mul(
-                samples, self._zetta1) + torch.mul(self.calculate_residual(pre_activation), self._zetta2)
+                samples, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
 
             # Normalizes the input for the next layer
             samples = torch.div(samples, torch.max(samples))
 
             # Checking whether GPU is being used
-            if self._device == 'cuda':
+            if self.device == 'cuda':
                 # If yes, get samples back to the CPU
                 samples = samples.cpu()
 
@@ -204,7 +200,7 @@ class ResidualDBN(DBN):
         """
 
         # For every possible model
-        for model in self._models:
+        for model in self.models:
             # Calculates the pre-activations of current model
             pre_activation = model.pre_activation(x)
 
@@ -213,7 +209,7 @@ class ResidualDBN(DBN):
 
             # Aggregates the residual learning
             x = torch.mul(
-                x, self._zetta1) + torch.mul(self.calculate_residual(pre_activation), self._zetta2)
+                x, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
 
             # Normalizes the input for the next layer
             x = torch.div(x, torch.max(x))

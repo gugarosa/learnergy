@@ -28,17 +28,17 @@ class Dataset(torch.utils.data.Dataset):
         logger.info('Creating class: Dataset.')
 
         # Samples array
-        self._data = data
+        self.data = data
 
         # Labels array
-        self._targets = targets
+        self.targets = targets
 
         # Transform callable
-        self._transform = transform
+        self.transform = transform
 
         logger.info('Class created.')
         logger.debug('Data: %s | Targets: %s | Transforms: %s.',
-                     self._data.shape, self._targets.shape, self._transform)
+                     self.data.shape, self.targets.shape, self.transform)
 
     @property
     def data(self):
@@ -50,8 +50,6 @@ class Dataset(torch.utils.data.Dataset):
 
     @data.setter
     def data(self, data):
-        if not isinstance(data, (np.ndarray, torch.Tensor)):
-            raise e.TypeError('`data` should be a numpy array or a tensor')
 
         self._data = data
 
@@ -65,8 +63,6 @@ class Dataset(torch.utils.data.Dataset):
 
     @targets.setter
     def targets(self, targets):
-        if not isinstance(targets, np.ndarray):
-            raise e.TypeError('`targets` should be a numpy array')
 
         self._targets = targets
 
@@ -93,11 +89,11 @@ class Dataset(torch.utils.data.Dataset):
 
         """
 
-        x = self._data[idx]
-        y = self._targets[idx]
+        x = self.data[idx]
+        y = self.targets[idx]
 
-        if self._transform:
-            x = self._transform(x)
+        if self.transform:
+            x = self.transform(x)
 
         return x, y
 
@@ -106,4 +102,4 @@ class Dataset(torch.utils.data.Dataset):
 
         """
 
-        return len(self._data)
+        return len(self.data)

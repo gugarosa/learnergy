@@ -28,19 +28,19 @@ class Model(torch.nn.Module):
         super(Model, self).__init__()
 
         # Creates a cpu-based device property
-        self._device = 'cpu'
+        self.device = 'cpu'
 
         # Checks if GPU is avaliable
         if torch.cuda.is_available() and use_gpu:
-            self._device = 'cuda'
+            self.device = 'cuda'
 
         # Creating an empty dictionary to hold historical values
-        self._history = {}
+        self.history = {}
 
         # Setting default tensor type to float
         torch.set_default_tensor_type(torch.FloatTensor)
 
-        logger.debug('Device: %s.', self._device)
+        logger.debug('Device: %s.', self.device)
 
     @property
     def device(self):
@@ -67,8 +67,6 @@ class Model(torch.nn.Module):
 
     @history.setter
     def history(self, history):
-        if not isinstance(history, dict):
-            raise e.TypeError('`history` should be a dictionary')
 
         self._history = history
 
@@ -78,7 +76,7 @@ class Model(torch.nn.Module):
         """
 
         for k, v in kwargs.items():
-            if k not in self._history.keys():
-                self._history[k] = []
+            if k not in self.history.keys():
+                self.history[k] = []
 
-            self._history[k].append(v)
+            self.history[k].append(v)

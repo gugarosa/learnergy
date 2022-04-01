@@ -72,7 +72,7 @@ class GaussianRBM(RBM):
         """
 
         # Calculate samples' activations
-        activations = F.linear(samples, self._W.t(), self._b)
+        activations = F.linear(samples, self.W.t(), self.b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -81,7 +81,7 @@ class GaussianRBM(RBM):
         h = torch.sum(s(activations), dim=1)
 
         # Calculate the visible term
-        v = 0.5 * torch.sum((samples - self._a) ** 2, dim=1)
+        v = 0.5 * torch.sum((samples - self.a) ** 2, dim=1)
 
         # Finally, gathers the system's energy
         energy = v - h
@@ -101,12 +101,12 @@ class GaussianRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(h, self._W, self._a)
+        activations = F.linear(h, self.W, self.a)
 
         # If scaling is true
         if scale:
             # Scale with temperature
-            states = torch.div(activations, self._T)
+            states = torch.div(activations, self.T)
 
         # If scaling is false
         else:
@@ -155,7 +155,7 @@ class GaussianRBM(RBM):
                 samples = samples.reshape(len(samples), self.n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self._device == 'cuda':
+                if self.device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
@@ -170,13 +170,13 @@ class GaussianRBM(RBM):
                     torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
-                self._optimizer.zero_grad()
+                self.optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self._optimizer.step()
+                self.optimizer.step()
 
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
@@ -258,7 +258,7 @@ class GaussianRBM(RBM):
             samples = samples.reshape(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self._device == 'cuda':
+            if self.device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -335,12 +335,12 @@ class GaussianReluRBM(GaussianRBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(v, self._W.t(), self._b)
+        activations = F.linear(v, self.W.t(), self.b)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = F.relu(torch.div(activations, self._T))
+            probs = F.relu(torch.div(activations, self.T))
 
         # If scaling is false
         else:
@@ -393,13 +393,13 @@ class VarianceGaussianRBM(RBM):
                                                   momentum, decay, temperature, use_gpu)
 
         # Variance parameter
-        self._sigma = nn.Parameter(torch.ones(n_visible))
+        self.sigma = nn.Parameter(torch.ones(n_visible))
 
         # Updating optimizer's parameters with `sigma`
-        self._optimizer.add_param_group({'params': self._sigma})
+        self.optimizer.add_param_group({'params': self.sigma})
 
         # Re-checks if current device is CUDA-based due to new parameter
-        if self._device == 'cuda':
+        if self.device == 'cuda':
             # If yes, re-uses CUDA in the whole class
             self.cuda()
 
@@ -415,8 +415,6 @@ class VarianceGaussianRBM(RBM):
 
     @sigma.setter
     def sigma(self, sigma):
-        if not isinstance(sigma, nn.Parameter):
-            raise e.TypeError('`sigma` should be a PyTorch parameter')
 
         self._sigma = sigma
 
@@ -434,12 +432,12 @@ class VarianceGaussianRBM(RBM):
 
         # Calculating neurons' activations
         activations = F.linear(
-            torch.div(v, torch.pow(self._sigma, 2)), self._W.t(), self._b)
+            torch.div(v, torch.pow(self.sigma, 2)), self.W.t(), self.b)
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.sigmoid(torch.div(activations, self._T))
+            probs = torch.sigmoid(torch.div(activations, self.T))
 
         # If scaling is false
         else:
@@ -464,18 +462,18 @@ class VarianceGaussianRBM(RBM):
         """
 
         # Calculating neurons' activations
-        activations = F.linear(h, self._W, self._a)
+        activations = F.linear(h, self.W, self.a)
 
         # Checks if device is CPU-based
-        if self._device == 'cpu':
+        if self.device == 'cpu':
             # If yes, variance needs to have size equal to (batch_size, n_visible)
             sigma = torch.repeat_interleave(
-                self._sigma, activations.size(0), dim=0)
+                self.sigma, activations.size(0), dim=0)
 
         # If it is GPU-based
         else:
             # Variance needs to have size equal to (n_visible)
-            sigma = self._sigma
+            sigma = self.sigma
 
         # Sampling current states from a Gaussian distribution
         states = torch.normal(activations, torch.pow(sigma, 2))
@@ -494,10 +492,10 @@ class VarianceGaussianRBM(RBM):
         """
 
         # Calculating the potency of variance
-        sigma = torch.pow(self._sigma, 2)
+        sigma = torch.pow(self.sigma, 2)
 
         # Calculate samples' activations
-        activations = F.linear(torch.div(samples, sigma), self._W.t(), self._b)
+        activations = F.linear(torch.div(samples, sigma), self.W.t(), self.b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -508,7 +506,7 @@ class VarianceGaussianRBM(RBM):
         # Calculate the visible term
         # Note that this might be improved
         v = torch.sum(
-            torch.div(torch.pow(samples - self._a, 2), 2 * sigma), dim=1)
+            torch.div(torch.pow(samples - self.a, 2), 2 * sigma), dim=1)
 
         # Finally, gathers the system's energy
         energy = -v - h

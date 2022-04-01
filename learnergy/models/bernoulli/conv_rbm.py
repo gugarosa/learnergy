@@ -50,49 +50,49 @@ class ConvRBM(Model):
         super(ConvRBM, self).__init__(use_gpu=use_gpu)
 
         # Shape of visible units
-        self._visible_shape = visible_shape
+        self.visible_shape = visible_shape
 
         # Shape of filters
-        self._filter_shape = filter_shape
+        self.filter_shape = filter_shape
 
         # Shape of hidden units
-        self._hidden_shape = (
+        self.hidden_shape = (
             visible_shape[0] - filter_shape[0] + 1, visible_shape[1] - filter_shape[1] + 1)
 
         # Number of filters
-        self._n_filters = n_filters
+        self.n_filters = n_filters
 
         # Number of channels
-        self._n_channels = n_channels
+        self.n_channels = n_channels
 
         # Number of steps Gibbs' sampling steps
-        self._steps = steps
+        self.steps = steps
 
         # Learning rate
-        self._lr = learning_rate
+        self.lr = learning_rate
 
         # Momentum parameter
-        self._momentum = momentum
+        self.momentum = momentum
 
         # Weight decay
-        self._decay = decay
+        self.decay = decay
 
         # Filters' matrix
-        self._W = nn.Parameter(torch.randn(
+        self.W = nn.Parameter(torch.randn(
             n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01)
 
         # Visible units bias
-        self._a = nn.Parameter(torch.zeros(n_channels))
+        self.a = nn.Parameter(torch.zeros(n_channels))
 
         # Hidden units bias
-        self._b = nn.Parameter(torch.zeros(n_filters))
+        self.b = nn.Parameter(torch.zeros(n_filters))
 
         # Creating the optimizer object
-        self._optimizer = opt.SGD(
+        self.optimizer = opt.SGD(
             self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
 
         # Checks if current device is CUDA-based
-        if self._device == 'cuda':
+        if self.device == 'cuda':
             # If yes, uses CUDA in the whole class
             self.cuda()
 
@@ -100,9 +100,9 @@ class ConvRBM(Model):
         logger.debug('Visible: %s | Filters: %d x %s | Hidden: %s | '
                      'Channels: %d | Learning: CD-%d | '
                      'Hyperparameters: lr = %s, momentum = %s, decay = %s.',
-                     self._visible_shape, self._n_filters, self._filter_shape,
-                     self._hidden_shape, self._n_channels, self._steps,
-                     self._lr, self._momentum, self._decay)
+                     self.visible_shape, self.n_filters, self.filter_shape,
+                     self.hidden_shape, self.n_channels, self.steps,
+                     self.lr, self.momentum, self.decay)
 
     @property
     def visible_shape(self):
@@ -114,8 +114,6 @@ class ConvRBM(Model):
 
     @visible_shape.setter
     def visible_shape(self, visible_shape):
-        if not isinstance(visible_shape, tuple):
-            raise e.TypeError('`visible_shape` should be a tuple')
 
         self._visible_shape = visible_shape
 
@@ -129,9 +127,7 @@ class ConvRBM(Model):
 
     @filter_shape.setter
     def filter_shape(self, filter_shape):
-        if not isinstance(filter_shape, tuple):
-            raise e.TypeError('`filter_shape` should be a tuple')
-        if (filter_shape[0] >= self._visible_shape[0]) or (filter_shape[1] >= self._visible_shape[1]):
+        if (filter_shape[0] >= self.visible_shape[0]) or (filter_shape[1] >= self.visible_shape[1]):
             raise e.ValueError(
                 '`filter_shape` should be smaller than `visible_shape`')
 
@@ -147,8 +143,6 @@ class ConvRBM(Model):
 
     @hidden_shape.setter
     def hidden_shape(self, hidden_shape):
-        if not isinstance(hidden_shape, tuple):
-            raise e.TypeError('`hidden_shape` should be a tuple')
 
         self._hidden_shape = hidden_shape
 
@@ -162,8 +156,6 @@ class ConvRBM(Model):
 
     @n_filters.setter
     def n_filters(self, n_filters):
-        if not isinstance(n_filters, int):
-            raise e.TypeError('`n_filters` should be an integer')
         if n_filters <= 0:
             raise e.ValueError('`n_filters` should be > 0')
 
@@ -179,8 +171,6 @@ class ConvRBM(Model):
 
     @n_channels.setter
     def n_channels(self, n_channels):
-        if not isinstance(n_channels, int):
-            raise e.TypeError('`n_channels` should be an integer')
         if n_channels <= 0:
             raise e.ValueError('`n_channels` should be > 0')
 
@@ -196,8 +186,6 @@ class ConvRBM(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, int):
-            raise e.TypeError('`steps` should be an integer')
         if steps <= 0:
             raise e.ValueError('`steps` should be > 0')
 
@@ -213,8 +201,6 @@ class ConvRBM(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not isinstance(lr, (float, int)):
-            raise e.TypeError('`lr` should be a float or integer')
         if lr < 0:
             raise e.ValueError('`lr` should be >= 0')
 
@@ -230,8 +216,6 @@ class ConvRBM(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not isinstance(momentum, (float, int)):
-            raise e.TypeError('`momentum` should be a float or integer')
         if momentum < 0:
             raise e.ValueError('`momentum` should be >= 0')
 
@@ -247,8 +231,6 @@ class ConvRBM(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not isinstance(decay, (float, int)):
-            raise e.TypeError('`decay` should be a float or integer')
         if decay < 0:
             raise e.ValueError('`decay` should be >= 0')
 
@@ -264,8 +246,6 @@ class ConvRBM(Model):
 
     @W.setter
     def W(self, W):
-        if not isinstance(W, nn.Parameter):
-            raise e.TypeError('`W` should be a PyTorch parameter')
 
         self._W = W
 
@@ -279,8 +259,6 @@ class ConvRBM(Model):
 
     @a.setter
     def a(self, a):
-        if not isinstance(a, nn.Parameter):
-            raise e.TypeError('`a` should be a PyTorch parameter')
 
         self._a = a
 
@@ -294,8 +272,6 @@ class ConvRBM(Model):
 
     @b.setter
     def b(self, b):
-        if not isinstance(b, nn.Parameter):
-            raise e.TypeError('`b` should be a PyTorch parameter')
 
         self._b = b
 
@@ -309,8 +285,6 @@ class ConvRBM(Model):
 
     @optimizer.setter
     def optimizer(self, optimizer):
-        if not isinstance(optimizer, opt.SGD):
-            raise e.TypeError('`optimizer` should be a SGD')
 
         self._optimizer = optimizer
 
@@ -326,7 +300,7 @@ class ConvRBM(Model):
         """
 
         # Calculating neurons' activations
-        activations = F.conv2d(v, self._W, bias=self._b)
+        activations = F.conv2d(v, self.W, bias=self.b)
 
         # Calculates probabilities
         probs = torch.sigmoid(activations)
@@ -348,7 +322,7 @@ class ConvRBM(Model):
         """
 
         # Calculating neurons' activations
-        activations = F.conv_transpose2d(h, self._W, bias=self._a)
+        activations = F.conv_transpose2d(h, self.W, bias=self.a)
 
         # Calculates probabilities
         probs = torch.sigmoid(activations)
@@ -378,7 +352,7 @@ class ConvRBM(Model):
         neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
-        for _ in range(self._steps):
+        for _ in range(self.steps):
             # Calculating visible probabilities and states
             _, visible_states = self.visible_sampling(
                 neg_hidden_states)
@@ -401,7 +375,7 @@ class ConvRBM(Model):
         """
 
         # Calculate samples' activations
-        activations = F.conv2d(samples, self._W, bias=self._b)
+        activations = F.conv2d(samples, self.W, bias=self.b)
 
         # Creating a Softplus function for numerical stability
         s = nn.Softplus()
@@ -410,7 +384,7 @@ class ConvRBM(Model):
         h = torch.sum(s(activations), dim=(1, 2, 3))
 
         # Calculate the visible term
-        v = torch.sum(samples, dim=(1, 2, 3)) * torch.mean(self._a)
+        v = torch.sum(samples, dim=(1, 2, 3)) * torch.mean(self.a)
 
         # Finally, gathers the system's energy
         energy = -v - h
@@ -448,10 +422,10 @@ class ConvRBM(Model):
             for samples, _ in tqdm(batches):
                 # Flattening the samples' batch
                 samples = samples.reshape(
-                    len(samples), self._n_channels, self._visible_shape[0], self._visible_shape[1])
+                    len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self._device == 'cuda':
+                if self.device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
@@ -466,13 +440,13 @@ class ConvRBM(Model):
                     torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
-                self._optimizer.zero_grad()
+                self.optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self._optimizer.step()
+                self.optimizer.step()
 
                 # Gathering the size of the batch
                 batch_size = samples.size(0)
@@ -524,10 +498,10 @@ class ConvRBM(Model):
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
             samples = samples.reshape(
-                len(samples), self._n_channels, self._visible_shape[0], self._visible_shape[1])
+                len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
 
             # Checking whether GPU is avaliable and if it should be used
-            if self._device == 'cuda':
+            if self.device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 

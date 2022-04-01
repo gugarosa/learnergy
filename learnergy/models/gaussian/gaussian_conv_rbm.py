@@ -50,7 +50,7 @@ class GaussianConvRBM(ConvRBM):
                                               steps, learning_rate, momentum, decay, use_gpu)
 
         # Inner data normalization
-        self._normalize = True
+        self.normalize = True
 
         logger.info('Class overrided.')
 
@@ -64,8 +64,6 @@ class GaussianConvRBM(ConvRBM):
 
     @normalize.setter
     def normalize(self, normalize):
-        if not isinstance(normalize, bool):
-            raise e.TypeError('`normalize` should be a boolean')
 
         self._normalize = normalize
 
@@ -80,7 +78,7 @@ class GaussianConvRBM(ConvRBM):
 
         """
         # Calculating neurons' activations
-        activations = F.conv2d(v, self._W, bias=self._b)
+        activations = F.conv2d(v, self.W, bias=self.b)
 
         # Calculate probabilities
         probs = F.relu6(activations).detach()
@@ -99,10 +97,10 @@ class GaussianConvRBM(ConvRBM):
         """
 
         # Calculating neurons' activations
-        activations = F.conv_transpose2d(h, self._W, bias=self._a)
+        activations = F.conv_transpose2d(h, self.W, bias=self.a)
 
         # Checks it is supposed to perform the normalization
-        if self._normalize:
+        if self.normalize:
             # Uses the previously calculated activations
             probs = activations.detach()
 
@@ -143,15 +141,15 @@ class GaussianConvRBM(ConvRBM):
             # For every batch
             for samples, _ in tqdm(batches):
                 # Guarantee the samples' batch
-                samples = samples.reshape(len(samples), self._n_channels, self._visible_shape[0], self._visible_shape[1])
+                samples = samples.reshape(len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self._device == 'cuda':
+                if self.device == 'cuda':
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
                 # If it is supposed to use normalization
-                if self._normalize:
+                if self.normalize:
                     # Performs the normalization
                     samples = ((samples - torch.mean(samples, 0, True)) /
                                (torch.std(samples, 0, True) + c.EPSILON))
@@ -167,13 +165,13 @@ class GaussianConvRBM(ConvRBM):
                     torch.mean(self.energy(visible_states))
 
                 # Initializing the gradient
-                self._optimizer.zero_grad()
+                self.optimizer.zero_grad()
 
                 # Computing the gradients
                 cost.backward()
 
                 # Updating the parameters
-                self._optimizer.step()
+                self.optimizer.step()
 
                 # Calculating current's batch MSE
                 batch_mse = torch.div(

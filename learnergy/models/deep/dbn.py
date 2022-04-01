@@ -57,61 +57,61 @@ class DBN(Model):
         super(DBN, self).__init__(use_gpu=use_gpu)
 
         # Amount of visible units
-        self._n_visible = n_visible
+        self.n_visible = n_visible
 
         # Amount of hidden units per layer
-        self._n_hidden = n_hidden
+        self.n_hidden = n_hidden
 
         # Number of layers
-        self._n_layers = len(n_hidden)
+        self.n_layers = len(n_hidden)
 
         # Number of steps Gibbs' sampling steps
-        self._steps = steps
+        self.steps = steps
 
         # Learning rate
-        self._lr = learning_rate
+        self.lr = learning_rate
 
         # Momentum parameter
-        self._momentum = momentum
+        self.momentum = momentum
 
         # Weight decay
-        self._decay = decay
+        self.decay = decay
 
         # Temperature factor
-        self._T = temperature
+        self.T = temperature
 
         # List of models (RBMs)
-        self._models = []
+        self.models = []
 
         # For every possible layer
-        for i in range(self._n_layers):
+        for i in range(self.n_layers):
             # If it is the first layer
             if i == 0:
                 # Gathers the number of input units as number of visible units
-                n_input = self._n_visible
+                n_input = self.n_visible
 
             # If it is not the first layer
             else:
                 # Gathers the number of input units as previous number of hidden units
-                n_input = self._n_hidden[i-1]
+                n_input = self.n_hidden[i-1]
 
                 # After creating the first layer, we need to change the model's type to sigmoid
                 model = 'sigmoid'
 
             # Creates an RBM
-            m = MODELS[model](n_input, self._n_hidden[i], self._steps[i],
-                              self._lr[i], self._momentum[i], self._decay[i], self._T[i], use_gpu)
+            m = MODELS[model](n_input, self.n_hidden[i], self.steps[i],
+                              self.lr[i], self.momentum[i], self.decay[i], self.T[i], use_gpu)
 
             # Appends the model to the list
-            self._models.append(m)
+            self.models.append(m)
 
         # Checks if current device is CUDA-based
-        if self._device == 'cuda':
+        if self.device == 'cuda':
             # If yes, uses CUDA in the whole class
             self.cuda()
 
         logger.info('Class overrided.')
-        logger.debug('Number of layers: %d.', self._n_layers)
+        logger.debug('Number of layers: %d.', self.n_layers)
 
     @property
     def n_visible(self):
@@ -123,8 +123,6 @@ class DBN(Model):
 
     @n_visible.setter
     def n_visible(self, n_visible):
-        if not isinstance(n_visible, int):
-            raise e.TypeError('`n_visible` should be an integer')
         if n_visible <= 0:
             raise e.ValueError('`n_visible` should be > 0')
 
@@ -140,8 +138,6 @@ class DBN(Model):
 
     @n_hidden.setter
     def n_hidden(self, n_hidden):
-        if not isinstance(n_hidden, tuple):
-            raise e.TypeError('`n_hidden` should be a tuple')
 
         self._n_hidden = n_hidden
 
@@ -155,8 +151,6 @@ class DBN(Model):
 
     @n_layers.setter
     def n_layers(self, n_layers):
-        if not isinstance(n_layers, int):
-            raise e.TypeError('`n_layers` should be an integer')
         if n_layers <= 0:
             raise e.ValueError('`n_layers` should be > 0')
 
@@ -172,9 +166,7 @@ class DBN(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, tuple):
-            raise e.TypeError('`steps` should be a tuple')
-        if len(steps) != self._n_layers:
+        if len(steps) != self.n_layers:
             raise e.SizeError(
                 f'`steps` should have size equal as {self.n_layers}')
 
@@ -190,9 +182,7 @@ class DBN(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not isinstance(lr, tuple):
-            raise e.TypeError('`lr` should be a tuple')
-        if len(lr) != self._n_layers:
+        if len(lr) != self.n_layers:
             raise e.SizeError(
                 f'`lr` should have size equal as {self.n_layers}')
 
@@ -208,9 +198,7 @@ class DBN(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not isinstance(momentum, tuple):
-            raise e.TypeError('`momentum` should be a tuple')
-        if len(momentum) != self._n_layers:
+        if len(momentum) != self.n_layers:
             raise e.SizeError(
                 f'`momentum` should have size equal as {self.n_layers}')
 
@@ -226,9 +214,7 @@ class DBN(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not isinstance(decay, tuple):
-            raise e.TypeError('`decay` should be a tuple')
-        if len(decay) != self._n_layers:
+        if len(decay) != self.n_layers:
             raise e.SizeError(
                 f'`decay` should have size equal as {self.n_layers}')
 
@@ -244,9 +230,7 @@ class DBN(Model):
 
     @T.setter
     def T(self, T):
-        if not isinstance(T, tuple):
-            raise e.TypeError('`T` should be a tuple')
-        if len(T) != self._n_layers:
+        if len(T) != self.n_layers:
             raise e.SizeError(f'`T` should have size equal as {self.n_layers}')
 
         self._T = T
@@ -261,8 +245,6 @@ class DBN(Model):
 
     @models.setter
     def models(self, models):
-        if not isinstance(models, list):
-            raise e.TypeError('`models` should be a list')
 
         self._models = models
 
@@ -280,9 +262,9 @@ class DBN(Model):
         """
 
         # Checking if the length of number of epochs' list is correct
-        if len(epochs) != self._n_layers:
+        if len(epochs) != self.n_layers:
             # If not, raises an error
-            raise e.SizeError(('`epochs` should have size equal as %d', self._n_layers))
+            raise e.SizeError(('`epochs` should have size equal as %d', self.n_layers))
 
         # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
@@ -291,8 +273,8 @@ class DBN(Model):
         samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
 
         # For every possible model (RBM)
-        for i, model in enumerate(self._models):
-            logger.info('Fitting layer %d/%d ...', i+1, self._n_layers)
+        for i, model in enumerate(self.models):
+            logger.info('Fitting layer %d/%d ...', i+1, self.n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -315,7 +297,7 @@ class DBN(Model):
                 samples = d.data
 
             # Checking whether GPU is avaliable and if it should be used
-            if self._device == 'cuda':
+            if self.device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -332,7 +314,7 @@ class DBN(Model):
             samples, _ = model.hidden_sampling(samples)
 
             # Checking whether GPU is being used
-            if self._device == 'cuda':
+            if self.device == 'cuda':
                 # If yes, get samples back to the CPU
                 samples = samples.cpu()
 
@@ -366,10 +348,10 @@ class DBN(Model):
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
-            samples = samples.reshape(batch_size, self._models[0].n_visible)
+            samples = samples.reshape(batch_size, self.models[0].n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self._device == 'cuda':
+            if self.device == 'cuda':
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -377,7 +359,7 @@ class DBN(Model):
             hidden_probs = samples
 
             # For every possible model (RBM)
-            for model in self._models:
+            for model in self.models:
                 # Flattening the hidden probabilities
                 hidden_probs = hidden_probs.reshape(batch_size, model.n_visible)
 
@@ -388,7 +370,7 @@ class DBN(Model):
             visible_probs = hidden_probs
 
             # For every possible model (RBM)
-            for model in reversed(self._models):
+            for model in reversed(self.models):
                 # Flattening the visible probabilities
                 visible_probs = visible_probs.reshape(
                     batch_size, model.n_hidden)
@@ -423,7 +405,7 @@ class DBN(Model):
         """
 
         # For every possible model
-        for model in self._models:
+        for model in self.models:
             # Calculates the outputs of current model
             x, _ = model.hidden_sampling(x)
 
