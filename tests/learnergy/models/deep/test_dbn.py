@@ -198,10 +198,7 @@ def test_dbn_models():
 def test_dbn_models_setter():
     new_dbn = dbn.DBN()
 
-    try:
-        new_dbn.models = 'a'
-    except:
-        new_dbn.models = []
+    new_dbn.models = []
 
     assert len(new_dbn.models) == 0
 

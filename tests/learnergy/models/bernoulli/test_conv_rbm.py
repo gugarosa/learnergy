@@ -13,10 +13,7 @@ def test_conv_rbm_visible_shape():
 def test_conv_rbm_visible_shape_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
-    try:
-        new_conv_rbm.visible_shape = 'a'
-    except:
-        new_conv_rbm.visible_shape = (28, 28)
+    new_conv_rbm.visible_shape = (28, 28)
 
     assert new_conv_rbm.visible_shape == (28, 28)
 
@@ -47,10 +44,7 @@ def test_conv_rbm_hidden_shape():
 def test_conv_rbm_hidden_shape_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
-    try:
-        new_conv_rbm.hidden_shape = 'a'
-    except:
-        new_conv_rbm.hidden_shape = (22, 22)
+    new_conv_rbm.hidden_shape = (22, 22)
 
     assert new_conv_rbm.hidden_shape == (22, 22)
 
@@ -265,11 +259,8 @@ def test_conv_rbm_optimizer():
 def test_conv_rbm_optimizer_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
-    try:
-        new_conv_rbm.optimizer = 'OPT'
-    except:
-        new_conv_rbm.optimizer = torch.optim.SGD(
-            new_conv_rbm.parameters(), lr=0.1)
+    new_conv_rbm.optimizer = torch.optim.SGD(
+        new_conv_rbm.parameters(), lr=0.1)
 
     assert type(new_conv_rbm.optimizer).__name__ == 'SGD'
 
