@@ -123,8 +123,6 @@ class DBN(Model):
 
     @n_visible.setter
     def n_visible(self, n_visible):
-        if not isinstance(n_visible, int):
-            raise e.TypeError('`n_visible` should be an integer')
         if n_visible <= 0:
             raise e.ValueError('`n_visible` should be > 0')
 
@@ -140,8 +138,6 @@ class DBN(Model):
 
     @n_hidden.setter
     def n_hidden(self, n_hidden):
-        if not isinstance(n_hidden, tuple):
-            raise e.TypeError('`n_hidden` should be a tuple')
 
         self._n_hidden = n_hidden
 
@@ -155,8 +151,6 @@ class DBN(Model):
 
     @n_layers.setter
     def n_layers(self, n_layers):
-        if not isinstance(n_layers, int):
-            raise e.TypeError('`n_layers` should be an integer')
         if n_layers <= 0:
             raise e.ValueError('`n_layers` should be > 0')
 
@@ -172,8 +166,6 @@ class DBN(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, tuple):
-            raise e.TypeError('`steps` should be a tuple')
         if len(steps) != self.n_layers:
             raise e.SizeError(
                 f'`steps` should have size equal as {self.n_layers}')
@@ -190,8 +182,6 @@ class DBN(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not isinstance(lr, tuple):
-            raise e.TypeError('`lr` should be a tuple')
         if len(lr) != self.n_layers:
             raise e.SizeError(
                 f'`lr` should have size equal as {self.n_layers}')
@@ -208,8 +198,6 @@ class DBN(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not isinstance(momentum, tuple):
-            raise e.TypeError('`momentum` should be a tuple')
         if len(momentum) != self.n_layers:
             raise e.SizeError(
                 f'`momentum` should have size equal as {self.n_layers}')
@@ -226,8 +214,6 @@ class DBN(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not isinstance(decay, tuple):
-            raise e.TypeError('`decay` should be a tuple')
         if len(decay) != self.n_layers:
             raise e.SizeError(
                 f'`decay` should have size equal as {self.n_layers}')
@@ -244,8 +230,6 @@ class DBN(Model):
 
     @T.setter
     def T(self, T):
-        if not isinstance(T, tuple):
-            raise e.TypeError('`T` should be a tuple')
         if len(T) != self.n_layers:
             raise e.SizeError(f'`T` should have size equal as {self.n_layers}')
 
@@ -261,8 +245,6 @@ class DBN(Model):
 
     @models.setter
     def models(self, models):
-        if not isinstance(models, list):
-            raise e.TypeError('`models` should be a list')
 
         self._models = models
 

@@ -114,8 +114,6 @@ class ConvRBM(Model):
 
     @visible_shape.setter
     def visible_shape(self, visible_shape):
-        if not isinstance(visible_shape, tuple):
-            raise e.TypeError('`visible_shape` should be a tuple')
 
         self._visible_shape = visible_shape
 
@@ -129,8 +127,6 @@ class ConvRBM(Model):
 
     @filter_shape.setter
     def filter_shape(self, filter_shape):
-        if not isinstance(filter_shape, tuple):
-            raise e.TypeError('`filter_shape` should be a tuple')
         if (filter_shape[0] >= self.visible_shape[0]) or (filter_shape[1] >= self.visible_shape[1]):
             raise e.ValueError(
                 '`filter_shape` should be smaller than `visible_shape`')
@@ -147,8 +143,6 @@ class ConvRBM(Model):
 
     @hidden_shape.setter
     def hidden_shape(self, hidden_shape):
-        if not isinstance(hidden_shape, tuple):
-            raise e.TypeError('`hidden_shape` should be a tuple')
 
         self._hidden_shape = hidden_shape
 
@@ -162,8 +156,6 @@ class ConvRBM(Model):
 
     @n_filters.setter
     def n_filters(self, n_filters):
-        if not isinstance(n_filters, int):
-            raise e.TypeError('`n_filters` should be an integer')
         if n_filters <= 0:
             raise e.ValueError('`n_filters` should be > 0')
 
@@ -179,8 +171,6 @@ class ConvRBM(Model):
 
     @n_channels.setter
     def n_channels(self, n_channels):
-        if not isinstance(n_channels, int):
-            raise e.TypeError('`n_channels` should be an integer')
         if n_channels <= 0:
             raise e.ValueError('`n_channels` should be > 0')
 
@@ -196,8 +186,6 @@ class ConvRBM(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, int):
-            raise e.TypeError('`steps` should be an integer')
         if steps <= 0:
             raise e.ValueError('`steps` should be > 0')
 
@@ -213,8 +201,6 @@ class ConvRBM(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not isinstance(lr, (float, int)):
-            raise e.TypeError('`lr` should be a float or integer')
         if lr < 0:
             raise e.ValueError('`lr` should be >= 0')
 
@@ -230,8 +216,6 @@ class ConvRBM(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not isinstance(momentum, (float, int)):
-            raise e.TypeError('`momentum` should be a float or integer')
         if momentum < 0:
             raise e.ValueError('`momentum` should be >= 0')
 
@@ -247,8 +231,6 @@ class ConvRBM(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not isinstance(decay, (float, int)):
-            raise e.TypeError('`decay` should be a float or integer')
         if decay < 0:
             raise e.ValueError('`decay` should be >= 0')
 
@@ -264,8 +246,6 @@ class ConvRBM(Model):
 
     @W.setter
     def W(self, W):
-        if not isinstance(W, nn.Parameter):
-            raise e.TypeError('`W` should be a PyTorch parameter')
 
         self._W = W
 
@@ -279,8 +259,6 @@ class ConvRBM(Model):
 
     @a.setter
     def a(self, a):
-        if not isinstance(a, nn.Parameter):
-            raise e.TypeError('`a` should be a PyTorch parameter')
 
         self._a = a
 
@@ -294,8 +272,6 @@ class ConvRBM(Model):
 
     @b.setter
     def b(self, b):
-        if not isinstance(b, nn.Parameter):
-            raise e.TypeError('`b` should be a PyTorch parameter')
 
         self._b = b
 
@@ -309,8 +285,6 @@ class ConvRBM(Model):
 
     @optimizer.setter
     def optimizer(self, optimizer):
-        if not isinstance(optimizer, opt.SGD):
-            raise e.TypeError('`optimizer` should be a SGD')
 
         self._optimizer = optimizer
 

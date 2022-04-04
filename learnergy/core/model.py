@@ -67,8 +67,6 @@ class Model(torch.nn.Module):
 
     @history.setter
     def history(self, history):
-        if not isinstance(history, dict):
-            raise e.TypeError('`history` should be a dictionary')
 
         self._history = history
 

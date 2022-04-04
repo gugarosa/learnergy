@@ -13,10 +13,7 @@ def test_e_dropout_rbm_M():
 def test_e_dropout_rbm_M_setter():
     new_e_dropout_rbm = e_dropout_rbm.EDropoutRBM()
 
-    try:
-        new_e_dropout_rbm.M = 1
-    except:
-        new_e_dropout_rbm.M = torch.Tensor()
+    new_e_dropout_rbm.M = torch.Tensor()
 
     assert isinstance(new_e_dropout_rbm.M, torch.Tensor)
 

@@ -415,8 +415,6 @@ class VarianceGaussianRBM(RBM):
 
     @sigma.setter
     def sigma(self, sigma):
-        if not isinstance(sigma, nn.Parameter):
-            raise e.TypeError('`sigma` should be a PyTorch parameter')
 
         self._sigma = sigma
 

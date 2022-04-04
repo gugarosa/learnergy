@@ -61,8 +61,6 @@ class DropoutRBM(RBM):
 
     @p.setter
     def p(self, p):
-        if not isinstance(p, (float, int)):
-            raise e.TypeError('`p` should be a float or integer')
         if p < 0 or p > 1:
             raise e.ValueError('`p` should be between 0 and 1')
 

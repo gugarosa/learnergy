@@ -62,8 +62,6 @@ class ResidualDBN(DBN):
 
     @zetta1.setter
     def zetta1(self, zetta1):
-        if not isinstance(zetta1, (float, int)):
-            raise e.TypeError('`zetta1` should be a float or integer')
         if zetta1 < 0:
             raise e.ValueError('`zetta1` should be >= 0')
 
@@ -79,8 +77,6 @@ class ResidualDBN(DBN):
 
     @zetta2.setter
     def zetta2(self, zetta2):
-        if not isinstance(zetta2, (float, int)):
-            raise e.TypeError('`zetta2` should be a float or integer')
         if zetta2 < 0:
             raise e.ValueError('`zetta2` should be >= 0')
 
@@ -149,12 +145,12 @@ class ResidualDBN(DBN):
             if d.transform:
                 # Applies the transform over the samples
                 samples = d.transform(d.data)
-
+    
             # If there is no transform
             else:
                 # Just gather the samples
                 samples = d.data
-
+    
             # Checking whether GPU is avaliable and if it should be used
             if self.device == 'cuda':
                 # Applies the GPU usage to the data

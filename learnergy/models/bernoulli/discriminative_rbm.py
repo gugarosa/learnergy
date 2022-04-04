@@ -83,8 +83,6 @@ class DiscriminativeRBM(RBM):
 
     @n_classes.setter
     def n_classes(self, n_classes):
-        if not isinstance(n_classes, int):
-            raise e.TypeError('`n_classes` should be an integer')
         if n_classes <= 0:
             raise e.ValueError('`n_classes` should be > 0')
 
@@ -100,8 +98,6 @@ class DiscriminativeRBM(RBM):
 
     @U.setter
     def U(self, U):
-        if not isinstance(U, nn.Parameter):
-            raise e.TypeError('`U` should be a PyTorch parameter')
 
         self._U = U
 
@@ -115,8 +111,6 @@ class DiscriminativeRBM(RBM):
 
     @c.setter
     def c(self, c):
-        if not isinstance(c, nn.Parameter):
-            raise e.TypeError('`c` should be a PyTorch parameter')
 
         self._c = c
 
@@ -130,8 +124,6 @@ class DiscriminativeRBM(RBM):
 
     @loss.setter
     def loss(self, loss):
-        if not isinstance(loss, nn.CrossEntropyLoss):
-            raise e.TypeError('`loss` should be a CrossEntropy')
 
         self._loss = loss
 
@@ -350,8 +342,6 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
     @alpha.setter
     def alpha(self, alpha):
-        if not isinstance(alpha, (float, int)):
-            raise e.TypeError('`alpha` should be a float or integer')
         if alpha < 0:
             raise e.ValueError('`alpha` should be >= 0')
 

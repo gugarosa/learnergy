@@ -13,9 +13,6 @@ def test_model():
 
     assert new_model.device == 'cuda'
 
-    try:
-        new_model.history = []
-    except:
-        new_model.history = {}
+    new_model.history = {}
 
     assert new_model.history == {}

@@ -50,8 +50,6 @@ class Dataset(torch.utils.data.Dataset):
 
     @data.setter
     def data(self, data):
-        if not isinstance(data, (np.ndarray, torch.Tensor)):
-            raise e.TypeError('`data` should be a numpy array or a tensor')
 
         self._data = data
 
@@ -65,8 +63,6 @@ class Dataset(torch.utils.data.Dataset):
 
     @targets.setter
     def targets(self, targets):
-        if not isinstance(targets, np.ndarray):
-            raise e.TypeError('`targets` should be a numpy array')
 
         self._targets = targets
 

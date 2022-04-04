@@ -43,8 +43,6 @@ def plot(*args, labels=None, title='', subtitle='', xlabel='epoch', ylabel='valu
         ax.grid()
 
     if labels:
-        if not isinstance(labels, list):
-            raise e.TypeError('`labels` should be a list')
 
         if len(labels) != len(args):
             raise e.SizeError('`args` and `labels` should have the same size')

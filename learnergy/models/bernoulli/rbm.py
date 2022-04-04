@@ -101,8 +101,6 @@ class RBM(Model):
 
     @n_visible.setter
     def n_visible(self, n_visible):
-        if not isinstance(n_visible, int):
-            raise e.TypeError('`n_visible` should be an integer')
         if n_visible <= 0:
             raise e.ValueError('`n_visible` should be > 0')
 
@@ -118,8 +116,6 @@ class RBM(Model):
 
     @n_hidden.setter
     def n_hidden(self, n_hidden):
-        if not isinstance(n_hidden, int):
-            raise e.TypeError('`n_hidden` should be an integer')
         if n_hidden <= 0:
             raise e.ValueError('`n_hidden` should be > 0')
 
@@ -135,8 +131,6 @@ class RBM(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, int):
-            raise e.TypeError('`steps` should be an integer')
         if steps <= 0:
             raise e.ValueError('`steps` should be > 0')
 
@@ -152,8 +146,6 @@ class RBM(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not isinstance(lr, (float, int)):
-            raise e.TypeError('`lr` should be a float or integer')
         if lr < 0:
             raise e.ValueError('`lr` should be >= 0')
 
@@ -169,8 +161,6 @@ class RBM(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not isinstance(momentum, (float, int)):
-            raise e.TypeError('`momentum` should be a float or integer')
         if momentum < 0:
             raise e.ValueError('`momentum` should be >= 0')
 
@@ -186,8 +176,6 @@ class RBM(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not isinstance(decay, (float, int)):
-            raise e.TypeError('`decay` should be a float or integer')
         if decay < 0:
             raise e.ValueError('`decay` should be >= 0')
 
@@ -203,8 +191,6 @@ class RBM(Model):
 
     @T.setter
     def T(self, T):
-        if not isinstance(T, (float, int)):
-            raise e.TypeError('`T` should be a float or integer')
         if T <= 0 or T > 1:
             raise e.ValueError('`T` should be between 0 and 1')
 
@@ -220,8 +206,6 @@ class RBM(Model):
 
     @W.setter
     def W(self, W):
-        if not isinstance(W, nn.Parameter):
-            raise e.TypeError('`W` should be a PyTorch parameter')
 
         self._W = W
 
@@ -235,9 +219,6 @@ class RBM(Model):
 
     @a.setter
     def a(self, a):
-        if not isinstance(a, nn.Parameter):
-            raise e.TypeError('`a` should be a PyTorch parameter')
-
         self._a = a
 
     @property
@@ -250,9 +231,6 @@ class RBM(Model):
 
     @b.setter
     def b(self, b):
-        if not isinstance(b, nn.Parameter):
-            raise e.TypeError('`b` should be a PyTorch parameter')
-
         self._b = b
 
     @property
@@ -265,8 +243,6 @@ class RBM(Model):
 
     @optimizer.setter
     def optimizer(self, optimizer):
-        if not isinstance(optimizer, opt.SGD):
-            raise e.TypeError('`optimizer` should be a SGD')
 
         self._optimizer = optimizer
 

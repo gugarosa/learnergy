@@ -64,8 +64,6 @@ class GaussianConvRBM(ConvRBM):
 
     @normalize.setter
     def normalize(self, normalize):
-        if not isinstance(normalize, bool):
-            raise e.TypeError('`normalize` should be a boolean')
 
         self._normalize = normalize
 

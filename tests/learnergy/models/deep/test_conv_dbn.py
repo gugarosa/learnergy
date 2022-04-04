@@ -13,10 +13,7 @@ def test_dbn_visible_shape():
 def test_dbn_visible_shape_setter():
     new_dbn = conv_dbn.ConvDBN()
 
-    try:
-        new_dbn.visible_shape = 'a'
-    except:
-        new_dbn.visible_shape = (1, 1)
+    new_dbn.visible_shape = (1, 1)
 
     assert len(new_dbn.visible_shape) == 2
 
@@ -208,9 +205,6 @@ def test_dbn_models():
 def test_dbn_models_setter():
     new_dbn = conv_dbn.ConvDBN()
 
-    try:
-        new_dbn.models = 'a'
-    except:
-        new_dbn.models = []
+    new_dbn.models = []
 
     assert len(new_dbn.models) == 0

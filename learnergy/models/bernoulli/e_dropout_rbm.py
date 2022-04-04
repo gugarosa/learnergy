@@ -62,8 +62,6 @@ class EDropoutRBM(RBM):
 
     @M.setter
     def M(self, M):
-        if not isinstance(M, torch.Tensor):
-            raise ex.TypeError('`M` should be a PyTorch tensor')
 
         self._M = M
 

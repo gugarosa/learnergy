@@ -114,8 +114,6 @@ class ConvDBN(Model):
 
     @visible_shape.setter
     def visible_shape(self, visible_shape):
-        if not isinstance(visible_shape, tuple):
-            raise e.TypeError('`visible_shape` should be a tuple')
 
         self._visible_shape = visible_shape
 
@@ -129,8 +127,6 @@ class ConvDBN(Model):
 
     @filter_shape.setter
     def filter_shape(self, filter_shape):
-        if not isinstance(filter_shape, tuple):
-            raise e.TypeError('`filter_shape` should be a tuple of tuples')
 
         self._filter_shape = filter_shape
 
@@ -144,8 +140,6 @@ class ConvDBN(Model):
 
     @n_filters.setter
     def n_filters(self, n_filters):
-        if not isinstance(n_filters, tuple):
-            raise e.TypeError('`n_filters` should be a tuple')
 
         self._n_filters = n_filters
 
@@ -159,8 +153,6 @@ class ConvDBN(Model):
 
     @n_channels.setter
     def n_channels(self, n_channels):
-        if not isinstance(n_channels, int):
-            raise e.TypeError('`n_channels` should be an integer')
         if n_channels <= 0:
             raise e.ValueError('`n_channels` should be > 0')
 
@@ -176,8 +168,6 @@ class ConvDBN(Model):
 
     @n_layers.setter
     def n_layers(self, n_layers):
-        if not isinstance(n_layers, int):
-            raise e.TypeError('`n_layers` should be an integer')
         if n_layers <= 0:
             raise e.ValueError('`n_layers` should be > 0')
 
@@ -193,8 +183,6 @@ class ConvDBN(Model):
 
     @steps.setter
     def steps(self, steps):
-        if not isinstance(steps, tuple):
-            raise e.TypeError('`steps` should be a tuple')
         if len(steps) != self.n_layers:
             raise e.SizeError(
                 f'`steps` should have size equal as {self.n_layers}')
@@ -211,8 +199,6 @@ class ConvDBN(Model):
 
     @lr.setter
     def lr(self, lr):
-        if not isinstance(lr, tuple):
-            raise e.TypeError('`lr` should be a tuple')
         if len(lr) != self.n_layers:
             raise e.SizeError(
                 f'`lr` should have size equal as {self.n_layers}')
@@ -229,8 +215,6 @@ class ConvDBN(Model):
 
     @momentum.setter
     def momentum(self, momentum):
-        if not isinstance(momentum, tuple):
-            raise e.TypeError('`momentum` should be a tuple')
         if len(momentum) != self.n_layers:
             raise e.SizeError(
                 f'`momentum` should have size equal as {self.n_layers}')
@@ -247,8 +231,6 @@ class ConvDBN(Model):
 
     @decay.setter
     def decay(self, decay):
-        if not isinstance(decay, tuple):
-            raise e.TypeError('`decay` should be a tuple')
         if len(decay) != self.n_layers:
             raise e.SizeError(
                 f'`decay` should have size equal as {self.n_layers}')
@@ -265,8 +247,6 @@ class ConvDBN(Model):
 
     @models.setter
     def models(self, models):
-        if not isinstance(models, list):
-            raise e.TypeError('`models` should be a list')
 
         self._models = models
 

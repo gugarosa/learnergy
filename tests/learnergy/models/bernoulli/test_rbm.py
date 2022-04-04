@@ -234,10 +234,7 @@ def test_rbm_optimizer():
 def test_rbm_optimizer_setter():
     new_rbm = rbm.RBM()
 
-    try:
-        new_rbm.optimizer = 'OPT'
-    except:
-        new_rbm.optimizer = torch.optim.SGD(new_rbm.parameters(), lr=0.1)
+    new_rbm.optimizer = torch.optim.SGD(new_rbm.parameters(), lr=0.1)
 
     assert type(new_rbm.optimizer).__name__ == 'SGD'
 
