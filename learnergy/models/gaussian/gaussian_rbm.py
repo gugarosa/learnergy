@@ -286,8 +286,9 @@ class GaussianRBM(RBM):
         # For every batch
         for samples, _ in tqdm(batches):
 
-            # Normalizing the samples' batch
-            samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6)).detach()
+            if self.normalize:
+                # Normalizing the samples' batch
+                samples = ((samples - torch.mean(samples, 0, True)) / (torch.std(samples, 0, True) + 1e-6)).detach()
 
             # Flattening the samples' batch
             samples = samples.reshape(len(samples), self.n_visible)
