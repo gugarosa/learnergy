@@ -11,7 +11,7 @@ from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import RBM, DropoutRBM, EDropoutRBM
 from learnergy.models.extra import SigmoidRBM
 from learnergy.models.gaussian import (GaussianRBM, GaussianReluRBM,
-                                       VarianceGaussianRBM)
+                                       GaussianSeluRBM, VarianceGaussianRBM)
 
 logger = l.get_logger(__name__)
 
@@ -21,6 +21,7 @@ MODELS = {
     'e_dropout': EDropoutRBM,
     'gaussian': GaussianRBM,
     'gaussian_relu': GaussianReluRBM,
+    'gaussian_selu': GaussianSeluRBM,
     'sigmoid': SigmoidRBM,
     'variance_gaussian': VarianceGaussianRBM
 }
