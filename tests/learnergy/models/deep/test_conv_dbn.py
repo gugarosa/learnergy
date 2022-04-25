@@ -28,7 +28,7 @@ def test_dbn_filter_shape_setter():
     new_dbn = conv_dbn.ConvDBN()
 
     try:
-        new_dbn.filter_shape = 'a'
+        new_dbn.filter_shape = "a"
     except:
         new_dbn.filter_shape = (1,)
 
@@ -45,7 +45,7 @@ def test_dbn_n_filters_setter():
     new_dbn = conv_dbn.ConvDBN()
 
     try:
-        new_dbn.n_filters = 'a'
+        new_dbn.n_filters = "a"
     except:
         new_dbn.n_filters = (1,)
 
@@ -69,7 +69,7 @@ def test_dbn_n_channels_setter():
     assert new_dbn.n_channels == 1
 
     try:
-        new_dbn.n_channels = 'a'
+        new_dbn.n_channels = "a"
     except:
         new_dbn.n_channels = 1
 
@@ -93,7 +93,7 @@ def test_dbn_n_layers_setter():
     assert new_dbn.n_layers == 1
 
     try:
-        new_dbn.n_layers = 'a'
+        new_dbn.n_layers = "a"
     except:
         new_dbn.n_layers = 1
 
@@ -110,7 +110,7 @@ def test_dbn_steps_setter():
     new_dbn = conv_dbn.ConvDBN()
 
     try:
-        new_dbn.steps = 'a'
+        new_dbn.steps = "a"
     except:
         new_dbn.steps = (1,)
 
@@ -134,7 +134,7 @@ def test_dbn_lr_setter():
     new_dbn = conv_dbn.ConvDBN()
 
     try:
-        new_dbn.lr = 'a'
+        new_dbn.lr = "a"
     except:
         new_dbn.lr = (0.1,)
 
@@ -158,7 +158,7 @@ def test_dbn_momentum_setter():
     new_dbn = conv_dbn.ConvDBN()
 
     try:
-        new_dbn.momentum = 'a'
+        new_dbn.momentum = "a"
     except:
         new_dbn.momentum = (0,)
 
@@ -182,7 +182,7 @@ def test_dbn_decay_setter():
     new_dbn = conv_dbn.ConvDBN()
 
     try:
-        new_dbn.decay = 'a'
+        new_dbn.decay = "a"
     except:
         new_dbn.decay = (0,)
 

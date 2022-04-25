@@ -6,17 +6,14 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import ConvRBM
 from learnergy.models.gaussian import GaussianConvRBM
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
-MODELS = {
-    'bernoulli': ConvRBM,
-    'gaussian': GaussianConvRBM
-}
+MODELS = {"bernoulli": ConvRBM, "gaussian": GaussianConvRBM}
 
 
 class ConvDBN(Model):
@@ -29,8 +26,19 @@ class ConvDBN(Model):
 
     """
 
-    def __init__(self, model='bernoulli', visible_shape=(28, 28), filter_shape=((7, 7),), n_filters=(16,),
-                 n_channels=1, steps=(1,), learning_rate=(0.1,), momentum=(0,), decay=(0,), use_gpu=False):
+    def __init__(
+        self,
+        model="bernoulli",
+        visible_shape=(28, 28),
+        filter_shape=((7, 7),),
+        n_filters=(16,),
+        n_channels=1,
+        steps=(1,),
+        learning_rate=(0.1,),
+        momentum=(0,),
+        decay=(0,),
+        use_gpu=False,
+    ):
         """Initialization method.
 
         Args:
@@ -47,7 +55,7 @@ class ConvDBN(Model):
 
         """
 
-        logger.info('Overriding class: Model -> ConvDBN.')
+        logger.info("Overriding class: Model -> ConvDBN.")
 
         super(ConvDBN, self).__init__(use_gpu=use_gpu)
 
@@ -84,12 +92,23 @@ class ConvDBN(Model):
         # For every possible layer
         for i in range(self.n_layers):
             # Creates an CRBM
-            m = MODELS[model](visible_shape, self.filter_shape[i], self.n_filters[i],
-                              n_channels, self.steps[i], self.lr[i], self.momentum[i], self.decay[i], use_gpu)
+            m = MODELS[model](
+                visible_shape,
+                self.filter_shape[i],
+                self.n_filters[i],
+                n_channels,
+                self.steps[i],
+                self.lr[i],
+                self.momentum[i],
+                self.decay[i],
+                use_gpu,
+            )
 
             # Re-defines the visible shape
-            visible_shape = (visible_shape[0] - self.filter_shape[i][0] + 1,
-                             visible_shape[1] - self.filter_shape[i][1] + 1)
+            visible_shape = (
+                visible_shape[0] - self.filter_shape[i][0] + 1,
+                visible_shape[1] - self.filter_shape[i][1] + 1,
+            )
 
             # Also defines the new number of channels
             n_channels = self.n_filters[i]
@@ -98,17 +117,15 @@ class ConvDBN(Model):
             self.models.append(m)
 
         # Checks if current device is CUDA-based
-        if self.device == 'cuda':
+        if self.device == "cuda":
             # If yes, uses CUDA in the whole class
             self.cuda()
 
-        logger.info('Class overrided.')
+        logger.info("Class overrided.")
 
     @property
     def visible_shape(self):
-        """tuple: Shape of visible units.
-
-        """
+        """tuple: Shape of visible units."""
 
         return self._visible_shape
 
@@ -119,9 +136,7 @@ class ConvDBN(Model):
 
     @property
     def filter_shape(self):
-        """tuple: Shape of filters.
-
-        """
+        """tuple: Shape of filters."""
 
         return self._filter_shape
 
@@ -132,9 +147,7 @@ class ConvDBN(Model):
 
     @property
     def n_filters(self):
-        """tuple: Number of filters.
-
-        """
+        """tuple: Number of filters."""
 
         return self._n_filters
 
@@ -145,103 +158,85 @@ class ConvDBN(Model):
 
     @property
     def n_channels(self):
-        """int: Number of channels.
-
-        """
+        """int: Number of channels."""
 
         return self._n_channels
 
     @n_channels.setter
     def n_channels(self, n_channels):
         if n_channels <= 0:
-            raise e.ValueError('`n_channels` should be > 0')
+            raise e.ValueError("`n_channels` should be > 0")
 
         self._n_channels = n_channels
 
     @property
     def n_layers(self):
-        """int: Number of layers.
-
-        """
+        """int: Number of layers."""
 
         return self._n_layers
 
     @n_layers.setter
     def n_layers(self, n_layers):
         if n_layers <= 0:
-            raise e.ValueError('`n_layers` should be > 0')
+            raise e.ValueError("`n_layers` should be > 0")
 
         self._n_layers = n_layers
 
     @property
     def steps(self):
-        """tuple: Number of steps Gibbs' sampling steps per layer.
-
-        """
+        """tuple: Number of steps Gibbs' sampling steps per layer."""
 
         return self._steps
 
     @steps.setter
     def steps(self, steps):
         if len(steps) != self.n_layers:
-            raise e.SizeError(
-                f'`steps` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`steps` should have size equal as {self.n_layers}")
 
         self._steps = steps
 
     @property
     def lr(self):
-        """tuple: Learning rate per layer.
-
-        """
+        """tuple: Learning rate per layer."""
 
         return self._lr
 
     @lr.setter
     def lr(self, lr):
         if len(lr) != self.n_layers:
-            raise e.SizeError(
-                f'`lr` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`lr` should have size equal as {self.n_layers}")
 
         self._lr = lr
 
     @property
     def momentum(self):
-        """tuple: Momentum parameter per layer.
-
-        """
+        """tuple: Momentum parameter per layer."""
 
         return self._momentum
 
     @momentum.setter
     def momentum(self, momentum):
         if len(momentum) != self.n_layers:
-            raise e.SizeError(
-                f'`momentum` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`momentum` should have size equal as {self.n_layers}")
 
         self._momentum = momentum
 
     @property
     def decay(self):
-        """tuple: Weight decay per layer.
-
-        """
+        """tuple: Weight decay per layer."""
 
         return self._decay
 
     @decay.setter
     def decay(self, decay):
         if len(decay) != self.n_layers:
-            raise e.SizeError(
-                f'`decay` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`decay` should have size equal as {self.n_layers}")
 
         self._decay = decay
 
     @property
     def models(self):
-        """list: List of models (RBMs).
-
-        """
+        """list: List of models (RBMs)."""
 
         return self._models
 
@@ -266,17 +261,21 @@ class ConvDBN(Model):
         # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
             # If not, raises an error
-            raise e.SizeError(('`epochs` should have size equal as %d', self.n_layers))
+            raise e.SizeError(("`epochs` should have size equal as %d", self.n_layers))
 
         # Initializing MSE as a list
         mse = []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = (
+            dataset.data.numpy(),
+            dataset.targets.numpy(),
+            dataset.transform,
+        )
 
         # For every possible model (ConvRBM)
         for i, model in enumerate(self.models):
-            logger.info('Fitting layer %d/%d ...', i + 1, self.n_layers)
+            logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -298,12 +297,17 @@ class ConvDBN(Model):
                 samples = d.data
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
             # Reshape the samples into an appropriate shape
-            samples = samples.reshape(len(dataset), model.n_channels, model.visible_shape[0], model.visible_shape[1])
+            samples = samples.reshape(
+                len(dataset),
+                model.n_channels,
+                model.visible_shape[0],
+                model.visible_shape[1],
+            )
 
             # Gathers the targets
             targets = d.targets
@@ -315,7 +319,7 @@ class ConvDBN(Model):
             samples, _ = model.hidden_sampling(samples)
 
             # Checking whether GPU is being used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # If yes, get samples back to the CPU
                 samples = samples.cpu()
 
@@ -335,7 +339,7 @@ class ConvDBN(Model):
 
         """
 
-        logger.info('Reconstructing new samples ...')
+        logger.info("Reconstructing new samples ...")
 
         # Resetting MSE to zero
         mse = 0
@@ -344,16 +348,22 @@ class ConvDBN(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, num_workers=0
+        )
 
         # For every batch
         for samples, _ in tqdm(batches):
             # Flattening the samples' batch
             samples = samples.reshape(
-                len(samples), self.n_channels, self.visible_shape[0], self.visible_shape[1])
+                len(samples),
+                self.n_channels,
+                self.visible_shape[0],
+                self.visible_shape[1],
+            )
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -375,7 +385,8 @@ class ConvDBN(Model):
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+            )
 
             # Summing up to reconstruction's MSE
             mse += batch_mse
@@ -383,7 +394,7 @@ class ConvDBN(Model):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info('MSE: %f', mse)
+        logger.info("MSE: %f", mse)
 
         return mse, visible_probs
 

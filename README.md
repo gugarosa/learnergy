@@ -79,7 +79,7 @@ Learnergy is based on the following structure, and you should pay attention to i
         - extra
             - sigmoid_rbm
         - gaussian
-            - gaussian_conv_rbm        
+            - gaussian_conv_rbm
             - gaussian_rbm
     - utils
         - constants

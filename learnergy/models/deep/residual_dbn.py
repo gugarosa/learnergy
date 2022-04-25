@@ -5,11 +5,11 @@ import torch
 import torch.nn.functional as F
 
 import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.core import Dataset
 from learnergy.models.deep import DBN
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ResidualDBN(DBN):
@@ -21,9 +21,20 @@ class ResidualDBN(DBN):
 
     """
 
-    def __init__(self, model='bernoulli', n_visible=128, n_hidden=(128,), steps=(1,),
-                 learning_rate=(0.1,), momentum=(0,), decay=(0,), temperature=(1,),
-                 zetta1=1, zetta2=1, use_gpu=False):
+    def __init__(
+        self,
+        model="bernoulli",
+        n_visible=128,
+        n_hidden=(128,),
+        steps=(1,),
+        learning_rate=(0.1,),
+        momentum=(0,),
+        decay=(0,),
+        temperature=(1,),
+        zetta1=1,
+        zetta2=1,
+        use_gpu=False,
+    ):
         """Initialization method.
 
         Args:
@@ -41,10 +52,19 @@ class ResidualDBN(DBN):
 
         """
 
-        logger.info('Overriding class: DBN -> ResidualDBN.')
+        logger.info("Overriding class: DBN -> ResidualDBN.")
 
-        super(ResidualDBN, self).__init__(model, n_visible, n_hidden, steps, learning_rate,
-                                          momentum, decay, temperature, use_gpu)
+        super(ResidualDBN, self).__init__(
+            model,
+            n_visible,
+            n_hidden,
+            steps,
+            learning_rate,
+            momentum,
+            decay,
+            temperature,
+            use_gpu,
+        )
 
         # Defining a property for holding the original learning's penalization
         self.zetta1 = zetta1
@@ -54,31 +74,27 @@ class ResidualDBN(DBN):
 
     @property
     def zetta1(self):
-        """float: Penalization factor for original learning.
-
-        """
+        """float: Penalization factor for original learning."""
 
         return self._zetta1
 
     @zetta1.setter
     def zetta1(self, zetta1):
         if zetta1 < 0:
-            raise e.ValueError('`zetta1` should be >= 0')
+            raise e.ValueError("`zetta1` should be >= 0")
 
         self._zetta1 = zetta1
 
     @property
     def zetta2(self):
-        """float: Penalization factor for residual learning.
-
-        """
+        """float: Penalization factor for residual learning."""
 
         return self._zetta2
 
     @zetta2.setter
     def zetta2(self, zetta2):
         if zetta2 < 0:
-            raise e.ValueError('`zetta2` should be >= 0')
+            raise e.ValueError("`zetta2` should be >= 0")
 
         self._zetta2 = zetta2
 
@@ -117,19 +133,21 @@ class ResidualDBN(DBN):
         # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
             # If not, raises an error
-            raise e.SizeError(
-                f'`epochs` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`epochs` should have size equal as {self.n_layers}")
 
         # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(
-        ), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = (
+            dataset.data.numpy(),
+            dataset.targets.numpy(),
+            dataset.transform,
+        )
 
         # For every possible model (RBM)
         for i, model in enumerate(self.models):
-            logger.info('Fitting layer %d/%d ...', i+1, self.n_layers)
+            logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -145,14 +163,14 @@ class ResidualDBN(DBN):
             if d.transform:
                 # Applies the transform over the samples
                 samples = d.transform(d.data)
-    
+
             # If there is no transform
             else:
                 # Just gather the samples
                 samples = d.data
-    
+
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -172,14 +190,15 @@ class ResidualDBN(DBN):
             samples, _ = model.hidden_sampling(samples)
 
             # Aggregates the residual learning
-            samples = torch.mul(
-                samples, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
+            samples = torch.mul(samples, self.zetta1) + torch.mul(
+                self.calculate_residual(pre_activation), self.zetta2
+            )
 
             # Normalizes the input for the next layer
             samples = torch.div(samples, torch.max(samples))
 
             # Checking whether GPU is being used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # If yes, get samples back to the CPU
                 samples = samples.cpu()
 
@@ -208,8 +227,9 @@ class ResidualDBN(DBN):
             x, _ = model.hidden_sampling(x)
 
             # Aggregates the residual learning
-            x = torch.mul(
-                x, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
+            x = torch.mul(x, self.zetta1) + torch.mul(
+                self.calculate_residual(pre_activation), self.zetta2
+            )
 
             # Normalizes the input for the next layer
             x = torch.div(x, torch.max(x))

@@ -4,9 +4,9 @@
 import torch
 
 import learnergy.utils.exception as e
-import learnergy.utils.logging as l
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class Model(torch.nn.Module):
@@ -28,11 +28,11 @@ class Model(torch.nn.Module):
         super(Model, self).__init__()
 
         # Creates a cpu-based device property
-        self.device = 'cpu'
+        self.device = "cpu"
 
         # Checks if GPU is avaliable
         if torch.cuda.is_available() and use_gpu:
-            self.device = 'cuda'
+            self.device = "cuda"
 
         # Creating an empty dictionary to hold historical values
         self.history = {}
@@ -40,28 +40,24 @@ class Model(torch.nn.Module):
         # Setting default tensor type to float
         torch.set_default_tensor_type(torch.FloatTensor)
 
-        logger.debug('Device: %s.', self.device)
+        logger.debug("Device: %s.", self.device)
 
     @property
     def device(self):
-        """str: Indicates which device is being used for computation.
-
-        """
+        """str: Indicates which device is being used for computation."""
 
         return self._device
 
     @device.setter
     def device(self, device):
-        if device not in ['cpu', 'cuda']:
-            raise e.TypeError('`device` should be `cpu` or `cuda`')
+        if device not in ["cpu", "cuda"]:
+            raise e.TypeError("`device` should be `cpu` or `cuda`")
 
         self._device = device
 
     @property
     def history(self):
-        """dict: Dictionary containing historical values from the model.
-
-        """
+        """dict: Dictionary containing historical values from the model."""
 
         return self._history
 
@@ -71,9 +67,7 @@ class Model(torch.nn.Module):
         self._history = history
 
     def dump(self, **kwargs):
-        """Dumps any amount of keyword documents to lists in the history property.
-
-        """
+        """Dumps any amount of keyword documents to lists in the history property."""
 
         for k, v in kwargs.items():
             if k not in self.history.keys():

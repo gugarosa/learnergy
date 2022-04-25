@@ -4,10 +4,10 @@
 import torch
 import torch.nn.functional as F
 
-import learnergy.utils.logging as l
 from learnergy.models.bernoulli import RBM
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class SigmoidRBM(RBM):
@@ -20,8 +20,17 @@ class SigmoidRBM(RBM):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(
+        self,
+        n_visible=128,
+        n_hidden=128,
+        steps=1,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        temperature=1,
+        use_gpu=False,
+    ):
         """Initialization method.
 
         Args:
@@ -36,12 +45,20 @@ class SigmoidRBM(RBM):
 
         """
 
-        logger.info('Overriding class: RBM -> SigmoidRBM.')
+        logger.info("Overriding class: RBM -> SigmoidRBM.")
 
-        super(SigmoidRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
-                                         momentum, decay, temperature, use_gpu)
+        super(SigmoidRBM, self).__init__(
+            n_visible,
+            n_hidden,
+            steps,
+            learning_rate,
+            momentum,
+            decay,
+            temperature,
+            use_gpu,
+        )
 
-        logger.info('Class overrided.')
+        logger.info("Class overrided.")
 
     def visible_sampling(self, h, scale=False):
         """Performs the visible layer sampling, i.e., P(v|h).

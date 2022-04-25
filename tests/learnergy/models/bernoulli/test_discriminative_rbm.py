@@ -14,7 +14,7 @@ def test_discriminative_rbm_n_classes_setter():
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM()
 
     try:
-        new_discriminative_rbm.n_classes = 'a'
+        new_discriminative_rbm.n_classes = "a"
     except:
         new_discriminative_rbm.n_classes = 1
 
@@ -41,8 +41,7 @@ def test_discriminative_rbm_U_setter():
     try:
         new_discriminative_rbm.U = 1
     except:
-        new_discriminative_rbm.U = torch.nn.Parameter(
-            torch.randn(10, 128) * 0.01)
+        new_discriminative_rbm.U = torch.nn.Parameter(torch.randn(10, 128) * 0.01)
 
     assert new_discriminative_rbm.U.size(0) == 10
     assert new_discriminative_rbm.U.size(1) == 128
@@ -68,18 +67,18 @@ def test_discriminative_rbm_c_setter():
 def test_discriminative_rbm_loss():
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM()
 
-    assert type(new_discriminative_rbm.loss).__name__ == 'CrossEntropyLoss'
+    assert type(new_discriminative_rbm.loss).__name__ == "CrossEntropyLoss"
 
 
 def test_discriminative_rbm_loss_setter():
     new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM()
 
     try:
-        new_discriminative_rbm.loss = 'LOSS'
+        new_discriminative_rbm.loss = "LOSS"
     except:
         new_discriminative_rbm.loss = torch.nn.CrossEntropyLoss()
 
-    assert type(new_discriminative_rbm.loss).__name__ == 'CrossEntropyLoss'
+    assert type(new_discriminative_rbm.loss).__name__ == "CrossEntropyLoss"
 
 
 def test_discriminative_rbm_labels_sampling():
@@ -95,10 +94,21 @@ def test_discriminative_rbm_labels_sampling():
 
 def test_discriminative_rbm_fit():
     train = torchvision.datasets.KMNIST(
-        root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=True,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
-                                                                  learning_rate=0.1, momentum=0, decay=0, use_gpu=False)
+    new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(
+        n_visible=784,
+        n_hidden=128,
+        n_classes=10,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        use_gpu=False,
+    )
 
     loss, acc = new_discriminative_rbm.fit(train, batch_size=128, epochs=1)
 
@@ -108,10 +118,21 @@ def test_discriminative_rbm_fit():
 
 def test_discriminative_rbm_predict():
     test = torchvision.datasets.KMNIST(
-        root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=False,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
-                                                                  learning_rate=0.1, momentum=0, decay=0, use_gpu=False)
+    new_discriminative_rbm = discriminative_rbm.DiscriminativeRBM(
+        n_visible=784,
+        n_hidden=128,
+        n_classes=10,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        use_gpu=False,
+    )
 
     acc, probs, labels = new_discriminative_rbm.predict(test)
 
@@ -130,7 +151,7 @@ def test_hybrid_discriminative_rbm_alpha_setter():
     new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM()
 
     try:
-        new_hybrid_discriminative_rbm.alpha = 'a'
+        new_hybrid_discriminative_rbm.alpha = "a"
     except:
         new_hybrid_discriminative_rbm.alpha = 0.01
 
@@ -146,7 +167,8 @@ def test_hybrid_discriminative_rbm_alpha_setter():
 
 def test_hybrid_discriminative_rbm_hidden_sampling():
     new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(
-        n_classes=10)
+        n_classes=10
+    )
 
     v = torch.ones(1, 128)
     y = torch.ones(128, 10)
@@ -159,7 +181,8 @@ def test_hybrid_discriminative_rbm_hidden_sampling():
 
 def test_hybrid_discriminative_rbm_class_sampling():
     new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(
-        n_classes=10)
+        n_classes=10
+    )
 
     h = torch.ones(1, 128)
 
@@ -171,13 +194,24 @@ def test_hybrid_discriminative_rbm_class_sampling():
 
 def test_hybrid_discriminative_rbm_fit():
     train = torchvision.datasets.KMNIST(
-        root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=True,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(n_visible=784, n_hidden=128, n_classes=10,
-                                                                               learning_rate=0.1, alpha=0.01, momentum=0, decay=0, use_gpu=False)
+    new_hybrid_discriminative_rbm = discriminative_rbm.HybridDiscriminativeRBM(
+        n_visible=784,
+        n_hidden=128,
+        n_classes=10,
+        learning_rate=0.1,
+        alpha=0.01,
+        momentum=0,
+        decay=0,
+        use_gpu=False,
+    )
 
-    loss, acc = new_hybrid_discriminative_rbm.fit(
-        train, batch_size=128, epochs=1)
+    loss, acc = new_hybrid_discriminative_rbm.fit(train, batch_size=128, epochs=1)
 
     assert loss >= 0
     assert acc >= 0

@@ -14,7 +14,7 @@ def test_dbn_n_visible_setter():
     new_dbn = dbn.DBN()
 
     try:
-        new_dbn.n_visible = 'a'
+        new_dbn.n_visible = "a"
     except:
         new_dbn.n_visible = 1
 
@@ -38,7 +38,7 @@ def test_dbn_n_hidden_setter():
     new_dbn = dbn.DBN()
 
     try:
-        new_dbn.n_hidden = 'a'
+        new_dbn.n_hidden = "a"
     except:
         new_dbn.n_hidden = (128,)
 
@@ -62,7 +62,7 @@ def test_dbn_n_layers_setter():
     assert new_dbn.n_layers == 1
 
     try:
-        new_dbn.n_layers = 'a'
+        new_dbn.n_layers = "a"
     except:
         new_dbn.n_layers = 1
 
@@ -79,7 +79,7 @@ def test_dbn_steps_setter():
     new_dbn = dbn.DBN()
 
     try:
-        new_dbn.steps = 'a'
+        new_dbn.steps = "a"
     except:
         new_dbn.steps = (1,)
 
@@ -103,7 +103,7 @@ def test_dbn_lr_setter():
     new_dbn = dbn.DBN()
 
     try:
-        new_dbn.lr = 'a'
+        new_dbn.lr = "a"
     except:
         new_dbn.lr = (0.1,)
 
@@ -127,7 +127,7 @@ def test_dbn_momentum_setter():
     new_dbn = dbn.DBN()
 
     try:
-        new_dbn.momentum = 'a'
+        new_dbn.momentum = "a"
     except:
         new_dbn.momentum = (0,)
 
@@ -151,7 +151,7 @@ def test_dbn_decay_setter():
     new_dbn = dbn.DBN()
 
     try:
-        new_dbn.decay = 'a'
+        new_dbn.decay = "a"
     except:
         new_dbn.decay = (0,)
 
@@ -175,7 +175,7 @@ def test_dbn_T_setter():
     new_dbn = dbn.DBN()
 
     try:
-        new_dbn.T = 'a'
+        new_dbn.T = "a"
     except:
         new_dbn.T = (0,)
 
@@ -215,17 +215,31 @@ def test_dbn_models_setter():
 #     assert len(e) == 2
 #     assert len(pl) == 2
 
+
 def test_dbn_reconstruct():
     test = torchvision.datasets.KMNIST(
-        root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=False,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_dbn = dbn.DBN(n_visible=784, n_hidden=(128, 128), steps=(1, 1),
-                      learning_rate=(0.1, 0.1), momentum=(0, 0), decay=(0, 0), temperature=(1, 1), use_gpu=False)
+    new_dbn = dbn.DBN(
+        n_visible=784,
+        n_hidden=(128, 128),
+        steps=(1, 1),
+        learning_rate=(0.1, 0.1),
+        momentum=(0, 0),
+        decay=(0, 0),
+        temperature=(1, 1),
+        use_gpu=False,
+    )
 
     e, v = new_dbn.reconstruct(test)
 
     assert e >= 0
     assert v.size(1) == 784
+
 
 # def test_dbn_forward():
 #     new_dbn = dbn.DBN(n_visible=784, n_hidden=(128, 128), steps=(1, 1),

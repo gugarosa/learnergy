@@ -12,10 +12,10 @@ from tqdm import tqdm
 
 import learnergy.utils.constants as c
 import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.core import Model
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class RBM(Model):
@@ -27,8 +27,17 @@ class RBM(Model):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1,
-                 learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(
+        self,
+        n_visible=128,
+        n_hidden=128,
+        steps=1,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        temperature=1,
+        use_gpu=False,
+    ):
         """Initialization method.
 
         Args:
@@ -43,7 +52,7 @@ class RBM(Model):
 
         """
 
-        logger.info('Overriding class: Model -> RBM.')
+        logger.info("Overriding class: Model -> RBM.")
 
         super(RBM, self).__init__(use_gpu=use_gpu)
 
@@ -79,128 +88,121 @@ class RBM(Model):
 
         # Creating the optimizer object
         self.optimizer = opt.SGD(
-            self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
+            self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay
+        )
 
         # Checks if current device is CUDA-based
-        if self.device == 'cuda':
+        if self.device == "cuda":
             # If yes, uses CUDA in the whole class
             self.cuda()
 
-        logger.info('Class overrided.')
-        logger.debug('Size: (%d, %d) | Learning: CD-%d | '
-                     'Hyperparameters: lr = %s, momentum = %s, decay = %s, T = %s.',
-                     self.n_visible, self.n_hidden, self.steps, self.lr, self.momentum, self.decay, self.T)
+        logger.info("Class overrided.")
+        logger.debug(
+            "Size: (%d, %d) | Learning: CD-%d | "
+            "Hyperparameters: lr = %s, momentum = %s, decay = %s, T = %s.",
+            self.n_visible,
+            self.n_hidden,
+            self.steps,
+            self.lr,
+            self.momentum,
+            self.decay,
+            self.T,
+        )
 
     @property
     def n_visible(self):
-        """int: Number of visible units.
-
-        """
+        """int: Number of visible units."""
 
         return self._n_visible
 
     @n_visible.setter
     def n_visible(self, n_visible):
         if n_visible <= 0:
-            raise e.ValueError('`n_visible` should be > 0')
+            raise e.ValueError("`n_visible` should be > 0")
 
         self._n_visible = n_visible
 
     @property
     def n_hidden(self):
-        """int: Number of hidden units.
-
-        """
+        """int: Number of hidden units."""
 
         return self._n_hidden
 
     @n_hidden.setter
     def n_hidden(self, n_hidden):
         if n_hidden <= 0:
-            raise e.ValueError('`n_hidden` should be > 0')
+            raise e.ValueError("`n_hidden` should be > 0")
 
         self._n_hidden = n_hidden
 
     @property
     def steps(self):
-        """int: Number of steps Gibbs' sampling steps.
-
-        """
+        """int: Number of steps Gibbs' sampling steps."""
 
         return self._steps
 
     @steps.setter
     def steps(self, steps):
         if steps <= 0:
-            raise e.ValueError('`steps` should be > 0')
+            raise e.ValueError("`steps` should be > 0")
 
         self._steps = steps
 
     @property
     def lr(self):
-        """float: Learning rate.
-
-        """
+        """float: Learning rate."""
 
         return self._lr
 
     @lr.setter
     def lr(self, lr):
         if lr < 0:
-            raise e.ValueError('`lr` should be >= 0')
+            raise e.ValueError("`lr` should be >= 0")
 
         self._lr = lr
 
     @property
     def momentum(self):
-        """float: Momentum parameter.
-
-        """
+        """float: Momentum parameter."""
 
         return self._momentum
 
     @momentum.setter
     def momentum(self, momentum):
         if momentum < 0:
-            raise e.ValueError('`momentum` should be >= 0')
+            raise e.ValueError("`momentum` should be >= 0")
 
         self._momentum = momentum
 
     @property
     def decay(self):
-        """float: Weight decay.
-
-        """
+        """float: Weight decay."""
 
         return self._decay
 
     @decay.setter
     def decay(self, decay):
         if decay < 0:
-            raise e.ValueError('`decay` should be >= 0')
+            raise e.ValueError("`decay` should be >= 0")
 
         self._decay = decay
 
     @property
     def T(self):
-        """float: Temperature factor.
-
-        """
+        """float: Temperature factor."""
 
         return self._T
 
     @T.setter
     def T(self, T):
         if T <= 0 or T > 1:
-            raise e.ValueError('`T` should be between 0 and 1')
+            raise e.ValueError("`T` should be between 0 and 1")
 
         self._T = T
 
     @property
     def W(self):
-        """torch.nn.Parameter: Weights' matrix.
-
-        """
+        """torch.nn.Parameter: Weights' matrix."""
 
         return self._W
 
@@ -211,9 +213,7 @@ class RBM(Model):
 
     @property
     def a(self):
-        """torch.nn.Parameter: Visible units bias.
-
-        """
+        """torch.nn.Parameter: Visible units bias."""
 
         return self._a
 
@@ -223,9 +223,7 @@ class RBM(Model):
 
     @property
     def b(self):
-        """torch.nn.Parameter: Hidden units bias.
-
-        """
+        """torch.nn.Parameter: Hidden units bias."""
 
         return self._b
 
@@ -235,9 +233,7 @@ class RBM(Model):
 
     @property
     def optimizer(self):
-        """torch.optim.SGD: Stochastic Gradient Descent object.
-
-        """
+        """torch.optim.SGD: Stochastic Gradient Descent object."""
 
         return self._optimizer
 
@@ -350,14 +346,20 @@ class RBM(Model):
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
             # Calculating visible probabilities and states
-            _, visible_states = self.visible_sampling(
-                neg_hidden_states, True)
+            _, visible_states = self.visible_sampling(neg_hidden_states, True)
 
             # Calculating hidden probabilities and states
             neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                visible_states, True)
+                visible_states, True
+            )
 
-        return pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states
+        return (
+            pos_hidden_probs,
+            pos_hidden_states,
+            neg_hidden_probs,
+            neg_hidden_states,
+            visible_states,
+        )
 
     def energy(self, samples):
         """Calculates and frees the system's energy.
@@ -405,26 +407,26 @@ class RBM(Model):
         energy = self.energy(samples_binary)
 
         # Samples an array of indexes to flip the bits
-        indexes = torch.randint(0, self.n_visible, size=(
-            samples.size(0), 1), device=self.device)
+        indexes = torch.randint(
+            0, self.n_visible, size=(samples.size(0), 1), device=self.device
+        )
 
         # Creates an empty vector for filling the indexes
-        bits = torch.zeros(samples.size(
-            0), samples.size(1), device=self.device)
+        bits = torch.zeros(samples.size(0), samples.size(1), device=self.device)
 
         # Fills the sampled indexes with 1
         bits = bits.scatter_(1, indexes, 1)
 
         # Actually flips the bits
-        samples_binary = torch.where(
-            bits == 0, samples_binary, 1 - samples_binary)
+        samples_binary = torch.where(bits == 0, samples_binary, 1 - samples_binary)
 
         # Calculates the energy after flipping the bits
         energy1 = self.energy(samples_binary)
 
         # Calculate the logarithm of the pseudo-likelihood
-        pl = torch.mean(self.n_visible *
-                        torch.log(torch.sigmoid(energy1 - energy) + c.EPSILON))
+        pl = torch.mean(
+            self.n_visible * torch.log(torch.sigmoid(energy1 - energy) + c.EPSILON)
+        )
 
         return pl
 
@@ -442,12 +444,13 @@ class RBM(Model):
         """
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=True, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=True, num_workers=0
+        )
 
         # For every epoch
         for epoch in range(epochs):
-            logger.info('Epoch %d/%d', epoch+1, epochs)
+            logger.info("Epoch %d/%d", epoch + 1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -461,7 +464,7 @@ class RBM(Model):
                 samples = samples.reshape(len(samples), self.n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self.device == "cuda":
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
@@ -472,8 +475,9 @@ class RBM(Model):
                 visible_states = visible_states.detach()
 
                 # Calculates the loss for further gradients' computation
-                cost = torch.mean(self.energy(samples)) - \
-                    torch.mean(self.energy(visible_states))
+                cost = torch.mean(self.energy(samples)) - torch.mean(
+                    self.energy(visible_states)
+                )
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -489,7 +493,8 @@ class RBM(Model):
 
                 # Calculating current's batch MSE
                 batch_mse = torch.div(
-                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+                ).detach()
 
                 # Calculating the current's batch logarithm pseudo-likelihood
                 batch_pl = self.pseudo_likelihood(samples).detach()
@@ -506,9 +511,9 @@ class RBM(Model):
             end = time.time()
 
             # Dumps the desired variables to the model's history
-            self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
+            self.dump(mse=mse.item(), pl=pl.item(), time=end - start)
 
-            logger.info('MSE: %f | log-PL: %f', mse, pl)
+            logger.info("MSE: %f | log-PL: %f", mse, pl)
 
         return mse, pl
 
@@ -523,7 +528,7 @@ class RBM(Model):
 
         """
 
-        logger.info('Reconstructing new samples ...')
+        logger.info("Reconstructing new samples ...")
 
         # Resetting MSE to zero
         mse = 0
@@ -532,8 +537,9 @@ class RBM(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=False, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, num_workers=0
+        )
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -541,7 +547,7 @@ class RBM(Model):
             samples = samples.reshape(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -549,12 +555,12 @@ class RBM(Model):
             _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                pos_hidden_states)
+            visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+            )
 
             # Summing up the reconstruction's MSE
             mse += batch_mse
@@ -562,7 +568,7 @@ class RBM(Model):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info('MSE: %f', mse)
+        logger.info("MSE: %f", mse)
 
         return mse, visible_probs
 

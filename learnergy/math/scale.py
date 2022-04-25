@@ -16,7 +16,7 @@ def unitary_scale(x):
     """
 
     # Makes sure the array is float typed
-    x = x.astype('float32')
+    x = x.astype("float32")
 
     # Gathers array minimum and subtract
     x -= x.min()

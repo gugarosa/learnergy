@@ -14,7 +14,7 @@ def test_residual_dbn_zetta1_setter():
     new_residual_dbn = residual_dbn.ResidualDBN()
 
     try:
-        new_residual_dbn.zetta1 = 'a'
+        new_residual_dbn.zetta1 = "a"
     except:
         new_residual_dbn.zetta1 = 0.1
 
@@ -38,7 +38,7 @@ def test_residual_dbn_zetta2_setter():
     new_residual_dbn = residual_dbn.ResidualDBN()
 
     try:
-        new_residual_dbn.zetta2 = 'a'
+        new_residual_dbn.zetta2 = "a"
     except:
         new_residual_dbn.zetta2 = 0.1
 
@@ -53,8 +53,16 @@ def test_residual_dbn_zetta2_setter():
 
 
 def test_residual_dbn_calculate_residual():
-    new_residual_dbn = residual_dbn.ResidualDBN(n_visible=784, n_hidden=(128, 128), steps=(1, 1),
-                                                learning_rate=(0.1, 0.1), momentum=(0, 0), decay=(0, 0), temperature=(1, 1), use_gpu=False)
+    new_residual_dbn = residual_dbn.ResidualDBN(
+        n_visible=784,
+        n_hidden=(128, 128),
+        steps=(1, 1),
+        learning_rate=(0.1, 0.1),
+        momentum=(0, 0),
+        decay=(0, 0),
+        temperature=(1, 1),
+        use_gpu=False,
+    )
 
     v = torch.ones(1, 784)
 
@@ -77,8 +85,16 @@ def test_residual_dbn_calculate_residual():
 
 
 def test_residual_dbn_forward():
-    new_residual_dbn = residual_dbn.ResidualDBN(n_visible=784, n_hidden=(128, 128), steps=(1, 1),
-                                                learning_rate=(0.1, 0.1), momentum=(0, 0), decay=(0, 0), temperature=(1, 1), use_gpu=False)
+    new_residual_dbn = residual_dbn.ResidualDBN(
+        n_visible=784,
+        n_hidden=(128, 128),
+        steps=(1, 1),
+        learning_rate=(0.1, 0.1),
+        momentum=(0, 0),
+        decay=(0, 0),
+        temperature=(1, 1),
+        use_gpu=False,
+    )
 
     v = torch.ones(1, 784)
 

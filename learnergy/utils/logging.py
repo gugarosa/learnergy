@@ -5,9 +5,8 @@ import logging
 import sys
 from logging.handlers import TimedRotatingFileHandler
 
-FORMATTER = logging.Formatter(
-    '%(asctime)s - %(name)s — %(levelname)s — %(message)s')
-LOG_FILE = 'learnergy.log'
+FORMATTER = logging.Formatter("%(asctime)s - %(name)s — %(levelname)s — %(message)s")
+LOG_FILE = "learnergy.log"
 
 
 def get_console_handler():
@@ -34,7 +33,7 @@ def get_timed_file_handler():
     """
 
     # Creates a timed rotating file handler for logger
-    file_handler = TimedRotatingFileHandler(LOG_FILE, delay=True, when='midnight')
+    file_handler = TimedRotatingFileHandler(LOG_FILE, delay=True, when="midnight")
     file_handler.setFormatter(FORMATTER)
 
     return file_handler

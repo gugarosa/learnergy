@@ -7,7 +7,16 @@ import numpy as np
 import learnergy.utils.exception as e
 
 
-def plot(*args, labels=None, title='', subtitle='', xlabel='epoch', ylabel='value', grid=True, legend=True):
+def plot(
+    *args,
+    labels=None,
+    title="",
+    subtitle="",
+    xlabel="epoch",
+    ylabel="value",
+    grid=True,
+    legend=True,
+):
     """Plots the convergence graph of desired variables.
 
     Essentially, each variable is a list or numpy array
@@ -36,8 +45,8 @@ def plot(*args, labels=None, title='', subtitle='', xlabel='epoch', ylabel='valu
     ax.set_xlim(xmin=1, xmax=ticks[-1])
 
     # Setting both title and subtitles
-    ax.set_title(title, loc='left', fontsize=14)
-    ax.set_title(subtitle, loc='right', fontsize=8, color='grey')
+    ax.set_title(title, loc="left", fontsize=14)
+    ax.set_title(subtitle, loc="right", fontsize=8, color="grey")
 
     if grid:
         ax.grid()
@@ -45,10 +54,10 @@ def plot(*args, labels=None, title='', subtitle='', xlabel='epoch', ylabel='valu
     if labels:
 
         if len(labels) != len(args):
-            raise e.SizeError('`args` and `labels` should have the same size')
+            raise e.SizeError("`args` and `labels` should have the same size")
 
     else:
-        labels = [f'variable_{i}' for i in range(len(args))]
+        labels = [f"variable_{i}" for i in range(len(args))]
 
     # Plotting the axis
     for (arg, label) in zip(args, labels):

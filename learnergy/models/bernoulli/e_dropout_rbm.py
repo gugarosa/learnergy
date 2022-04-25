@@ -9,10 +9,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as ex
-import learnergy.utils.logging as l
 from learnergy.models.bernoulli import RBM
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class EDropoutRBM(RBM):
@@ -26,8 +26,17 @@ class EDropoutRBM(RBM):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(
+        self,
+        n_visible=128,
+        n_hidden=128,
+        steps=1,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        temperature=1,
+        use_gpu=False,
+    ):
         """Initialization method.
 
         Args:
@@ -42,21 +51,27 @@ class EDropoutRBM(RBM):
 
         """
 
-        logger.info('Overriding class: RBM -> EDropoutRBM.')
+        logger.info("Overriding class: RBM -> EDropoutRBM.")
 
-        super(EDropoutRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
-                                          momentum, decay, temperature, use_gpu)
+        super(EDropoutRBM, self).__init__(
+            n_visible,
+            n_hidden,
+            steps,
+            learning_rate,
+            momentum,
+            decay,
+            temperature,
+            use_gpu,
+        )
 
         # Initializes the Energy-based Dropout mask
         self.M = torch.Tensor()
 
-        logger.info('Class overrided.')
+        logger.info("Class overrided.")
 
     @property
     def M(self):
-        """torch.Tensor: Energy-based Dropout mask.
-
-        """
+        """torch.Tensor: Energy-based Dropout mask."""
 
         return self._M
 
@@ -83,8 +98,7 @@ class EDropoutRBM(RBM):
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.mul(torch.sigmoid(
-                torch.div(activations, self.T)), self.M)
+            probs = torch.mul(torch.sigmoid(torch.div(activations, self.T)), self.M)
 
         # If scaling is false
         else:
@@ -158,11 +172,13 @@ class EDropoutRBM(RBM):
         """
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=True, num_workers=0
+        )
 
         # For every epoch
         for epoch in range(epochs):
-            logger.info('Epoch %d/%d', epoch+1, epochs)
+            logger.info("Epoch %d/%d", epoch + 1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -176,20 +192,24 @@ class EDropoutRBM(RBM):
                 batch_size = samples.size(0)
 
                 # Returns the Energy-based Dropout mask to one
-                self.M = torch.ones(
-                    (batch_size, self.n_hidden), device=self.device)
+                self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
                 # Flattening the samples' batch
                 samples = samples.reshape(len(samples), self.n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self.device == "cuda":
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
                 # Performs the initial Gibbs sampling procedure (pre-dropout)
-                pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states = self.gibbs_sampling(
-                    samples)
+                (
+                    pos_hidden_probs,
+                    pos_hidden_states,
+                    neg_hidden_probs,
+                    neg_hidden_states,
+                    visible_states,
+                ) = self.gibbs_sampling(samples)
 
                 # Calculating energy of positive phase sampling
                 e = self.total_energy(pos_hidden_states, samples)
@@ -207,8 +227,9 @@ class EDropoutRBM(RBM):
                 visible_states = visible_states.detach()
 
                 # Calculates the loss for further gradients' computation
-                cost = torch.mean(self.energy(samples)) - \
-                    torch.mean(self.energy(visible_states))
+                cost = torch.mean(self.energy(samples)) - torch.mean(
+                    self.energy(visible_states)
+                )
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -221,7 +242,8 @@ class EDropoutRBM(RBM):
 
                 # Calculating current's batch MSE
                 batch_mse = torch.div(
-                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+                )
 
                 # Calculating the current's batch logarithm pseudo-likelihood
                 batch_pl = self.pseudo_likelihood(samples)
@@ -238,9 +260,9 @@ class EDropoutRBM(RBM):
             end = time.time()
 
             # Dumps the desired variables to the model's history
-            self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
+            self.dump(mse=mse.item(), pl=pl.item(), time=end - start)
 
-            logger.info('MSE: %f | log-PL: %f', mse, pl)
+            logger.info("MSE: %f | log-PL: %f", mse, pl)
 
         return mse, pl
 
@@ -255,7 +277,7 @@ class EDropoutRBM(RBM):
 
         """
 
-        logger.info('Reconstructing new samples ...')
+        logger.info("Reconstructing new samples ...")
 
         # Resetting MSE to zero
         mse = 0
@@ -264,19 +286,20 @@ class EDropoutRBM(RBM):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, num_workers=0
+        )
 
         # For every batch
         for samples, _ in tqdm(batches):
             # Returns the Energy-based Dropout mask to one
-            self.M = torch.ones(
-                (batch_size, self.n_hidden), device=self.device)
+            self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
             # Flattening the samples' batch
             samples = samples.reshape(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -284,12 +307,12 @@ class EDropoutRBM(RBM):
             _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                pos_hidden_states)
+            visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+            )
 
             # Summing up the reconstruction's MSE
             mse += batch_mse
@@ -297,6 +320,6 @@ class EDropoutRBM(RBM):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info('MSE: %f', mse)
+        logger.info("MSE: %f", mse)
 
         return mse, visible_probs
