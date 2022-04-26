@@ -1,26 +1,36 @@
 """Image-related visualization.
 """
 
+from typing import Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from PIL import Image
 
 import learnergy.math.scale as scl
 
 
-def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=True):
+def _rasterize(
+    x: np.array,
+    img_shape: Tuple[int, int],
+    tile_shape: Tuple[int, int],
+    tile_spacing: Optional[Tuple[int, int]] = (0, 0),
+    scale: Optional[bool] = True,
+    output: Optional[bool] = True,
+) -> np.array:
     """Rasterizes and prepares an image to be outputted as a mosaic.
 
     Args:
-        x (array): An input array to be rasterized.
-        img_shape (tuple): A tuple for the image shape.
-        tile_shape (tuple): A tuple holding the shape of each tile.
-        tile_spacing (tuple): A tuple containing the spacing between tiles.
-        scale (bool): If output array should be scaled between 0 and 1.
-        output (bool): If output values should be returned as pixels or not.
+        x: An input array to be rasterized.
+        img_shape: A tuple for the image shape.
+        tile_shape: A tuple holding the shape of each tile.
+        tile_spacing: A tuple containing the spacing between tiles.
+        scale: If output array should be scaled between 0 and 1.
+        output: If output values should be returned as pixels or not.
 
     Returns:
-        An output array containing the rasterized version of input array.
+        (np.array): Rasterized version of input array.
 
     """
 
@@ -127,11 +137,11 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
     return out_array
 
 
-def create_mosaic(tensor):
+def create_mosaic(tensor: torch.Tensor) -> None:
     """Creates a mosaic from a tensor using Pillow.
 
     Args:
-        tensor (Tensor): An input tensor to have its mosaic created.
+        tensor: An input tensor to have its mosaic created.
 
     """
 
@@ -151,12 +161,12 @@ def create_mosaic(tensor):
     img.show()
 
 
-def create_rgb_mosaic(tensor, n_samples=1):
+def create_rgb_mosaic(tensor: torch.Tensor, n_samples: Optional[int] = 1) -> None:
     """Creates a squared mosaic for RGB images.
 
     Args:
-        tensor (Tensor): An input tensor to have its mosaic created.
-        n_samples (int): The amount of samples to be plotted (width or height).
+        tensor: An input tensor to have its mosaic created.
+        n_samples: The amount of samples to be plotted (width or height).
 
     """
 

@@ -2,6 +2,7 @@
 """
 
 import time
+from typing import Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -29,28 +30,28 @@ class GaussianConvRBM(ConvRBM):
 
     def __init__(
         self,
-        visible_shape=(28, 28),
-        filter_shape=(7, 7),
-        n_filters=5,
-        n_channels=1,
-        steps=1,
-        learning_rate=0.1,
-        momentum=0,
-        decay=0,
-        use_gpu=False,
-    ):
+        visible_shape: Optional[Tuple[int, int]] = (28, 28),
+        filter_shape: Optional[Tuple[int, int]] = (7, 7),
+        n_filters: Optional[int] = 5,
+        n_channels: Optional[int] = 1,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            visible_shape (tuple): Shape of visible units.
-            filter_shape (tuple): Shape of filters.
-            n_filters (int): Number of filters.
-            n_channels (int): Number of channels.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            use_gpu (boolean): Whether GPU should be used or not.
+            visible_shape: Shape of visible units.
+            filter_shape: Shape of filters.
+            n_filters: Number of filters.
+            n_channels: Number of channels.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -74,24 +75,23 @@ class GaussianConvRBM(ConvRBM):
         logger.info("Class overrided.")
 
     @property
-    def normalize(self):
-        """bool: Inner data normalization."""
+    def normalize(self) -> bool:
+        """Inner data normalization."""
 
         return self._normalize
 
     @normalize.setter
-    def normalize(self, normalize):
-
+    def normalize(self, normalize: bool) -> None:
         self._normalize = normalize
 
-    def hidden_sampling(self, v):
+    def hidden_sampling(self, v: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
             v (torch.Tensor): A tensor incoming from the visible layer.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
         # Calculating neurons' activations
@@ -102,14 +102,14 @@ class GaussianConvRBM(ConvRBM):
 
         return probs, probs
 
-    def visible_sampling(self, h):
+    def visible_sampling(self, h: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (torch.Tensor): A tensor incoming from the hidden layer.
+            h: A tensor incoming from the hidden layer.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
 
         """
 
@@ -128,16 +128,21 @@ class GaussianConvRBM(ConvRBM):
 
         return probs, probs
 
-    def fit(self, dataset, batch_size=128, epochs=10):
-        """Fits a new RBM model.
+    def fit(
+        self,
+        dataset: torch.utils.data.Dataset,
+        batch_size: Optional[int] = 128,
+        epochs: Optional[int] = 10,
+    ) -> float:
+        """Fits a new GaussianConvRBM model.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (int): Number of training epochs.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs.
 
         Returns:
-            MSE (mean squared error) from the training step.
+            (float): MSE (mean squared error) from the training step.
 
         """
 

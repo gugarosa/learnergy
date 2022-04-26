@@ -2,6 +2,7 @@
 """
 
 import time
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -28,28 +29,28 @@ class DiscriminativeRBM(RBM):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        n_classes=1,
-        steps=1,
-        learning_rate=0.1,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        n_classes: Optional[int] = 1,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            n_classes (int): Amount of classes.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            n_classes: Amount of classes.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -92,59 +93,56 @@ class DiscriminativeRBM(RBM):
         logger.info("Class overrided.")
 
     @property
-    def n_classes(self):
-        """int: Number of classes."""
+    def n_classes(self) -> int:
+        """Number of classes."""
 
         return self._n_classes
 
     @n_classes.setter
-    def n_classes(self, n_classes):
+    def n_classes(self, n_classes: int) -> None:
         if n_classes <= 0:
             raise e.ValueError("`n_classes` should be > 0")
 
         self._n_classes = n_classes
 
     @property
-    def U(self):
-        """torch.nn.Parameter: Class weights' matrix."""
+    def U(self) -> torch.nn.Parameter:
+        """Class weights' matrix."""
 
         return self._U
 
     @U.setter
-    def U(self, U):
-
+    def U(self, U: torch.nn.Parameter) -> None:
         self._U = U
 
     @property
-    def c(self):
-        """torch.nn.Parameter: Class units bias."""
+    def c(self) -> torch.nn.Parameter:
+        """Class units bias."""
 
         return self._c
 
     @c.setter
-    def c(self, c):
-
+    def c(self, c: torch.nn.Parameter) -> None:
         self._c = c
 
     @property
-    def loss(self):
-        """torch.nn.CrossEntropyLoss: Cross-Entropy loss function."""
+    def loss(self) -> torch.nn.CrossEntropyLoss:
+        """Cross-Entropy loss function."""
 
         return self._loss
 
     @loss.setter
-    def loss(self, loss):
-
+    def loss(self, loss: torch.nn.CrossEntropyLoss) -> None:
         self._loss = loss
 
-    def labels_sampling(self, samples):
+    def labels_sampling(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates labels probabilities by samplings, i.e., P(y|v).
 
         Args:
-            samples (torch.Tensor): Samples to be labels-calculated.
+            samples: Samples to be labels-calculated.
 
         Returns:
-            Labels' probabilities based on input samples.
+            (torch.Tensor): Labels' probabilities based on input samples.
 
         """
 
@@ -167,16 +165,21 @@ class DiscriminativeRBM(RBM):
 
         return probs, preds
 
-    def fit(self, dataset, batch_size=128, epochs=10):
+    def fit(
+        self,
+        dataset: torch.utils.data.Dataset,
+        batch_size: Optional[int] = 128,
+        epochs: Optional[int] = 10,
+    ) -> Tuple[float, float]:
         """Fits a new DRBM model.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (int): Number of training epochs.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs.
 
         Returns:
-            Loss and accuracy from the training step.
+            (Tuple[float, float]): Loss and accuracy from the training step.
 
         """
 
@@ -251,14 +254,16 @@ class DiscriminativeRBM(RBM):
 
         return loss, acc
 
-    def predict(self, dataset):
+    def predict(
+        self, dataset: torch.utils.data.Dataset
+    ) -> Tuple[float, torch.Tensor, torch.Tensor]:
         """Predicts batches of new samples.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+            dataset: A Dataset object containing the testing data.
 
         Returns:
-            Prediction probabilities and labels, i.e., P(y|v).
+            (Tuple[float, torch.Tensor, torch.Tensor]): Accuracy, prediction probabilities and labels, i.e., P(y|v).
 
         """
 
@@ -315,30 +320,30 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        n_classes=1,
-        steps=1,
-        learning_rate=0.1,
-        alpha=0.01,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        n_classes: Optional[int] = 1,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        alpha: Optional[float] = 0.01,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            n_classes (int): Amount of classes.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            alpha (float): Amount of penalization to the generative loss.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            n_classes: Amount of classes.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            alpha: Amount of penalization to the generative loss.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -361,28 +366,30 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         self.alpha = alpha
 
     @property
-    def alpha(self):
-        """float: Generative loss penalization."""
+    def alpha(self) -> float:
+        """Generative loss penalization."""
 
         return self._alpha
 
     @alpha.setter
-    def alpha(self, alpha):
+    def alpha(self, alpha: float) -> None:
         if alpha < 0:
             raise e.ValueError("`alpha` should be >= 0")
 
         self._alpha = alpha
 
-    def hidden_sampling(self, v, y, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, y: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|y,v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            y (torch.Tensor): A tensor incoming from the class layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            y: A tensor incoming from the class layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -404,14 +411,14 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         return probs, states
 
-    def class_sampling(self, h):
+    def class_sampling(self, h: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the class layer sampling, i.e., P(y|h).
 
         Args:
-            h (torch.Tensor): A tensor incoming from the hidden layer.
+            h: A tensor incoming from the hidden layer.
 
         Returns:
-            The probabilities and states of the class layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the class layer sampling.
 
         """
 
@@ -428,17 +435,19 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         return probs, states
 
-    def gibbs_sampling(self, v, y):
+    def gibbs_sampling(
+        self, v: torch.Tensor, y: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Performs the whole Gibbs sampling procedure.
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            y (torch.Tensor): A tensor incoming from the class layer.
+            v: A tensor incoming from the visible layer.
+            y: A tensor incoming from the class layer.
 
         Returns:
-            The probabilities and states of the hidden layer sampling (positive),
-            the probabilities and states of the hidden layer sampling (negative)
-            and the states of the visible layer sampling (negative).
+            (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling (positive),
+                the probabilities and states of the hidden layer sampling (negative)
+                and the states of the visible layer sampling (negative).
 
         """
 
@@ -472,16 +481,21 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             visible_states,
         )
 
-    def fit(self, dataset, batch_size=128, epochs=10):
+    def fit(
+        self,
+        dataset: torch.utils.data.Dataset,
+        batch_size: Optional[int] = 128,
+        epochs: Optional[int] = 10,
+    ) -> Tuple[float, float]:
         """Fits a new DRBM model.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (int): Number of training epochs.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs.
 
         Returns:
-            Loss and accuracy from the training step.
+            (Tuple[float, float]): Loss and accuracy from the training step.
 
         """
 

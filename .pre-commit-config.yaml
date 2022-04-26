@@ -15,6 +15,7 @@ repos:
     rev: 5.10.1
     hooks:
       - id: isort
+        exclude: learnergy/models/bernoulli/__init__.py
   - repo: https://github.com/psf/black
     rev: 22.3.0
     hooks:

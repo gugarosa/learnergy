@@ -1,6 +1,8 @@
 """Residual-based Deep Belief Networks.
 """
 
+from typing import Optional, Tuple, Union
+
 import torch
 import torch.nn.functional as F
 
@@ -23,17 +25,17 @@ class ResidualDBN(DBN):
 
     def __init__(
         self,
-        model="bernoulli",
-        n_visible=128,
-        n_hidden=(128,),
-        steps=(1,),
-        learning_rate=(0.1,),
-        momentum=(0,),
-        decay=(0,),
-        temperature=(1,),
-        zetta1=1,
-        zetta2=1,
-        use_gpu=False,
+        model: Optional[str] = "bernoulli",
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[Tuple[int, ...]] = (128,),
+        steps: Optional[Tuple[int, ...]] = (1,),
+        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
+        momentum: Optional[Tuple[float, ...]] = (0.0,),
+        decay: Optional[Tuple[float, ...]] = (0.0,),
+        temperature: Optional[Tuple[float, ...]] = (1.0,),
+        zetta1: Optional[float] = 1.0,
+        zetta2: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
 
@@ -73,39 +75,39 @@ class ResidualDBN(DBN):
         self.zetta2 = zetta2
 
     @property
-    def zetta1(self):
-        """float: Penalization factor for original learning."""
+    def zetta1(self) -> float:
+        """Penalization factor for original learning."""
 
         return self._zetta1
 
     @zetta1.setter
-    def zetta1(self, zetta1):
+    def zetta1(self, zetta1: float) -> None:
         if zetta1 < 0:
             raise e.ValueError("`zetta1` should be >= 0")
 
         self._zetta1 = zetta1
 
     @property
-    def zetta2(self):
-        """float: Penalization factor for residual learning."""
+    def zetta2(self) -> float:
+        """Penalization factor for residual learning."""
 
         return self._zetta2
 
     @zetta2.setter
-    def zetta2(self, zetta2):
+    def zetta2(self, zetta2: float) -> None:
         if zetta2 < 0:
             raise e.ValueError("`zetta2` should be >= 0")
 
         self._zetta2 = zetta2
 
-    def calculate_residual(self, pre_activations):
+    def calculate_residual(self, pre_activations: torch.Tensor) -> torch.Tensor:
         """Calculates the residual learning over input.
 
         Args:
             pre_activations (torch.Tensor): Pre-activations to be used.
 
         Returns:
-            The residual learning based on input pre-activations.
+            (torch.Tensor): The residual learning based on input pre-activations.
 
         """
 
@@ -117,16 +119,21 @@ class ResidualDBN(DBN):
 
         return residual
 
-    def fit(self, dataset, batch_size=128, epochs=(10)):
-        """Fits a new DBN model.
+    def fit(
+        self,
+        dataset: Union[torch.utils.data.Dataset, Dataset],
+        batch_size: Optional[int] = 128,
+        epochs: Optional[Tuple[int, ...]] = (10,),
+    ) -> Tuple[float, float]:
+        """Fits a new ResidualDBN model.
 
         Args:
-            dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (tuple): Number of training epochs per layer.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs per layer.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -207,14 +214,14 @@ class ResidualDBN(DBN):
 
         return mse, pl
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Re-writes the forward pass for classification purposes.
 
         Args:
-            x (torch.Tensor): An input tensor for computing the forward pass.
+            x: An input tensor for computing the forward pass.
 
         Returns:
-            A tensor containing the DBN's outputs.
+            (torch.Tensor): A tensor containing the DBN's outputs.
 
         """
 

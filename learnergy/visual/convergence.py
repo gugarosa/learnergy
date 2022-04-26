@@ -1,6 +1,8 @@
 """Convergence-related visualization.
 """
 
+from typing import List, Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -9,27 +11,27 @@ import learnergy.utils.exception as e
 
 def plot(
     *args,
-    labels=None,
-    title="",
-    subtitle="",
-    xlabel="epoch",
-    ylabel="value",
-    grid=True,
-    legend=True,
-):
+    labels: Optional[List[str]] = None,
+    title: Optional[str] = "",
+    subtitle: Optional[str] = "",
+    xlabel: Optional[str] = "epoch",
+    ylabel: Optional[str] = "value",
+    grid: Optional[bool] = True,
+    legend: Optional[bool] = True,
+) -> None:
     """Plots the convergence graph of desired variables.
 
     Essentially, each variable is a list or numpy array
     with size equals to (epochs x 1).
 
     Args:
-        labels (list): Labels to be applied for each plot in legend.
-        title (str): The title of the plot.
-        subtitle (str): The subtitle of the plot.
-        xlabel (str): The `x` axis label.
-        ylabel (str): The `y` axis label.
-        grid (bool): If grid should be used or not.
-        legend (bool): If legend should be displayed or not.
+        labels: Labels to be applied for each plot in legend.
+        title: The title of the plot.
+        subtitle: The subtitle of the plot.
+        xlabel: The `x` axis label.
+        ylabel: The `y` axis label.
+        grid: If grid should be used or not.
+        legend: If legend should be displayed or not.
 
     """
 

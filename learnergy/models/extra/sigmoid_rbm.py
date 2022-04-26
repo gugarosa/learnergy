@@ -1,6 +1,8 @@
 """Sigmoid-Bernoulli Restricted Boltzmann Machine.
 """
 
+from typing import Optional, Tuple
+
 import torch
 import torch.nn.functional as F
 
@@ -22,26 +24,26 @@ class SigmoidRBM(RBM):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        steps=1,
-        learning_rate=0.1,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -60,15 +62,17 @@ class SigmoidRBM(RBM):
 
         logger.info("Class overrided.")
 
-    def visible_sampling(self, h, scale=False):
+    def visible_sampling(
+        self, h: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (torch.Tensor): A tensor incoming from the hidden layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            h: A tensor incoming from the hidden layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The states and probabilities of the visible layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The states and probabilities of the visible layer sampling.
 
         """
 

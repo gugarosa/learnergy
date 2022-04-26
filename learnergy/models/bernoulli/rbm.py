@@ -2,6 +2,7 @@
 """
 
 import time
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -29,26 +30,26 @@ class RBM(Model):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        steps=1,
-        learning_rate=0.1,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -110,147 +111,147 @@ class RBM(Model):
         )
 
     @property
-    def n_visible(self):
-        """int: Number of visible units."""
+    def n_visible(self) -> int:
+        """Number of visible units."""
 
         return self._n_visible
 
     @n_visible.setter
-    def n_visible(self, n_visible):
+    def n_visible(self, n_visible: int) -> None:
         if n_visible <= 0:
             raise e.ValueError("`n_visible` should be > 0")
 
         self._n_visible = n_visible
 
     @property
-    def n_hidden(self):
-        """int: Number of hidden units."""
+    def n_hidden(self) -> int:
+        """Number of hidden units."""
 
         return self._n_hidden
 
     @n_hidden.setter
-    def n_hidden(self, n_hidden):
+    def n_hidden(self, n_hidden: int) -> None:
         if n_hidden <= 0:
             raise e.ValueError("`n_hidden` should be > 0")
 
         self._n_hidden = n_hidden
 
     @property
-    def steps(self):
-        """int: Number of steps Gibbs' sampling steps."""
+    def steps(self) -> int:
+        """Number of steps Gibbs' sampling steps."""
 
         return self._steps
 
     @steps.setter
-    def steps(self, steps):
+    def steps(self, steps: int) -> None:
         if steps <= 0:
             raise e.ValueError("`steps` should be > 0")
 
         self._steps = steps
 
     @property
-    def lr(self):
-        """float: Learning rate."""
+    def lr(self) -> float:
+        """Learning rate."""
 
         return self._lr
 
     @lr.setter
-    def lr(self, lr):
+    def lr(self, lr: float) -> None:
         if lr < 0:
             raise e.ValueError("`lr` should be >= 0")
 
         self._lr = lr
 
     @property
-    def momentum(self):
-        """float: Momentum parameter."""
+    def momentum(self) -> float:
+        """Momentum parameter."""
 
         return self._momentum
 
     @momentum.setter
-    def momentum(self, momentum):
+    def momentum(self, momentum: float) -> None:
         if momentum < 0:
             raise e.ValueError("`momentum` should be >= 0")
 
         self._momentum = momentum
 
     @property
-    def decay(self):
-        """float: Weight decay."""
+    def decay(self) -> float:
+        """Weight decay."""
 
         return self._decay
 
     @decay.setter
-    def decay(self, decay):
+    def decay(self, decay: float) -> None:
         if decay < 0:
             raise e.ValueError("`decay` should be >= 0")
 
         self._decay = decay
 
     @property
-    def T(self):
-        """float: Temperature factor."""
+    def T(self) -> float:
+        """Temperature factor."""
 
         return self._T
 
     @T.setter
-    def T(self, T):
+    def T(self, T: float) -> None:
         if T <= 0 or T > 1:
             raise e.ValueError("`T` should be between 0 and 1")
 
         self._T = T
 
     @property
-    def W(self):
-        """torch.nn.Parameter: Weights' matrix."""
+    def W(self) -> torch.nn.Parameter:
+        """Weights' matrix."""
 
         return self._W
 
     @W.setter
-    def W(self, W):
-
+    def W(self, W: torch.nn.Parameter) -> None:
         self._W = W
 
     @property
-    def a(self):
-        """torch.nn.Parameter: Visible units bias."""
+    def a(self) -> torch.nn.Parameter:
+        """Visible units bias."""
 
         return self._a
 
     @a.setter
-    def a(self, a):
+    def a(self, a: torch.nn.Parameter) -> None:
         self._a = a
 
     @property
-    def b(self):
-        """torch.nn.Parameter: Hidden units bias."""
+    def b(self) -> torch.nn.Parameter:
+        """Hidden units bias."""
 
         return self._b
 
     @b.setter
-    def b(self, b):
+    def b(self, b: torch.nn.Parameter) -> None:
         self._b = b
 
     @property
-    def optimizer(self):
-        """torch.optim.SGD: Stochastic Gradient Descent object."""
+    def optimizer(self) -> torch.optim.SGD:
+        """Stochastic Gradient Descent object."""
 
         return self._optimizer
 
     @optimizer.setter
-    def optimizer(self, optimizer):
-
+    def optimizer(self, optimizer: torch.optim.SGD) -> None:
         self._optimizer = optimizer
 
-    def pre_activation(self, v, scale=False):
+    def pre_activation(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> torch.Tensor:
         """Performs the pre-activation over hidden neurons, i.e., Wx' + b.
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            An input for any type of activation function.
+            (torch.Tensor): An input for any type of activation function.
 
         """
 
@@ -264,15 +265,17 @@ class RBM(Model):
 
         return activations
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> torch.Tensor:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (torch.Tensor): The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -294,15 +297,17 @@ class RBM(Model):
 
         return probs, states
 
-    def visible_sampling(self, h, scale=False):
+    def visible_sampling(
+        self, h: torch.Tensor, scale: Optional[bool] = False
+    ) -> torch.Tensor:
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (torch.Tensor): A tensor incoming from the hidden layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            h: A tensor incoming from the hidden layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            (torch.Tensor): The probabilities and states of the visible layer sampling.
 
         """
 
@@ -324,16 +329,18 @@ class RBM(Model):
 
         return probs, states
 
-    def gibbs_sampling(self, v):
+    def gibbs_sampling(
+        self, v: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Performs the whole Gibbs sampling procedure.
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
+            v: A tensor incoming from the visible layer.
 
         Returns:
-            The probabilities and states of the hidden layer sampling (positive),
-            the probabilities and states of the hidden layer sampling (negative)
-            and the states of the visible layer sampling (negative).
+            (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling (positive),
+                the probabilities and states of the hidden layer sampling (negative)
+                and the states of the visible layer sampling (negative).
 
         """
 
@@ -361,14 +368,14 @@ class RBM(Model):
             visible_states,
         )
 
-    def energy(self, samples):
+    def energy(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates and frees the system's energy.
 
         Args:
-            samples (torch.Tensor): Samples to be energy-freed.
+            samples: Samples to be energy-freed.
 
         Returns:
-            The system's energy based on input samples.
+            (torch.Tensor): The system's energy based on input samples.
 
         """
 
@@ -389,14 +396,14 @@ class RBM(Model):
 
         return energy
 
-    def pseudo_likelihood(self, samples):
+    def pseudo_likelihood(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates the logarithm of the pseudo-likelihood.
 
         Args:
-            samples (torch.Tensor): Samples to be calculated.
+            samples: Samples to be calculated.
 
         Returns:
-            The logarithm of the pseudo-likelihood based on input samples.
+            (torch.Tensor): The logarithm of the pseudo-likelihood based on input samples.
 
         """
 
@@ -430,16 +437,21 @@ class RBM(Model):
 
         return pl
 
-    def fit(self, dataset, batch_size=128, epochs=10):
+    def fit(
+        self,
+        dataset: torch.utils.data.Dataset,
+        batch_size: Optional[int] = 128,
+        epochs: Optional[int] = 10,
+    ) -> Tuple[float, float]:
         """Fits a new RBM model.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (int): Number of training epochs.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -517,14 +529,16 @@ class RBM(Model):
 
         return mse, pl
 
-    def reconstruct(self, dataset):
+    def reconstruct(
+        self, dataset: torch.utils.data.Dataset
+    ) -> Tuple[float, torch.Tensor]:
         """Reconstructs batches of new samples.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+            dataset: A Dataset object containing the testing data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -572,14 +586,14 @@ class RBM(Model):
 
         return mse, visible_probs
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the data.
 
         Args:
-            x (torch.Tensor): An input tensor for computing the forward pass.
+            x: An input tensor for computing the forward pass.
 
         Returns:
-            A tensor containing the RBM's outputs.
+            (torch.Tensor): A tensor containing the RBM's outputs.
 
         """
 

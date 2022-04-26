@@ -1,6 +1,8 @@
 """Deep Belief Network.
 """
 
+from typing import List, Optional, Tuple, Union
+
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -42,28 +44,28 @@ class DBN(Model):
 
     def __init__(
         self,
-        model="bernoulli",
-        n_visible=128,
-        n_hidden=(128,),
-        steps=(1,),
-        learning_rate=(0.1,),
-        momentum=(0,),
-        decay=(0,),
-        temperature=(1,),
-        use_gpu=False,
+        model: Optional[str] = "bernoulli",
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[Tuple[int, ...]] = (128,),
+        steps: Optional[Tuple[int, ...]] = (1,),
+        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
+        momentum: Optional[Tuple[float, ...]] = (0.0,),
+        decay: Optional[Tuple[float, ...]] = (0.0,),
+        temperature: Optional[Tuple[float, ...]] = (1.0,),
+        use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
 
         Args:
-            model (str): Indicates which type of RBM should be used to compose the DBN.
-            n_visible (int): Amount of visible units.
-            n_hidden (tuple): Amount of hidden units per layer.
-            steps (tuple): Number of Gibbs' sampling steps per layer.
-            learning_rate (tuple): Learning rate per layer.
-            momentum (tuple): Momentum parameter per layer.
-            decay (tuple): Weight decay used for penalization per layer.
-            temperature (tuple): Temperature factor per layer.
-            use_gpu (boolean): Whether GPU should be used or not.
+            model: Indicates which type of RBM should be used to compose the DBN.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units per layer.
+            steps: Number of Gibbs' sampling steps per layer.
+            learning_rate: Learning rate per layer.
+            momentum: Momentum parameter per layer.
+            decay: Weight decay used for penalization per layer.
+            temperature: Temperature factor per layer.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -137,128 +139,131 @@ class DBN(Model):
         logger.debug("Number of layers: %d.", self.n_layers)
 
     @property
-    def n_visible(self):
-        """int: Number of visible units."""
+    def n_visible(self) -> int:
+        """Number of visible units."""
 
         return self._n_visible
 
     @n_visible.setter
-    def n_visible(self, n_visible):
+    def n_visible(self, n_visible: int) -> None:
         if n_visible <= 0:
             raise e.ValueError("`n_visible` should be > 0")
 
         self._n_visible = n_visible
 
     @property
-    def n_hidden(self):
-        """tuple: Tuple of hidden units."""
+    def n_hidden(self) -> Tuple[int, ...]:
+        """Tuple of hidden units."""
 
         return self._n_hidden
 
     @n_hidden.setter
-    def n_hidden(self, n_hidden):
-
+    def n_hidden(self, n_hidden: Tuple[int, ...]) -> None:
         self._n_hidden = n_hidden
 
     @property
-    def n_layers(self):
-        """int: Number of layers."""
+    def n_layers(self) -> int:
+        """Number of layers."""
 
         return self._n_layers
 
     @n_layers.setter
-    def n_layers(self, n_layers):
+    def n_layers(self, n_layers: int) -> None:
         if n_layers <= 0:
             raise e.ValueError("`n_layers` should be > 0")
 
         self._n_layers = n_layers
 
     @property
-    def steps(self):
-        """tuple: Number of steps Gibbs' sampling steps per layer."""
+    def steps(self) -> Tuple[int, ...]:
+        """Number of steps Gibbs' sampling steps per layer."""
 
         return self._steps
 
     @steps.setter
-    def steps(self, steps):
+    def steps(self, steps: Tuple[int, ...]) -> None:
         if len(steps) != self.n_layers:
             raise e.SizeError(f"`steps` should have size equal as {self.n_layers}")
 
         self._steps = steps
 
     @property
-    def lr(self):
-        """tuple: Learning rate per layer."""
+    def lr(self) -> Tuple[float, ...]:
+        """Learning rate per layer."""
 
         return self._lr
 
     @lr.setter
-    def lr(self, lr):
+    def lr(self, lr: Tuple[float, ...]) -> None:
         if len(lr) != self.n_layers:
             raise e.SizeError(f"`lr` should have size equal as {self.n_layers}")
 
         self._lr = lr
 
     @property
-    def momentum(self):
-        """tuple: Momentum parameter per layer."""
+    def momentum(self) -> Tuple[float, ...]:
+        """Momentum parameter per layer."""
 
         return self._momentum
 
     @momentum.setter
-    def momentum(self, momentum):
+    def momentum(self, momentum: Tuple[float, ...]) -> None:
         if len(momentum) != self.n_layers:
             raise e.SizeError(f"`momentum` should have size equal as {self.n_layers}")
 
         self._momentum = momentum
 
     @property
-    def decay(self):
-        """tuple: Weight decay per layer."""
+    def decay(self) -> Tuple[float, ...]:
+        """Weight decay per layer."""
 
         return self._decay
 
     @decay.setter
-    def decay(self, decay):
+    def decay(self, decay: Tuple[float, ...]) -> None:
         if len(decay) != self.n_layers:
             raise e.SizeError(f"`decay` should have size equal as {self.n_layers}")
 
         self._decay = decay
 
     @property
-    def T(self):
-        """tuple: Temperature factor per layer."""
+    def T(self) -> Tuple[float, ...]:
+        """Temperature factor per layer."""
 
         return self._T
 
     @T.setter
-    def T(self, T):
+    def T(self, T: Tuple[float, ...]) -> None:
         if len(T) != self.n_layers:
             raise e.SizeError(f"`T` should have size equal as {self.n_layers}")
 
         self._T = T
 
     @property
-    def models(self):
-        """list: List of models (RBMs)."""
+    def models(self) -> List[torch.nn.Module]:
+        """List of models (RBMs)."""
 
         return self._models
 
     @models.setter
-    def models(self, models):
-
+    def models(self, models: List[torch.nn.Module]) -> None:
         self._models = models
 
-    def fit(self, dataset, batch_size=128, epochs=(10,)):
+    def fit(
+        self,
+        dataset: Union[torch.utils.data.Dataset, Dataset],
+        batch_size: Optional[int] = 128,
+        epochs: Optional[Tuple[int, ...]] = (10,),
+    ) -> Tuple[float, float]:
         """Fits a new DBN model.
 
         Args:
-            dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (tuple): Number of training epochs per layer.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs per layer.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -328,14 +333,16 @@ class DBN(Model):
 
         return mse, pl
 
-    def reconstruct(self, dataset):
+    def reconstruct(
+        self, dataset: torch.utils.data.Dataset
+    ) -> Tuple[float, torch.Tensor]:
         """Reconstructs batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -399,14 +406,14 @@ class DBN(Model):
 
         return mse, visible_probs
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the data.
 
         Args:
-            x (torch.Tensor): An input tensor for computing the forward pass.
+            x: An input tensor for computing the forward pass.
 
         Returns:
-            A tensor containing the DBN's outputs.
+            (torch.Tensor): A tensor containing the DBN's outputs.
 
         """
 

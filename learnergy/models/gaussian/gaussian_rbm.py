@@ -2,11 +2,11 @@
 """
 
 import time
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as opt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -37,30 +37,30 @@ class GaussianRBM(RBM):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        steps=1,
-        learning_rate=0.1,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-        normalize=True,
-        input_normalize=True,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+        normalize: Optional[bool] = True,
+        input_normalize: Optional[bool] = True,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
-            normalize (boolean): Whether or not to use batch normalization
-            input_normalize (boolean): Whether or not to normalize inputs
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
+            normalize: Whether or not to use batch normalization.
+            input_normalize: Whether or not to normalize inputs.
 
         """
 
@@ -83,35 +83,33 @@ class GaussianRBM(RBM):
         logger.info("Class overrided.")
 
     @property
-    def normalize(self):
-        """boolean: Whether or not to use batch normalization."""
+    def normalize(self) -> bool:
+        """Whether or not to use batch normalization."""
 
         return self._normalize
 
     @normalize.setter
-    def normalize(self, normalize):
-
+    def normalize(self, normalize: bool) -> None:
         self._normalize = normalize
 
     @property
-    def input_normalize(self):
-        """boolean: Whether or not to use input normalization."""
+    def input_normalize(self) -> bool:
+        """Whether or not to use input normalization."""
 
         return self._input_normalize
 
     @input_normalize.setter
-    def input_normalize(self, input_normalize):
-
+    def input_normalize(self, input_normalize: bool) -> None:
         self._input_normalize = input_normalize
 
-    def energy(self, samples):
+    def energy(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates and frees the system's energy.
 
         Args:
-            samples (torch.Tensor): Samples to be energy-freed.
+            samples: Samples to be energy-freed.
 
         Returns:
-            The system's energy based on input samples.
+            (torch.Tensor): The system's energy based on input samples.
 
         """
 
@@ -132,15 +130,17 @@ class GaussianRBM(RBM):
 
         return energy
 
-    def visible_sampling(self, h, scale=False):
+    def visible_sampling(
+        self, h: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (torch.Tensor): A tensor incoming from the hidden layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            h: A tensor incoming from the hidden layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
 
         """
 
@@ -162,16 +162,21 @@ class GaussianRBM(RBM):
 
         return probs, states
 
-    def fit(self, dataset, batch_size=128, epochs=10):
-        """Fits a new RBM model.
+    def fit(
+        self,
+        dataset: torch.utils.data.Dataset,
+        batch_size: Optional[int] = 128,
+        epochs: Optional[int] = 10,
+    ) -> Tuple[float, float]:
+        """Fits a new GaussianRBM model.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (int): Number of training epochs.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -257,19 +262,19 @@ class GaussianRBM(RBM):
 
         return mse, pl
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the data.
 
         Args:
-            x (torch.Tensor): An input tensor for computing the forward pass.
+            x: An input tensor for computing the forward pass.
 
         Returns:
-            A tensor containing the RBM's outputs.
+            (torch.Tensor): A tensor containing the RBM's outputs.
 
         """
 
         if self.input_normalize:
-            # Normalizing the samples'
+            # Normalizing the samples
             x = ((x - torch.mean(x, 0, True)) / (torch.std(x, 0, True) + 1e-6)).detach()
 
         # Calculates the outputs of the model
@@ -277,14 +282,16 @@ class GaussianRBM(RBM):
 
         return x
 
-    def reconstruct(self, dataset):
+    def reconstruct(
+        self, dataset: torch.utils.data.Dataset
+    ) -> Tuple[float, torch.Tensor]:
         """Reconstructs batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -303,7 +310,6 @@ class GaussianRBM(RBM):
 
         # For every batch
         for samples, _ in tqdm(batches):
-
             if self.normalize:
                 # Normalizing the samples' batch
                 samples = (
@@ -356,30 +362,30 @@ class GaussianReluRBM(GaussianRBM):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        steps=1,
-        learning_rate=0.001,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-        normalize=True,
-        input_normalize=True,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.001,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+        normalize: Optional[bool] = True,
+        input_normalize: Optional[bool] = True,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
-            normalize (boolean): Whether or not to use batch normalization
-            input_normalize (boolean): Whether or not to normalize inputs
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
+            normalize: Whether or not to use batch normalization.
+            input_normalize: Whether or not to normalize inputs.
 
         """
 
@@ -401,15 +407,17 @@ class GaussianReluRBM(GaussianRBM):
 
         logger.info("Class overrided.")
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -449,30 +457,30 @@ class GaussianSeluRBM(GaussianRBM):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        steps=1,
-        learning_rate=0.001,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-        normalize=False,
-        input_normalize=True,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.001,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+        normalize: Optional[bool] = False,
+        input_normalize: Optional[bool] = True,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
-            normalize (boolean): Whether or not to use batch normalization
-            input_normalize (boolean): Whether or not to normalize inputs
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
+            normalize: Whether or not to use batch normalization.
+            input_normalize: Whether or not to normalize inputs.
 
         """
 
@@ -494,15 +502,17 @@ class GaussianSeluRBM(GaussianRBM):
 
         logger.info("Class overrided.")
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -544,26 +554,26 @@ class VarianceGaussianRBM(RBM):
 
     def __init__(
         self,
-        n_visible=128,
-        n_hidden=128,
-        steps=1,
-        learning_rate=0.1,
-        momentum=0,
-        decay=0,
-        temperature=1,
-        use_gpu=False,
-    ):
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -595,25 +605,26 @@ class VarianceGaussianRBM(RBM):
         logger.info("Class overrided.")
 
     @property
-    def sigma(self):
+    def sigma(self) -> torch.nn.Parameter:
         """torch.nn.Parameter: Variance parameter."""
 
         return self._sigma
 
     @sigma.setter
-    def sigma(self, sigma):
-
+    def sigma(self, sigma: torch.nn.Parameter) -> None:
         self._sigma = sigma
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -637,15 +648,17 @@ class VarianceGaussianRBM(RBM):
 
         return probs, states
 
-    def visible_sampling(self, h, scale=False):
+    def visible_sampling(
+        self, h: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
 
         Args:
-            h (torch.Tensor): A tensor incoming from the hidden layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            h: A tensor incoming from the hidden layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
 
         """
 
@@ -667,14 +680,14 @@ class VarianceGaussianRBM(RBM):
 
         return states, activations
 
-    def energy(self, samples):
+    def energy(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates and frees the system's energy.
 
         Args:
-            samples (torch.Tensor): Samples to be energy-freed.
+            samples: Samples to be energy-freed.
 
         Returns:
-            The system's energy based on input samples.
+            (torch.Tensor): The system's energy based on input samples.
 
         """
 

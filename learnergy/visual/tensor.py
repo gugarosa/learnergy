@@ -2,14 +2,15 @@
 """
 
 import matplotlib.pyplot as plt
+import torch
 
 
-def save_tensor(tensor, output_path):
+def save_tensor(tensor: torch.Tensor, output_path: str) -> None:
     """Saves a tensor in grayscale mode using Matplotlib.
 
     Args:
-        tensor (Tensor): An input tensor to be saved.
-        output_path (str): An outputh path to save the tensor.
+        tensor: An input tensor to be saved.
+        output_path: An outputh path to save the tensor.
 
     """
 
@@ -37,11 +38,11 @@ def save_tensor(tensor, output_path):
     plt.savefig(output_path)
 
 
-def show_tensor(tensor):
+def show_tensor(tensor: torch.Tensor) -> None:
     """Plots a tensor in grayscale mode using Matplotlib.
 
     Args:
-        tensor (Tensor): An input tensor to be plotted.
+        tensor: An input tensor to be plotted.
 
     """
 

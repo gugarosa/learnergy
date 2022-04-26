@@ -1,6 +1,8 @@
 """Standard model-related implementation.
 """
 
+from typing import Any, Dict, Optional
+
 import torch
 
 import learnergy.utils.exception as e
@@ -17,11 +19,11 @@ class Model(torch.nn.Module):
 
     """
 
-    def __init__(self, use_gpu=False):
+    def __init__(self, use_gpu: Optional[bool] = False) -> None:
         """Initialization method.
 
         Args:
-            use_gpu (bool): Whether GPU should be used or not.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
@@ -43,30 +45,29 @@ class Model(torch.nn.Module):
         logger.debug("Device: %s.", self.device)
 
     @property
-    def device(self):
-        """str: Indicates which device is being used for computation."""
+    def device(self) -> str:
+        """Indicates which device is being used for computation."""
 
         return self._device
 
     @device.setter
-    def device(self, device):
+    def device(self, device: str) -> None:
         if device not in ["cpu", "cuda"]:
             raise e.TypeError("`device` should be `cpu` or `cuda`")
 
         self._device = device
 
     @property
-    def history(self):
-        """dict: Dictionary containing historical values from the model."""
+    def history(self) -> Dict[str, Any]:
+        """Dictionary containing historical values from the model."""
 
         return self._history
 
     @history.setter
-    def history(self, history):
-
+    def history(self, history: Dict[str, Any]) -> None:
         self._history = history
 
-    def dump(self, **kwargs):
+    def dump(self, **kwargs) -> None:
         """Dumps any amount of keyword documents to lists in the history property."""
 
         for k, v in kwargs.items():

@@ -1,17 +1,19 @@
 """Scaling-related mathematical functions.
 """
 
+import numpy as np
+
 import learnergy.utils.constants as c
 
 
-def unitary_scale(x):
+def unitary_scale(x: np.array) -> np.array:
     """Scales an array between 0 and 1.
 
     Args:
-        x (array): A numpy array to be scaled.
+        x: A numpy array to be scaled.
 
     Returns:
-        The scaled array.
+        (np.array): Scaled array.
 
     """
 
