@@ -27,7 +27,8 @@ class ResidualDBN(DBN):
         """Initialization method.
 
         Args:
-            model (str): Indicates which type of RBM should be used to compose the ResidualDBN.
+            model (str): Indicates which type of RBM should be used to compose the DBN. Can be string or list. If string, layer 2 and beyond a
+re of type 'sigmoid'
             n_visible (int): Amount of visible units.
             n_hidden (tuple): Amount of hidden units per layer.
             steps (tuple): Number of Gibbs' sampling steps per layer.

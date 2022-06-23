@@ -15,7 +15,9 @@ logger = l.get_logger(__name__)
 
 MODELS = {
     'bernoulli': ConvRBM,
-    'gaussian': GaussianConvRBM
+    'bernoulli_transpose': ConvTransposeRBM,
+    'gaussian': GaussianConvRBM,
+    'gaussian_transpose': GaussianConvTransposeRBM
 }
 
 
@@ -84,7 +86,14 @@ class ConvDBN(Model):
         # For every possible layer
         for i in range(self.n_layers):
             # Creates an CRBM
-            m = MODELS[model](visible_shape, self.filter_shape[i], self.n_filters[i],
+            if isinstance(model, list):
+                    #Use user-specified layers
+                    mdl = model[i]
+                else:
+                    mdl = model
+
+
+            m = MODELS[mdl](visible_shape, self.filter_shape[i], self.n_filters[i],
                               n_channels, self.steps[i], self.lr[i], self.momentum[i], self.decay[i], use_gpu)
 
             # Re-defines the visible shape

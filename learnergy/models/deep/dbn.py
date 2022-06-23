@@ -41,7 +41,7 @@ class DBN(Model):
         """Initialization method.
 
         Args:
-            model (str): Indicates which type of RBM should be used to compose the DBN.
+            model (str): Indicates which type of RBM should be used to compose the DBN. Can be string or list. If string, layer 2 and beyond are of type 'sigmoid'
             n_visible (int): Amount of visible units.
             n_hidden (tuple): Amount of hidden units per layer.
             steps (tuple): Number of Gibbs' sampling steps per layer.
@@ -90,17 +90,27 @@ class DBN(Model):
             if i == 0:
                 # Gathers the number of input units as number of visible units
                 n_input = self.n_visible
+             
+                if isinstance(model, list):
+                    #Use user-specified layers
+                    mdl = model[i]
+                else:
+                    mdl = model
 
             # If it is not the first layer
             else:
                 # Gathers the number of input units as previous number of hidden units
                 n_input = self.n_hidden[i-1]
 
-                # After creating the first layer, we need to change the model's type to sigmoid
-                model = 'sigmoid'
+                if isinstance(model, list):
+                    #Use user-specified layers
+                    mdl = model[i]
+                else:
+                    # After creating the first layer, we need to change the model's type to sigmoid
+                    mdl = 'sigmoid'
 
             # Creates an RBM
-            m = MODELS[model](n_input, self.n_hidden[i], self.steps[i],
+            m = MODELS[mdl](n_input, self.n_hidden[i], self.steps[i],
                               self.lr[i], self.momentum[i], self.decay[i], self.T[i], use_gpu)
 
             # Appends the model to the list
