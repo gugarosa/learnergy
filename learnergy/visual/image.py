@@ -1,26 +1,36 @@
 """Image-related visualization.
 """
 
+from typing import Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from PIL import Image
 
 import learnergy.math.scale as scl
 
 
-def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output=True):
+def _rasterize(
+    x: np.array,
+    img_shape: Tuple[int, int],
+    tile_shape: Tuple[int, int],
+    tile_spacing: Optional[Tuple[int, int]] = (0, 0),
+    scale: Optional[bool] = True,
+    output: Optional[bool] = True,
+) -> np.array:
     """Rasterizes and prepares an image to be outputted as a mosaic.
 
     Args:
-        x (array): An input array to be rasterized.
-        img_shape (tuple): A tuple for the image shape.
-        tile_shape (tuple): A tuple holding the shape of each tile.
-        tile_spacing (tuple): A tuple containing the spacing between tiles.
-        scale (bool): If output array should be scaled between 0 and 1.
-        output (bool): If output values should be returned as pixels or not.
+        x: An input array to be rasterized.
+        img_shape: A tuple for the image shape.
+        tile_shape: A tuple holding the shape of each tile.
+        tile_spacing: A tuple containing the spacing between tiles.
+        scale: If output array should be scaled between 0 and 1.
+        output: If output values should be returned as pixels or not.
 
     Returns:
-        An output array containing the rasterized version of input array.
+        (np.array): Rasterized version of input array.
 
     """
 
@@ -30,8 +40,10 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
     assert len(tile_spacing) == 2
 
     # Creates an output shape
-    out_shape = [(ishp + tsp) * tshp - tsp for ishp, tshp,
-                 tsp in zip(img_shape, tile_shape, tile_spacing)]
+    out_shape = [
+        (ishp + tsp) * tshp - tsp
+        for ishp, tshp, tsp in zip(img_shape, tile_shape, tile_spacing)
+    ]
 
     # Asserts if input array is a tuple
     if isinstance(x, tuple):
@@ -41,8 +53,7 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
         # If output boolean is true
         if output:
             # Output values as pixels
-            out_array = np.zeros(
-                (out_shape[0], out_shape[1], 4), dtype='uint8')
+            out_array = np.zeros((out_shape[0], out_shape[1], 4), dtype="uint8")
 
             # Apply the default channels
             channel_defaults = [0, 0, 0, 255]
@@ -50,25 +61,26 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
         # If output boolean is false
         else:
             # Output values as its input type
-            out_array = np.zeros(
-                (out_shape[0], out_shape[1], 4), dtype=x[0].dtype)
+            out_array = np.zeros((out_shape[0], out_shape[1], 4), dtype=x[0].dtype)
 
             # Apply the default channels
-            channel_defaults = [0., 0., 0., 1.]
+            channel_defaults = [0.0, 0.0, 0.0, 1.0]
 
         # For every possible item in tuple
         for i in range(4):
             # If there is no channel
             if x[i] is None:
                 # Fill it with zeros of the correct dtype
-                out_array[:, :, i] = np.zeros(
-                    out_shape, dtype=out_array.dtype) + channel_defaults[i]
+                out_array[:, :, i] = (
+                    np.zeros(out_shape, dtype=out_array.dtype) + channel_defaults[i]
+                )
 
             # If there is a channel
             else:
                 # Use a recurrent call to compute the channel and store it
                 out_array[:, :, i] = _rasterize(
-                    x[i], img_shape, tile_shape, tile_spacing, scale, output)
+                    x[i], img_shape, tile_shape, tile_spacing, scale, output
+                )
 
         return out_array
 
@@ -82,7 +94,7 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
     # If output boolean is true
     if output:
         # Output type should be an unsigned integer
-        dt = 'uint8'
+        dt = "uint8"
 
     # Creates a zeros array based on output shape
     out_array = np.zeros(out_shape, dtype=dt)
@@ -116,18 +128,20 @@ def _rasterize(x, img_shape, tile_shape, tile_spacing=(0, 0), scale=True, output
 
                 # Creates the output array
                 out_array[
-                    tile_row * (H + Hs): tile_row * (H + Hs) + H,
-                    tile_col * (W + Ws): tile_col * (W + Ws) + W
-                ] = img * c
+                    tile_row * (H + Hs) : tile_row * (H + Hs) + H,
+                    tile_col * (W + Ws) : tile_col * (W + Ws) + W,
+                ] = (
+                    img * c
+                )
 
     return out_array
 
 
-def create_mosaic(tensor):
+def create_mosaic(tensor: torch.Tensor) -> None:
     """Creates a mosaic from a tensor using Pillow.
 
     Args:
-        tensor (Tensor): An input tensor to have its mosaic created.
+        tensor: An input tensor to have its mosaic created.
 
     """
 
@@ -139,19 +153,20 @@ def create_mosaic(tensor):
     s = int(np.sqrt(array.shape[1]))
 
     # Creates a Pillow image from the array's rasterized version
-    img = Image.fromarray(_rasterize(array.T, img_shape=(
-        d, d), tile_shape=(s, s), tile_spacing=(1, 1)))
+    img = Image.fromarray(
+        _rasterize(array.T, img_shape=(d, d), tile_shape=(s, s), tile_spacing=(1, 1))
+    )
 
     # Shows the image
     img.show()
 
 
-def create_rgb_mosaic(tensor, n_samples=1):
+def create_rgb_mosaic(tensor: torch.Tensor, n_samples: Optional[int] = 1) -> None:
     """Creates a squared mosaic for RGB images.
 
     Args:
-        tensor (Tensor): An input tensor to have its mosaic created.
-        n_samples (int): The amount of samples to be plotted (width or height).
+        tensor: An input tensor to have its mosaic created.
+        n_samples: The amount of samples to be plotted (width or height).
 
     """
 
@@ -164,7 +179,7 @@ def create_rgb_mosaic(tensor, n_samples=1):
         plt.subplot(n_samples, n_samples, 1 + i)
 
         # Removes the axis
-        plt.axis('off')
+        plt.axis("off")
 
         # Plots the raw data
         plt.imshow(array[i])

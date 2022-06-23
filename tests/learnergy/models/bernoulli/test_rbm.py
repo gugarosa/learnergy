@@ -14,7 +14,7 @@ def test_rbm_n_visible_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.n_visible = 'a'
+        new_rbm.n_visible = "a"
     except:
         new_rbm.n_visible = 1
 
@@ -38,7 +38,7 @@ def test_rbm_n_hidden_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.n_hidden = 'a'
+        new_rbm.n_hidden = "a"
     except:
         new_rbm.n_hidden = 1
 
@@ -62,7 +62,7 @@ def test_rbm_steps_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.steps = 'a'
+        new_rbm.steps = "a"
     except:
         new_rbm.steps = 1
 
@@ -86,7 +86,7 @@ def test_rbm_lr_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.lr = 'a'
+        new_rbm.lr = "a"
     except:
         new_rbm.lr = 0.1
 
@@ -110,7 +110,7 @@ def test_rbm_momentum_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.momentum = 'a'
+        new_rbm.momentum = "a"
     except:
         new_rbm.momentum = 0.1
 
@@ -134,7 +134,7 @@ def test_rbm_decay_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.decay = 'a'
+        new_rbm.decay = "a"
     except:
         new_rbm.decay = 0.1
 
@@ -158,7 +158,7 @@ def test_rbm_T_setter():
     new_rbm = rbm.RBM()
 
     try:
-        new_rbm.T = 'a'
+        new_rbm.T = "a"
     except:
         new_rbm.T = 0.1
 
@@ -228,7 +228,7 @@ def test_rbm_b_setter():
 def test_rbm_optimizer():
     new_rbm = rbm.RBM()
 
-    assert type(new_rbm.optimizer).__name__ == 'SGD'
+    assert type(new_rbm.optimizer).__name__ == "SGD"
 
 
 def test_rbm_optimizer_setter():
@@ -236,7 +236,7 @@ def test_rbm_optimizer_setter():
 
     new_rbm.optimizer = torch.optim.SGD(new_rbm.parameters(), lr=0.1)
 
-    assert type(new_rbm.optimizer).__name__ == 'SGD'
+    assert type(new_rbm.optimizer).__name__ == "SGD"
 
 
 def test_rbm_hidden_sampling():
@@ -283,10 +283,22 @@ def test_rbm_pseudo_likelihood():
 
 def test_rbm_fit():
     train = torchvision.datasets.KMNIST(
-        root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=True,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
-                      learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False)
+    new_rbm = rbm.RBM(
+        n_visible=784,
+        n_hidden=128,
+        steps=1,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        temperature=1,
+        use_gpu=False,
+    )
 
     e, pl = new_rbm.fit(train, batch_size=128, epochs=1)
 
@@ -296,10 +308,22 @@ def test_rbm_fit():
 
 def test_rbm_reconstruct():
     test = torchvision.datasets.KMNIST(
-        root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=False,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_rbm = rbm.RBM(n_visible=784, n_hidden=128, steps=1,
-                      learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False)
+    new_rbm = rbm.RBM(
+        n_visible=784,
+        n_hidden=128,
+        steps=1,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        temperature=1,
+        use_gpu=False,
+    )
 
     e, v = new_rbm.reconstruct(test)
 

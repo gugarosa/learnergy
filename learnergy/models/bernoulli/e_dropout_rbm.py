@@ -2,6 +2,7 @@
 """
 
 import time
+from typing import Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -9,10 +10,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as ex
-import learnergy.utils.logging as l
 from learnergy.models.bernoulli import RBM
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class EDropoutRBM(RBM):
@@ -26,54 +27,70 @@ class EDropoutRBM(RBM):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, use_gpu=False):
+    def __init__(
+        self,
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
-        logger.info('Overriding class: RBM -> EDropoutRBM.')
+        logger.info("Overriding class: RBM -> EDropoutRBM.")
 
-        super(EDropoutRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
-                                          momentum, decay, temperature, use_gpu)
+        super(EDropoutRBM, self).__init__(
+            n_visible,
+            n_hidden,
+            steps,
+            learning_rate,
+            momentum,
+            decay,
+            temperature,
+            use_gpu,
+        )
 
         # Initializes the Energy-based Dropout mask
         self.M = torch.Tensor()
 
-        logger.info('Class overrided.')
+        logger.info("Class overrided.")
 
     @property
-    def M(self):
-        """torch.Tensor: Energy-based Dropout mask.
-
-        """
+    def M(self) -> torch.Tensor:
+        """Energy-based Dropout mask."""
 
         return self._M
 
     @M.setter
-    def M(self, M):
-
+    def M(self, M: torch.Tensor) -> None:
         self._M = M
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> torch.Tensor:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (torch.Tensor): The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -83,8 +100,7 @@ class EDropoutRBM(RBM):
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.mul(torch.sigmoid(
-                torch.div(activations, self.T)), self.M)
+            probs = torch.mul(torch.sigmoid(torch.div(activations, self.T)), self.M)
 
         # If scaling is false
         else:
@@ -96,15 +112,15 @@ class EDropoutRBM(RBM):
 
         return probs, states
 
-    def total_energy(self, h, v):
+    def total_energy(self, h: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
         """Calculates the total energy of the model.
 
         Args:
-            h (torch.Tensor): Hidden sampling states.
-            v (torch.Tensor): Visible sampling states.
+            h: Hidden sampling states.
+            v: Visible sampling states.
 
         Returns:
-            The total energy of the model.
+            (torch.Tensor): The total energy of the model.
 
         """
 
@@ -122,13 +138,15 @@ class EDropoutRBM(RBM):
 
         return energy
 
-    def energy_dropout(self, e, p_prob, n_prob):
+    def energy_dropout(
+        self, e: torch.Tensor, p_prob: torch.Tensor, n_prob: torch.Tensor
+    ) -> None:
         """Performs the Energy-based Dropout over the model.
 
         Args:
-            e (torch.Tensor): Model's total energy.
-            p_prob (torch.Tensor): Positive phase hidden probabilities.
-            n_prob (torch.Tensor): Negative phase hidden probabilities.
+            e: Model's total energy.
+            p_prob: Positive phase hidden probabilities.
+            n_prob: Negative phase hidden probabilities.
 
         """
 
@@ -144,25 +162,32 @@ class EDropoutRBM(RBM):
         # Calculates the Energy-based Dropout mask
         self.M = (I < p).float()
 
-    def fit(self, dataset, batch_size=128, epochs=10):
+    def fit(
+        self,
+        dataset: torch.utils.data.Dataset,
+        batch_size: Optional[int] = 128,
+        epochs: Optional[int] = 10,
+    ) -> Tuple[float, float]:
         """Fits a new RBM model.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (int): Number of training epochs.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs.
 
         Returns:
-            MSE (mean squared error), log pseudo-likelihood and time from the training step.
+            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=True, num_workers=0
+        )
 
         # For every epoch
         for epoch in range(epochs):
-            logger.info('Epoch %d/%d', epoch+1, epochs)
+            logger.info("Epoch %d/%d", epoch + 1, epochs)
 
             # Calculating the time of the epoch's starting
             start = time.time()
@@ -176,20 +201,24 @@ class EDropoutRBM(RBM):
                 batch_size = samples.size(0)
 
                 # Returns the Energy-based Dropout mask to one
-                self.M = torch.ones(
-                    (batch_size, self.n_hidden), device=self.device)
+                self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
                 # Flattening the samples' batch
                 samples = samples.reshape(len(samples), self.n_visible)
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self.device == "cuda":
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
                 # Performs the initial Gibbs sampling procedure (pre-dropout)
-                pos_hidden_probs, pos_hidden_states, neg_hidden_probs, neg_hidden_states, visible_states = self.gibbs_sampling(
-                    samples)
+                (
+                    pos_hidden_probs,
+                    pos_hidden_states,
+                    neg_hidden_probs,
+                    neg_hidden_states,
+                    visible_states,
+                ) = self.gibbs_sampling(samples)
 
                 # Calculating energy of positive phase sampling
                 e = self.total_energy(pos_hidden_states, samples)
@@ -207,8 +236,9 @@ class EDropoutRBM(RBM):
                 visible_states = visible_states.detach()
 
                 # Calculates the loss for further gradients' computation
-                cost = torch.mean(self.energy(samples)) - \
-                    torch.mean(self.energy(visible_states))
+                cost = torch.mean(self.energy(samples)) - torch.mean(
+                    self.energy(visible_states)
+                )
 
                 # Initializing the gradient
                 self.optimizer.zero_grad()
@@ -221,7 +251,8 @@ class EDropoutRBM(RBM):
 
                 # Calculating current's batch MSE
                 batch_mse = torch.div(
-                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+                )
 
                 # Calculating the current's batch logarithm pseudo-likelihood
                 batch_pl = self.pseudo_likelihood(samples)
@@ -238,24 +269,26 @@ class EDropoutRBM(RBM):
             end = time.time()
 
             # Dumps the desired variables to the model's history
-            self.dump(mse=mse.item(), pl=pl.item(), time=end-start)
+            self.dump(mse=mse.item(), pl=pl.item(), time=end - start)
 
-            logger.info('MSE: %f | log-PL: %f', mse, pl)
+            logger.info("MSE: %f | log-PL: %f", mse, pl)
 
         return mse, pl
 
-    def reconstruct(self, dataset):
+    def reconstruct(
+        self, dataset: torch.utils.data.Dataset
+    ) -> Tuple[float, torch.Tensor]:
         """Reconstructs batches of new samples.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            dataset: A Dataset object containing the testing data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
-        logger.info('Reconstructing new samples ...')
+        logger.info("Reconstructing new samples ...")
 
         # Resetting MSE to zero
         mse = 0
@@ -264,19 +297,20 @@ class EDropoutRBM(RBM):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, num_workers=0
+        )
 
         # For every batch
         for samples, _ in tqdm(batches):
             # Returns the Energy-based Dropout mask to one
-            self.M = torch.ones(
-                (batch_size, self.n_hidden), device=self.device)
+            self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
             # Flattening the samples' batch
             samples = samples.reshape(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -284,12 +318,12 @@ class EDropoutRBM(RBM):
             _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                pos_hidden_states)
+            visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+            )
 
             # Summing up the reconstruction's MSE
             mse += batch_mse
@@ -297,6 +331,6 @@ class EDropoutRBM(RBM):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info('MSE: %f', mse)
+        logger.info("MSE: %f", mse)
 
         return mse, visible_probs

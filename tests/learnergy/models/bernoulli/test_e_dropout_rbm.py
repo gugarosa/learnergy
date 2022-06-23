@@ -58,10 +58,22 @@ def test_e_dropout_rbm_energy_dropout():
 
 def test_e_dropout_rbm_fit():
     train = torchvision.datasets.KMNIST(
-        root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=True,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_e_dropout_rbm = e_dropout_rbm.EDropoutRBM(n_visible=784, n_hidden=128, steps=1,
-                                                  learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False)
+    new_e_dropout_rbm = e_dropout_rbm.EDropoutRBM(
+        n_visible=784,
+        n_hidden=128,
+        steps=1,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        temperature=1,
+        use_gpu=False,
+    )
 
     e, pl = new_e_dropout_rbm.fit(train, batch_size=128, epochs=1)
 
@@ -71,10 +83,22 @@ def test_e_dropout_rbm_fit():
 
 def test_e_dropout_rbm_reconstruct():
     test = torchvision.datasets.KMNIST(
-        root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=False,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_e_dropout_rbm = e_dropout_rbm.EDropoutRBM(n_visible=784, n_hidden=128, steps=1,
-                                                  learning_rate=0.1, momentum=0, decay=0, temperature=1, use_gpu=False)
+    new_e_dropout_rbm = e_dropout_rbm.EDropoutRBM(
+        n_visible=784,
+        n_hidden=128,
+        steps=1,
+        learning_rate=0.1,
+        momentum=0,
+        decay=0,
+        temperature=1,
+        use_gpu=False,
+    )
 
     e, v = new_e_dropout_rbm.reconstruct(test)
 

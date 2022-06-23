@@ -18,5 +18,5 @@ def test_dataset():
 
     x, y = new_dataset[0]
 
-    assert x.shape == (2, )
+    assert x.shape == (2,)
     assert y.shape == ()

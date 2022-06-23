@@ -1,22 +1,23 @@
 """Metrics-related mathematical functions.
 """
 
+import torch
 from skimage.metrics import structural_similarity as ssim
 
-import learnergy.utils.logging as l
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
-def calculate_ssim(v, x):
+def calculate_ssim(v: torch.Tensor, x: torch.Tensor) -> float:
     """Calculates the structural similarity of images.
 
     Args:
-        v (torch.Tensor): Reconstructed images.
-        x (torch.Tensor): Original images.
+        v: Reconstructed images.
+        x: Original images.
 
     Returns:
-        The structural similarity between input images.
+        (float): Structural similarity between input images.
 
     """
 
@@ -40,7 +41,8 @@ def calculate_ssim(v, x):
         v_indexed = v[z, :].reshape((width, height))
 
         # Sums up to the total similarity
-        total_ssim += ssim(x_indexed, v_indexed,
-                           data_range=x_indexed.max()-x_indexed.min())
+        total_ssim += ssim(
+            x_indexed, v_indexed, data_range=x_indexed.max() - x_indexed.min()
+        )
 
     return total_ssim / v.shape[0]

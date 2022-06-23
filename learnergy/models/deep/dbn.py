@@ -1,29 +1,35 @@
 """Deep Belief Network.
 """
 
+from typing import List, Optional, Tuple, Union
+
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import RBM, DropoutRBM, EDropoutRBM
 from learnergy.models.extra import SigmoidRBM
-from learnergy.models.gaussian import (GaussianRBM, GaussianReluRBM,
-                                       GaussianSeluRBM, VarianceGaussianRBM)
+from learnergy.models.gaussian import (
+    GaussianRBM,
+    GaussianReluRBM,
+    GaussianSeluRBM,
+    VarianceGaussianRBM,
+)
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 MODELS = {
-    'bernoulli': RBM,
-    'dropout': DropoutRBM,
-    'e_dropout': EDropoutRBM,
-    'gaussian': GaussianRBM,
-    'gaussian_relu': GaussianReluRBM,
-    'gaussian_selu': GaussianSeluRBM,
-    'sigmoid': SigmoidRBM,
-    'variance_gaussian': VarianceGaussianRBM
+    "bernoulli": RBM,
+    "dropout": DropoutRBM,
+    "e_dropout": EDropoutRBM,
+    "gaussian": GaussianRBM,
+    "gaussian_relu": GaussianReluRBM,
+    "gaussian_selu": GaussianSeluRBM,
+    "sigmoid": SigmoidRBM,
+    "variance_gaussian": VarianceGaussianRBM,
 }
 
 
@@ -36,24 +42,35 @@ class DBN(Model):
 
     """
 
-    def __init__(self, model='bernoulli', n_visible=128, n_hidden=(128,), steps=(1,),
-                 learning_rate=(0.1,), momentum=(0,), decay=(0,), temperature=(1,), use_gpu=False):
+    def __init__(
+        self,
+        model: Optional[str] = "bernoulli",
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[Tuple[int, ...]] = (128,),
+        steps: Optional[Tuple[int, ...]] = (1,),
+        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
+        momentum: Optional[Tuple[float, ...]] = (0.0,),
+        decay: Optional[Tuple[float, ...]] = (0.0,),
+        temperature: Optional[Tuple[float, ...]] = (1.0,),
+        use_gpu: Optional[bool] = False,
+    ):
         """Initialization method.
 
         Args:
-            model (str): Indicates which type of RBM should be used to compose the DBN. Can be string or list. If string, layer 2 and beyond are of type 'sigmoid'
-            n_visible (int): Amount of visible units.
-            n_hidden (tuple): Amount of hidden units per layer.
-            steps (tuple): Number of Gibbs' sampling steps per layer.
-            learning_rate (tuple): Learning rate per layer.
-            momentum (tuple): Momentum parameter per layer.
-            decay (tuple): Weight decay used for penalization per layer.
-            temperature (tuple): Temperature factor per layer.
-            use_gpu (boolean): Whether GPU should be used or not.
+
+            model: Indicates which type of RBM should be used to compose the DBN. Can be string or list. If string, layer 2 and beyond are of type 'sigmoid'
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units per layer.
+            steps: Number of Gibbs' sampling steps per layer.
+            learning_rate: Learning rate per layer.
+            momentum: Momentum parameter per layer.
+            decay: Weight decay used for penalization per layer.
+            temperature: Temperature factor per layer.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
-        logger.info('Overriding class: Model -> DBN.')
+        logger.info("Overriding class: Model -> DBN.")
 
         super(DBN, self).__init__(use_gpu=use_gpu)
 
@@ -100,192 +117,187 @@ class DBN(Model):
             # If it is not the first layer
             else:
                 # Gathers the number of input units as previous number of hidden units
-                n_input = self.n_hidden[i-1]
+                n_input = self.n_hidden[i - 1]
+
 
                 if isinstance(model, list):
                     #Use user-specified layers
                     mdl = model[i]
                 else:
                     # After creating the first layer, we need to change the model's type to sigmoid
-                    mdl = 'sigmoid'
+                    mdl = "sigmoid"
 
+          
             # Creates an RBM
-            m = MODELS[mdl](n_input, self.n_hidden[i], self.steps[i],
-                              self.lr[i], self.momentum[i], self.decay[i], self.T[i], use_gpu)
+            m = MODELS[model](
+                n_input,
+                self.n_hidden[i],
+                self.steps[i],
+                self.lr[i],
+                self.momentum[i],
+                self.decay[i],
+                self.T[i],
+                use_gpu,
+            )
 
             # Appends the model to the list
             self.models.append(m)
 
         # Checks if current device is CUDA-based
-        if self.device == 'cuda':
+        if self.device == "cuda":
             # If yes, uses CUDA in the whole class
             self.cuda()
 
-        logger.info('Class overrided.')
-        logger.debug('Number of layers: %d.', self.n_layers)
+        logger.info("Class overrided.")
+        logger.debug("Number of layers: %d.", self.n_layers)
 
     @property
-    def n_visible(self):
-        """int: Number of visible units.
-
-        """
+    def n_visible(self) -> int:
+        """Number of visible units."""
 
         return self._n_visible
 
     @n_visible.setter
-    def n_visible(self, n_visible):
+    def n_visible(self, n_visible: int) -> None:
         if n_visible <= 0:
-            raise e.ValueError('`n_visible` should be > 0')
+            raise e.ValueError("`n_visible` should be > 0")
 
         self._n_visible = n_visible
 
     @property
-    def n_hidden(self):
-        """tuple: Tuple of hidden units.
-
-        """
+    def n_hidden(self) -> Tuple[int, ...]:
+        """Tuple of hidden units."""
 
         return self._n_hidden
 
     @n_hidden.setter
-    def n_hidden(self, n_hidden):
-
+    def n_hidden(self, n_hidden: Tuple[int, ...]) -> None:
         self._n_hidden = n_hidden
 
     @property
-    def n_layers(self):
-        """int: Number of layers.
-
-        """
+    def n_layers(self) -> int:
+        """Number of layers."""
 
         return self._n_layers
 
     @n_layers.setter
-    def n_layers(self, n_layers):
+    def n_layers(self, n_layers: int) -> None:
         if n_layers <= 0:
-            raise e.ValueError('`n_layers` should be > 0')
+            raise e.ValueError("`n_layers` should be > 0")
 
         self._n_layers = n_layers
 
     @property
-    def steps(self):
-        """tuple: Number of steps Gibbs' sampling steps per layer.
-
-        """
+    def steps(self) -> Tuple[int, ...]:
+        """Number of steps Gibbs' sampling steps per layer."""
 
         return self._steps
 
     @steps.setter
-    def steps(self, steps):
+    def steps(self, steps: Tuple[int, ...]) -> None:
         if len(steps) != self.n_layers:
-            raise e.SizeError(
-                f'`steps` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`steps` should have size equal as {self.n_layers}")
 
         self._steps = steps
 
     @property
-    def lr(self):
-        """tuple: Learning rate per layer.
-
-        """
+    def lr(self) -> Tuple[float, ...]:
+        """Learning rate per layer."""
 
         return self._lr
 
     @lr.setter
-    def lr(self, lr):
+    def lr(self, lr: Tuple[float, ...]) -> None:
         if len(lr) != self.n_layers:
-            raise e.SizeError(
-                f'`lr` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`lr` should have size equal as {self.n_layers}")
 
         self._lr = lr
 
     @property
-    def momentum(self):
-        """tuple: Momentum parameter per layer.
-
-        """
+    def momentum(self) -> Tuple[float, ...]:
+        """Momentum parameter per layer."""
 
         return self._momentum
 
     @momentum.setter
-    def momentum(self, momentum):
+    def momentum(self, momentum: Tuple[float, ...]) -> None:
         if len(momentum) != self.n_layers:
-            raise e.SizeError(
-                f'`momentum` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`momentum` should have size equal as {self.n_layers}")
 
         self._momentum = momentum
 
     @property
-    def decay(self):
-        """tuple: Weight decay per layer.
-
-        """
+    def decay(self) -> Tuple[float, ...]:
+        """Weight decay per layer."""
 
         return self._decay
 
     @decay.setter
-    def decay(self, decay):
+    def decay(self, decay: Tuple[float, ...]) -> None:
         if len(decay) != self.n_layers:
-            raise e.SizeError(
-                f'`decay` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`decay` should have size equal as {self.n_layers}")
 
         self._decay = decay
 
     @property
-    def T(self):
-        """tuple: Temperature factor per layer.
-
-        """
+    def T(self) -> Tuple[float, ...]:
+        """Temperature factor per layer."""
 
         return self._T
 
     @T.setter
-    def T(self, T):
+    def T(self, T: Tuple[float, ...]) -> None:
         if len(T) != self.n_layers:
-            raise e.SizeError(f'`T` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`T` should have size equal as {self.n_layers}")
 
         self._T = T
 
     @property
-    def models(self):
-        """list: List of models (RBMs).
-
-        """
+    def models(self) -> List[torch.nn.Module]:
+        """List of models (RBMs)."""
 
         return self._models
 
     @models.setter
-    def models(self, models):
-
+    def models(self, models: List[torch.nn.Module]) -> None:
         self._models = models
 
-    def fit(self, dataset, batch_size=128, epochs=(10,)):
+    def fit(
+        self,
+        dataset: Union[torch.utils.data.Dataset, Dataset],
+        batch_size: Optional[int] = 128,
+        epochs: Optional[Tuple[int, ...]] = (10,),
+    ) -> Tuple[float, float]:
         """Fits a new DBN model.
 
         Args:
-            dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (tuple): Number of training epochs per layer.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs per layer.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
         # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
             # If not, raises an error
-            raise e.SizeError(('`epochs` should have size equal as %d', self.n_layers))
+            raise e.SizeError(("`epochs` should have size equal as %d", self.n_layers))
 
         # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = (
+            dataset.data.numpy(),
+            dataset.targets.numpy(),
+            dataset.transform,
+        )
 
         # For every possible model (RBM)
         for i, model in enumerate(self.models):
-            logger.info('Fitting layer %d/%d ...', i+1, self.n_layers)
+            logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -310,7 +322,7 @@ class DBN(Model):
                     samples = d.data
 
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self.device == "cuda":
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
     
@@ -327,7 +339,7 @@ class DBN(Model):
                 samples, _ = model.hidden_sampling(samples)
 
                 # Checking whether GPU is being used
-                if self.device == 'cuda':
+                if self.device == "cuda":
                     # If yes, get samples back to the CPU
                     samples = samples.cpu()
 
@@ -336,18 +348,20 @@ class DBN(Model):
 
         return mse, pl
 
-    def reconstruct(self, dataset):
+    def reconstruct(
+        self, dataset: torch.utils.data.Dataset
+    ) -> Tuple[float, torch.Tensor]:
         """Reconstructs batches of new samples.
 
         Args:
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
-        logger.info('Reconstructing new samples ...')
+        logger.info("Reconstructing new samples ...")
 
         # Resetting MSE to zero
         mse = 0
@@ -356,7 +370,9 @@ class DBN(Model):
         batch_size = len(dataset)
 
         # Transforming the dataset into training batches
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, num_workers=0
+        )
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -364,7 +380,7 @@ class DBN(Model):
             samples = samples.reshape(batch_size, self.models[0].n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -385,16 +401,15 @@ class DBN(Model):
             # For every possible model (RBM)
             for model in reversed(self.models):
                 # Flattening the visible probabilities
-                visible_probs = visible_probs.reshape(
-                    batch_size, model.n_hidden)
+                visible_probs = visible_probs.reshape(batch_size, model.n_hidden)
 
                 # Performing a visible layer sampling
-                visible_probs, visible_states = model.visible_sampling(
-                    visible_probs)
+                visible_probs, visible_states = model.visible_sampling(visible_probs)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+            )
 
             # Summing up to reconstruction's MSE
             mse += batch_mse
@@ -402,18 +417,18 @@ class DBN(Model):
         # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
-        logger.info('MSE: %f', mse)
+        logger.info("MSE: %f", mse)
 
         return mse, visible_probs
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the data.
 
         Args:
-            x (torch.Tensor): An input tensor for computing the forward pass.
+            x: An input tensor for computing the forward pass.
 
         Returns:
-            A tensor containing the DBN's outputs.
+            (torch.Tensor): A tensor containing the DBN's outputs.
 
         """
 

@@ -1,16 +1,18 @@
 """Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout and DropConnect.
 """
 
+from typing import Optional, Tuple
+
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.models.bernoulli import RBM
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class DropoutRBM(RBM):
@@ -23,58 +25,76 @@ class DropoutRBM(RBM):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, dropout=0.5, use_gpu=False):
+    def __init__(
+        self,
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        dropout: Optional[float] = 0.5,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            dropout (float): Dropout rate.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            dropout: Dropout rate.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
-        logger.info('Overriding class: RBM -> DropoutRBM.')
+        logger.info("Overriding class: RBM -> DropoutRBM.")
 
-        super(DropoutRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
-                                         momentum, decay, temperature, use_gpu)
+        super(DropoutRBM, self).__init__(
+            n_visible,
+            n_hidden,
+            steps,
+            learning_rate,
+            momentum,
+            decay,
+            temperature,
+            use_gpu,
+        )
 
         # Intensity of dropout
         self.p = dropout
 
-        logger.info('Class overrided.')
-        logger.debug('Additional hyperparameters: p = %s.', self.p)
+        logger.info("Class overrided.")
+        logger.debug("Additional hyperparameters: p = %s.", self.p)
 
     @property
-    def p(self):
-        """float: Probability of applying dropout.
-
-        """
+    def p(self) -> float:
+        """Probability of applying dropout."""
 
         return self._p
 
     @p.setter
-    def p(self, p):
+    def p(self, p: float) -> None:
         if p < 0 or p > 1:
-            raise e.ValueError('`p` should be between 0 and 1')
+            raise e.ValueError("`p` should be between 0 and 1")
 
         self._p = p
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -82,14 +102,19 @@ class DropoutRBM(RBM):
         activations = F.linear(v, self.W.t(), self.b)
 
         # Sampling a dropout mask from Bernoulli's distribution
-        mask = (torch.full((activations.size(0), activations.size(1)),
-                           1 - self.p, dtype=torch.float, device=self.device)).bernoulli()
+        mask = (
+            torch.full(
+                (activations.size(0), activations.size(1)),
+                1 - self.p,
+                dtype=torch.float,
+                device=self.device,
+            )
+        ).bernoulli()
 
         # If scaling is true
         if scale:
             # Calculate probabilities with temperature
-            probs = torch.mul(torch.sigmoid(
-                torch.div(activations, self.T)), mask)
+            probs = torch.mul(torch.sigmoid(torch.div(activations, self.T)), mask)
 
         # If scaling is false
         else:
@@ -101,18 +126,20 @@ class DropoutRBM(RBM):
 
         return probs, states
 
-    def reconstruct(self, dataset):
+    def reconstruct(
+        self, dataset: torch.utils.data.Dataset
+    ) -> Tuple[float, torch.Tensor]:
         """Reconstructs batches of new samples.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
+            dataset: A Dataset object containing the testing data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
-        logger.info('Reconstructing new samples ...')
+        logger.info("Reconstructing new samples ...")
 
         # Resetting mse to zero
         mse = 0
@@ -127,8 +154,9 @@ class DropoutRBM(RBM):
         self.p = 0
 
         # Transforming the dataset into testing batches
-        batches = DataLoader(dataset, batch_size=batch_size,
-                             shuffle=False, num_workers=0)
+        batches = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, num_workers=0
+        )
 
         # For every batch
         for samples, _ in tqdm(batches):
@@ -136,7 +164,7 @@ class DropoutRBM(RBM):
             samples = samples.reshape(len(samples), self.n_visible)
 
             # Checking whether GPU is avaliable and if it should be used
-            if self.device == 'cuda':
+            if self.device == "cuda":
                 # Applies the GPU usage to the data
                 samples = samples.cuda()
 
@@ -144,12 +172,12 @@ class DropoutRBM(RBM):
             _, pos_hidden_states = self.hidden_sampling(samples)
 
             # Calculating visible probabilities and states
-            visible_probs, visible_states = self.visible_sampling(
-                pos_hidden_states)
+            visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
             # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
+                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+            )
 
             # Summing up the reconstruction's MSE
             mse += batch_mse
@@ -160,7 +188,7 @@ class DropoutRBM(RBM):
         # Recovering initial dropout rate
         self.p = p
 
-        logger.info('MSE: %f', mse)
+        logger.info("MSE: %f", mse)
 
         return mse, visible_probs
 
@@ -175,44 +203,71 @@ class DropConnectRBM(DropoutRBM):
 
     """
 
-    def __init__(self, n_visible=128, n_hidden=128, steps=1, learning_rate=0.1,
-                 momentum=0, decay=0, temperature=1, dropout=0.5, use_gpu=False):
+    def __init__(
+        self,
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[int] = 128,
+        steps: Optional[int] = 1,
+        learning_rate: Optional[float] = 0.1,
+        momentum: Optional[float] = 0.0,
+        decay: Optional[float] = 0.0,
+        temperature: Optional[float] = 1.0,
+        dropout: Optional[float] = 0.5,
+        use_gpu: Optional[bool] = False,
+    ) -> None:
         """Initialization method.
 
         Args:
-            n_visible (int): Amount of visible units.
-            n_hidden (int): Amount of hidden units.
-            steps (int): Number of Gibbs' sampling steps.
-            learning_rate (float): Learning rate.
-            momentum (float): Momentum parameter.
-            decay (float): Weight decay used for penalization.
-            temperature (float): Temperature factor.
-            dropout (float): Dropout rate.
-            use_gpu (boolean): Whether GPU should be used or not.
+            n_visible: Amount of visible units.
+            n_hidden: Amount of hidden units.
+            steps: Number of Gibbs' sampling steps.
+            learning_rate: Learning rate.
+            momentum: Momentum parameter.
+            decay: Weight decay used for penalization.
+            temperature: Temperature factor.
+            dropout: Dropout rate.
+            use_gpu: Whether GPU should be used or not.
 
         """
 
-        logger.info('Overriding class: DropoutRBM -> DropConnectRBM.')
+        logger.info("Overriding class: DropoutRBM -> DropConnectRBM.")
 
         # Override its parent class
-        super(DropConnectRBM, self).__init__(n_visible, n_hidden, steps, learning_rate,
-                                             momentum, decay, temperature, dropout, use_gpu)
+        super(DropConnectRBM, self).__init__(
+            n_visible,
+            n_hidden,
+            steps,
+            learning_rate,
+            momentum,
+            decay,
+            temperature,
+            dropout,
+            use_gpu,
+        )
 
-    def hidden_sampling(self, v, scale=False):
+    def hidden_sampling(
+        self, v: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling using a dropconnect mask, i.e., P(h|m,v).
 
         Args:
-            v (torch.Tensor): A tensor incoming from the visible layer.
-            scale (bool): A boolean to decide whether temperature should be used or not.
+            v: A tensor incoming from the visible layer.
+            scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
         # Sampling a dropconnect mask from Bernoulli's distribution
-        mask = (torch.full((self.W.size(0), self.W.size(1)),
-                           1 - self.p, dtype=torch.float, device=self.device)).bernoulli()
+        mask = (
+            torch.full(
+                (self.W.size(0), self.W.size(1)),
+                1 - self.p,
+                dtype=torch.float,
+                device=self.device,
+            )
+        ).bernoulli()
 
         # Calculating neurons' activations
         activations = F.linear(v, torch.mul(self.W, mask).t(), self.b)

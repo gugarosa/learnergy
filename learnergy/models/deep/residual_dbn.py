@@ -1,15 +1,17 @@
 """Residual-based Deep Belief Networks.
 """
 
+from typing import Optional, Tuple, Union
+
 import torch
 import torch.nn.functional as F
 
 import learnergy.utils.exception as e
-import learnergy.utils.logging as l
 from learnergy.core import Dataset
 from learnergy.models.deep import DBN
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ResidualDBN(DBN):
@@ -21,9 +23,20 @@ class ResidualDBN(DBN):
 
     """
 
-    def __init__(self, model='bernoulli', n_visible=128, n_hidden=(128,), steps=(1,),
-                 learning_rate=(0.1,), momentum=(0,), decay=(0,), temperature=(1,),
-                 zetta1=1, zetta2=1, use_gpu=False):
+    def __init__(
+        self,
+        model: Optional[str] = "bernoulli",
+        n_visible: Optional[int] = 128,
+        n_hidden: Optional[Tuple[int, ...]] = (128,),
+        steps: Optional[Tuple[int, ...]] = (1,),
+        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
+        momentum: Optional[Tuple[float, ...]] = (0.0,),
+        decay: Optional[Tuple[float, ...]] = (0.0,),
+        temperature: Optional[Tuple[float, ...]] = (1.0,),
+        zetta1: Optional[float] = 1.0,
+        zetta2: Optional[float] = 1.0,
+        use_gpu: Optional[bool] = False,
+    ):
         """Initialization method.
 
         Args:
@@ -42,10 +55,19 @@ re of type 'sigmoid'
 
         """
 
-        logger.info('Overriding class: DBN -> ResidualDBN.')
+        logger.info("Overriding class: DBN -> ResidualDBN.")
 
-        super(ResidualDBN, self).__init__(model, n_visible, n_hidden, steps, learning_rate,
-                                          momentum, decay, temperature, use_gpu)
+        super(ResidualDBN, self).__init__(
+            model,
+            n_visible,
+            n_hidden,
+            steps,
+            learning_rate,
+            momentum,
+            decay,
+            temperature,
+            use_gpu,
+        )
 
         # Defining a property for holding the original learning's penalization
         self.zetta1 = zetta1
@@ -54,43 +76,39 @@ re of type 'sigmoid'
         self.zetta2 = zetta2
 
     @property
-    def zetta1(self):
-        """float: Penalization factor for original learning.
-
-        """
+    def zetta1(self) -> float:
+        """Penalization factor for original learning."""
 
         return self._zetta1
 
     @zetta1.setter
-    def zetta1(self, zetta1):
+    def zetta1(self, zetta1: float) -> None:
         if zetta1 < 0:
-            raise e.ValueError('`zetta1` should be >= 0')
+            raise e.ValueError("`zetta1` should be >= 0")
 
         self._zetta1 = zetta1
 
     @property
-    def zetta2(self):
-        """float: Penalization factor for residual learning.
-
-        """
+    def zetta2(self) -> float:
+        """Penalization factor for residual learning."""
 
         return self._zetta2
 
     @zetta2.setter
-    def zetta2(self, zetta2):
+    def zetta2(self, zetta2: float) -> None:
         if zetta2 < 0:
-            raise e.ValueError('`zetta2` should be >= 0')
+            raise e.ValueError("`zetta2` should be >= 0")
 
         self._zetta2 = zetta2
 
-    def calculate_residual(self, pre_activations):
+    def calculate_residual(self, pre_activations: torch.Tensor) -> torch.Tensor:
         """Calculates the residual learning over input.
 
         Args:
             pre_activations (torch.Tensor): Pre-activations to be used.
 
         Returns:
-            The residual learning based on input pre-activations.
+            (torch.Tensor): The residual learning based on input pre-activations.
 
         """
 
@@ -102,35 +120,42 @@ re of type 'sigmoid'
 
         return residual
 
-    def fit(self, dataset, batch_size=128, epochs=(10)):
-        """Fits a new DBN model.
+    def fit(
+        self,
+        dataset: Union[torch.utils.data.Dataset, Dataset],
+        batch_size: Optional[int] = 128,
+        epochs: Optional[Tuple[int, ...]] = (10,),
+    ) -> Tuple[float, float]:
+        """Fits a new ResidualDBN model.
 
         Args:
-            dataset (torch.utils.data.Dataset | Dataset): A Dataset object containing the training data.
-            batch_size (int): Amount of samples per batch.
-            epochs (tuple): Number of training epochs per layer.
+            dataset: A Dataset object containing the training data.
+            batch_size: Amount of samples per batch.
+            epochs: Number of training epochs per layer.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
         # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
             # If not, raises an error
-            raise e.SizeError(
-                f'`epochs` should have size equal as {self.n_layers}')
+            raise e.SizeError(f"`epochs` should have size equal as {self.n_layers}")
 
         # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
 
         # Initializing the dataset's variables
-        samples, targets, transform = dataset.data.numpy(
-        ), dataset.targets.numpy(), dataset.transform
+        samples, targets, transform = (
+            dataset.data.numpy(),
+            dataset.targets.numpy(),
+            dataset.transform,
+        )
 
         # For every possible model (RBM)
         for i, model in enumerate(self.models):
-            logger.info('Fitting layer %d/%d ...', i+1, self.n_layers)
+            logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
             # Creating the dataset
             d = Dataset(samples, targets, transform)
@@ -141,6 +166,7 @@ re of type 'sigmoid'
             # Appending the metrics
             mse.append(model_mse)
             pl.append(model_pl)
+
 
             #Run for all but last layer
             if i < len(self.models)-1:
@@ -155,7 +181,7 @@ re of type 'sigmoid'
                     samples = d.data
     
                 # Checking whether GPU is avaliable and if it should be used
-                if self.device == 'cuda':
+                if self.device == "cuda":
                     # Applies the GPU usage to the data
                     samples = samples.cuda()
 
@@ -175,14 +201,15 @@ re of type 'sigmoid'
                 samples, _ = model.hidden_sampling(samples)
 
                 # Aggregates the residual learning
-                samples = torch.mul(
-                    samples, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
+                samples = torch.mul(samples, self.zetta1) + torch.mul(
+                    self.calculate_residual(pre_activation), self.zetta2
+                )
 
                 # Normalizes the input for the next layer
                 samples = torch.div(samples, torch.max(samples))
 
                 # Checking whether GPU is being used
-                if self.device == 'cuda':
+                if self.device == "cuda":
                     # If yes, get samples back to the CPU
                     samples = samples.cpu()
 
@@ -191,14 +218,14 @@ re of type 'sigmoid'
 
         return mse, pl
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Re-writes the forward pass for classification purposes.
 
         Args:
-            x (torch.Tensor): An input tensor for computing the forward pass.
+            x: An input tensor for computing the forward pass.
 
         Returns:
-            A tensor containing the DBN's outputs.
+            (torch.Tensor): A tensor containing the DBN's outputs.
 
         """
 
@@ -211,8 +238,9 @@ re of type 'sigmoid'
             x, _ = model.hidden_sampling(x)
 
             # Aggregates the residual learning
-            x = torch.mul(
-                x, self.zetta1) + torch.mul(self.calculate_residual(pre_activation), self.zetta2)
+            x = torch.mul(x, self.zetta1) + torch.mul(
+                self.calculate_residual(pre_activation), self.zetta2
+            )
 
             # Normalizes the input for the next layer
             x = torch.div(x, torch.max(x))

@@ -28,7 +28,7 @@ def test_conv_rbm_filter_shape_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm.filter_shape = 'a'
+        new_conv_rbm.filter_shape = "a"
     except:
         new_conv_rbm.filter_shape = (7, 7)
 
@@ -59,7 +59,7 @@ def test_conv_rbm_n_filters_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm.n_filters = 'a'
+        new_conv_rbm.n_filters = "a"
     except:
         new_conv_rbm.n_filters = 1
 
@@ -83,7 +83,7 @@ def test_conv_rbm_n_channels_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm.n_channels = 'a'
+        new_conv_rbm.n_channels = "a"
     except:
         new_conv_rbm.n_channels = 1
 
@@ -107,7 +107,7 @@ def test_conv_rbm_steps_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm.steps = 'a'
+        new_conv_rbm.steps = "a"
     except:
         new_conv_rbm.steps = 1
 
@@ -131,7 +131,7 @@ def test_conv_rbm_lr_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm.lr = 'a'
+        new_conv_rbm.lr = "a"
     except:
         new_conv_rbm.lr = 0.1
 
@@ -155,7 +155,7 @@ def test_conv_rbm_momentum_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm.momentum = 'a'
+        new_conv_rbm.momentum = "a"
     except:
         new_conv_rbm.momentum = 0.1
 
@@ -179,7 +179,7 @@ def test_conv_rbm_decay_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
     try:
-        new_conv_rbm.decay = 'a'
+        new_conv_rbm.decay = "a"
     except:
         new_conv_rbm.decay = 0.1
 
@@ -253,16 +253,15 @@ def test_conv_rbm_b_setter():
 def test_conv_rbm_optimizer():
     new_conv_rbm = conv_rbm.ConvRBM()
 
-    assert type(new_conv_rbm.optimizer).__name__ == 'SGD'
+    assert type(new_conv_rbm.optimizer).__name__ == "SGD"
 
 
 def test_conv_rbm_optimizer_setter():
     new_conv_rbm = conv_rbm.ConvRBM()
 
-    new_conv_rbm.optimizer = torch.optim.SGD(
-        new_conv_rbm.parameters(), lr=0.1)
+    new_conv_rbm.optimizer = torch.optim.SGD(new_conv_rbm.parameters(), lr=0.1)
 
-    assert type(new_conv_rbm.optimizer).__name__ == 'SGD'
+    assert type(new_conv_rbm.optimizer).__name__ == "SGD"
 
 
 def test_conv_rbm_hidden_sampling():
@@ -299,10 +298,23 @@ def test_conv_rbm_energy():
 
 def test_conv_rbm_fit():
     train = torchvision.datasets.KMNIST(
-        root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=True,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_conv_rbm = conv_rbm.ConvRBM(visible_shape=(28, 28), filter_shape=(1, 1), n_filters=1, n_channels=1,
-                                    steps=1, learning_rate=0.01, momentum=0, decay=0, use_gpu=True)
+    new_conv_rbm = conv_rbm.ConvRBM(
+        visible_shape=(28, 28),
+        filter_shape=(1, 1),
+        n_filters=1,
+        n_channels=1,
+        steps=1,
+        learning_rate=0.01,
+        momentum=0,
+        decay=0,
+        use_gpu=True,
+    )
 
     e = new_conv_rbm.fit(train, batch_size=128, epochs=1)
 
@@ -311,10 +323,23 @@ def test_conv_rbm_fit():
 
 def test_conv_rbm_reconstruct():
     test = torchvision.datasets.KMNIST(
-        root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+        root="./data",
+        train=False,
+        download=True,
+        transform=torchvision.transforms.ToTensor(),
+    )
 
-    new_conv_rbm = conv_rbm.ConvRBM(visible_shape=(28, 28), filter_shape=(1, 1), n_filters=1, n_channels=1,
-                                    steps=1, learning_rate=0.01, momentum=0, decay=0, use_gpu=True)
+    new_conv_rbm = conv_rbm.ConvRBM(
+        visible_shape=(28, 28),
+        filter_shape=(1, 1),
+        n_filters=1,
+        n_channels=1,
+        steps=1,
+        learning_rate=0.01,
+        momentum=0,
+        decay=0,
+        use_gpu=True,
+    )
 
     e, v = new_conv_rbm.reconstruct(test)
 

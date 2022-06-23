@@ -1,9 +1,9 @@
 """Exceptions.
 """
 
-import learnergy.utils.logging as l
+from learnergy.utils import logging
 
-logger = l.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class Error(Exception):
@@ -13,96 +13,86 @@ class Error(Exception):
 
     """
 
-    def __init__(self, cls, msg):
+    def __init__(self, cls: str, msg: str) -> None:
         """Initialization method.
 
         Args:
-            cls (str): Class identifier.
-            msg (str): Message to be logged.
+            cls: Class identifier.
+            msg: Message to be logged.
 
         """
 
         super(Error, self).__init__()
 
         # Logs the error in a formatted way
-        logger.error('%s: %s.', cls, msg)
+        logger.error("%s: %s.", cls, msg)
 
 
 class ArgumentError(Error):
-    """An ArgumentError class for logging errors related to wrong number of provided arguments.
+    """An ArgumentError class for logging errors related to wrong number of provided arguments."""
 
-    """
-
-    def __init__(self, error):
+    def __init__(self, error: str) -> None:
         """Initialization method.
 
         Args:
-            error (str): Error message to be logged.
+            error: Error message to be logged.
 
         """
 
-        super(ArgumentError, self).__init__('ArgumentError', error)
+        super(ArgumentError, self).__init__("ArgumentError", error)
 
 
 class BuildError(Error):
-    """A BuildError class for logging errors related to classes not being built.
+    """A BuildError class for logging errors related to classes not being built."""
 
-    """
-
-    def __init__(self, error):
+    def __init__(self, error: str) -> None:
         """Initialization method.
 
         Args:
-            error (str): Error message to be logged.
+            error: Error message to be logged.
 
         """
 
-        super(BuildError, self).__init__('BuildError', error)
+        super(BuildError, self).__init__("BuildError", error)
 
 
 class SizeError(Error):
-    """A SizeError class for logging errors related to wrong length or size of variables.
+    """A SizeError class for logging errors related to wrong length or size of variables."""
 
-    """
-
-    def __init__(self, error):
+    def __init__(self, error: str) -> None:
         """Initialization method.
 
         Args:
-            error (str): Error message to be logged.
+            error: Error message to be logged.
 
         """
 
-        super(SizeError, self).__init__('SizeError', error)
+        super(SizeError, self).__init__("SizeError", error)
 
 
 class TypeError(Error):
-    """A TypeError class for logging errors related to wrong type of variables.
+    """A TypeError class for logging errors related to wrong type of variables."""
 
-    """
-
-    def __init__(self, error):
+    def __init__(self, error: str) -> None:
         """Initialization method.
 
         Args:
-            error (str): Error message to be logged.
+            error: Error message to be logged.
 
         """
 
-        super(TypeError, self).__init__('TypeError', error)
+        super(TypeError, self).__init__("TypeError", error)
 
 
 class ValueError(Error):
-    """A ValueError class for logging errors related to wrong value of variables.
+    """A ValueError class for logging errors related to wrong value of variables."""
 
-    """
-
-    def __init__(self, error):
+    def __init__(self, error: str) -> None:
         """Initialization method.
 
         Args:
-            error (str): Error message to be logged.
+            error: Error message to be logged.
 
         """
 
-        super(ValueError, self).__init__('ValueError', error)
+        super(ValueError, self).__init__("ValueError", error)
