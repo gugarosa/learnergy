@@ -73,41 +73,20 @@ class DBN(Model):
 
         super(DBN, self).__init__(use_gpu=use_gpu)
 
-        # Amount of visible units
         self.n_visible = n_visible
-
-        # Amount of hidden units per layer
         self.n_hidden = n_hidden
-
-        # Number of layers
         self.n_layers = len(n_hidden)
 
-        # Number of steps Gibbs' sampling steps
         self.steps = steps
-
-        # Learning rate
         self.lr = learning_rate
-
-        # Momentum parameter
         self.momentum = momentum
-
-        # Weight decay
         self.decay = decay
-
-        # Temperature factor
         self.T = temperature
 
-        # List of models (RBMs)
         self.models = []
-
-        # For every possible layer
         for i in range(self.n_layers):
-            # If it is the first layer
             if i == 0:
-                # Gathers the number of input units as number of visible units
                 n_input = self.n_visible
-
-            # If it is not the first layer
             else:
                 # Gathers the number of input units as previous number of hidden units
                 n_input = self.n_hidden[i - 1]
@@ -115,7 +94,6 @@ class DBN(Model):
                 # After creating the first layer, we need to change the model's type to sigmoid
                 model = "sigmoid"
 
-            # Creates an RBM
             m = MODELS[model](
                 n_input,
                 self.n_hidden[i],
@@ -126,13 +104,9 @@ class DBN(Model):
                 self.T[i],
                 use_gpu,
             )
-
-            # Appends the model to the list
             self.models.append(m)
 
-        # Checks if current device is CUDA-based
         if self.device == "cuda":
-            # If yes, uses CUDA in the whole class
             self.cuda()
 
         logger.info("Class overrided.")
@@ -267,68 +241,43 @@ class DBN(Model):
 
         """
 
-        # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
-            # If not, raises an error
             raise e.SizeError(("`epochs` should have size equal as %d", self.n_layers))
 
-        # Initializing MSE and pseudo-likelihood as lists
         mse, pl = [], []
 
-        # Initializing the dataset's variables
         samples, targets, transform = (
             dataset.data.numpy(),
             dataset.targets.numpy(),
             dataset.transform,
         )
 
-        # For every possible model (RBM)
         for i, model in enumerate(self.models):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
-            # Creating the dataset
             d = Dataset(samples, targets, transform)
 
-            # Fits the RBM
             model_mse, model_pl = model.fit(d, batch_size, epochs[i])
-
-            # Appending the metrics
             mse.append(model_mse)
             pl.append(model_pl)
 
-            # If the dataset has a transform
             if d.transform:
-                # Applies the transform over the samples
                 samples = d.transform(d.data)
-
-            # If there is no transform
             else:
-                # Just gather the samples
                 samples = d.data
 
-            # Checking whether GPU is avaliable and if it should be used
             if self.device == "cuda":
-                # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Reshape the samples into an appropriate shape
             samples = samples.reshape(len(dataset), model.n_visible)
-
-            # Gathers the targets
             targets = d.targets
-
-            # Gathers the transform callable from current dataset
             transform = None
 
             # Performs a forward pass over the samples to get their probabilities
             samples, _ = model.hidden_sampling(samples)
 
-            # Checking whether GPU is being used
             if self.device == "cuda":
-                # If yes, get samples back to the CPU
                 samples = samples.cpu()
-
-            # Detaches the variable from the computing graph
             samples = samples.detach()
 
         return mse, pl
@@ -348,58 +297,33 @@ class DBN(Model):
 
         logger.info("Reconstructing new samples ...")
 
-        # Resetting MSE to zero
         mse = 0
-
-        # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
 
-        # Transforming the dataset into training batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        # For every batch
         for samples, _ in tqdm(batches):
-            # Flattening the samples' batch
             samples = samples.reshape(batch_size, self.models[0].n_visible)
-
-            # Checking whether GPU is avaliable and if it should be used
             if self.device == "cuda":
-                # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Applying the initial hidden probabilities as the samples
             hidden_probs = samples
-
-            # For every possible model (RBM)
             for model in self.models:
-                # Flattening the hidden probabilities
                 hidden_probs = hidden_probs.reshape(batch_size, model.n_visible)
-
-                # Performing a hidden layer sampling
                 hidden_probs, _ = model.hidden_sampling(hidden_probs)
 
-            # Applying the initial visible probabilities as the hidden probabilities
             visible_probs = hidden_probs
-
-            # For every possible model (RBM)
             for model in reversed(self.models):
-                # Flattening the visible probabilities
                 visible_probs = visible_probs.reshape(batch_size, model.n_hidden)
-
-                # Performing a visible layer sampling
                 visible_probs, visible_states = model.visible_sampling(visible_probs)
 
-            # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
                 torch.sum(torch.pow(samples - visible_states, 2)), batch_size
             )
-
-            # Summing up to reconstruction's MSE
             mse += batch_mse
 
-        # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
         logger.info("MSE: %f", mse)
@@ -417,9 +341,7 @@ class DBN(Model):
 
         """
 
-        # For every possible model
         for model in self.models:
-            # Calculates the outputs of current model
             x, _ = model.hidden_sampling(x)
 
         return x

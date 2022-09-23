@@ -57,44 +57,24 @@ class RBM(Model):
 
         super(RBM, self).__init__(use_gpu=use_gpu)
 
-        # Amount of visible units
         self.n_visible = n_visible
-
-        # Amount of hidden units
         self.n_hidden = n_hidden
 
-        # Number of steps Gibbs' sampling steps
         self.steps = steps
-
-        # Learning rate
         self.lr = learning_rate
-
-        # Momentum parameter
         self.momentum = momentum
-
-        # Weight decay
         self.decay = decay
-
-        # Temperature factor
         self.T = temperature
 
-        # Weights matrix
         self.W = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01)
-
-        # Visible units bias
         self.a = nn.Parameter(torch.zeros(n_visible))
-
-        # Hidden units bias
         self.b = nn.Parameter(torch.zeros(n_hidden))
 
-        # Creating the optimizer object
         self.optimizer = opt.SGD(
             self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay
         )
 
-        # Checks if current device is CUDA-based
         if self.device == "cuda":
-            # If yes, uses CUDA in the whole class
             self.cuda()
 
         logger.info("Class overrided.")
@@ -255,12 +235,9 @@ class RBM(Model):
 
         """
 
-        # Calculating neurons' activations
         activations = F.linear(v, self.W.t(), self.b)
 
-        # If scaling is true
         if scale:
-            # Scales the activations with temperature
             activations = torch.div(activations, self.T)
 
         return activations
@@ -279,20 +256,13 @@ class RBM(Model):
 
         """
 
-        # Calculating neurons' activations
         activations = F.linear(v, self.W.t(), self.b)
 
-        # If scaling is true
         if scale:
-            # Calculate probabilities with temperature
             probs = torch.sigmoid(torch.div(activations, self.T))
-
-        # If scaling is false
         else:
-            # Calculate probabilities as usual
             probs = torch.sigmoid(activations)
 
-        # Sampling current states
         states = torch.bernoulli(probs)
 
         return probs, states
@@ -311,20 +281,13 @@ class RBM(Model):
 
         """
 
-        # Calculating neurons' activations
         activations = F.linear(h, self.W, self.a)
 
-        # If scaling is true
         if scale:
-            # Calculate probabilities with temperature
             probs = torch.sigmoid(torch.div(activations, self.T))
-
-        # If scaling is false
         else:
-            # Calculate probabilities as usual
             probs = torch.sigmoid(activations)
 
-        # Sampling current states
         states = torch.bernoulli(probs)
 
         return probs, states
@@ -344,18 +307,12 @@ class RBM(Model):
 
         """
 
-        # Calculating positive phase hidden probabilities and states
         pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v)
-
-        # Initially defining the negative phase
         neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
-            # Calculating visible probabilities and states
             _, visible_states = self.visible_sampling(neg_hidden_states, True)
-
-            # Calculating hidden probabilities and states
             neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
                 visible_states, True
             )
@@ -379,19 +336,14 @@ class RBM(Model):
 
         """
 
-        # Calculate samples' activations
         activations = F.linear(samples, self.W.t(), self.b)
 
-        # Creating a Softplus function for numerical stability
+        # Creates a Softplus function for numerical stability
         s = nn.Softplus()
 
-        # Calculate the hidden term
         h = torch.sum(s(activations), dim=1)
-
-        # Calculate the visible term
         v = torch.mv(samples, self.a)
 
-        # Finally, gathers the system's energy
         energy = -v - h
 
         return energy
@@ -407,27 +359,19 @@ class RBM(Model):
 
         """
 
-        # Gathering a new array to hold the rounded samples
-        samples_binary = torch.round(samples)
-
         # Calculates the energy of samples before flipping the bits
+        samples_binary = torch.round(samples)
         energy = self.energy(samples_binary)
 
         # Samples an array of indexes to flip the bits
         indexes = torch.randint(
             0, self.n_visible, size=(samples.size(0), 1), device=self.device
         )
-
-        # Creates an empty vector for filling the indexes
         bits = torch.zeros(samples.size(0), samples.size(1), device=self.device)
-
-        # Fills the sampled indexes with 1
         bits = bits.scatter_(1, indexes, 1)
 
-        # Actually flips the bits
-        samples_binary = torch.where(bits == 0, samples_binary, 1 - samples_binary)
-
         # Calculates the energy after flipping the bits
+        samples_binary = torch.where(bits == 0, samples_binary, 1 - samples_binary)
         energy1 = self.energy(samples_binary)
 
         # Calculate the logarithm of the pseudo-likelihood
@@ -455,74 +399,48 @@ class RBM(Model):
 
         """
 
-        # Transforming the dataset into training batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
 
-        # For every epoch
         for epoch in range(epochs):
             logger.info("Epoch %d/%d", epoch + 1, epochs)
 
-            # Calculating the time of the epoch's starting
             start = time.time()
 
-            # Resetting epoch's MSE and pseudo-likelihood to zero
             mse, pl = 0, 0
 
-            # For every batch
             for samples, _ in tqdm(batches):
-                # Flattening the samples' batch
                 samples = samples.reshape(len(samples), self.n_visible)
-
-                # Checking whether GPU is avaliable and if it should be used
                 if self.device == "cuda":
-                    # Applies the GPU usage to the data
                     samples = samples.cuda()
 
-                # Performs the Gibbs sampling procedure
                 _, _, _, _, visible_states = self.gibbs_sampling(samples)
-
-                # Detaching the visible states from GPU for further computation
                 visible_states = visible_states.detach()
 
-                # Calculates the loss for further gradients' computation
                 cost = torch.mean(self.energy(samples)) - torch.mean(
                     self.energy(visible_states)
                 )
 
-                # Initializing the gradient
                 self.optimizer.zero_grad()
-
-                # Computing the gradients
                 cost.backward()
-
-                # Updating the parameters
                 self.optimizer.step()
 
-                # Gathering the size of the batch
                 batch_size = samples.size(0)
 
-                # Calculating current's batch MSE
                 batch_mse = torch.div(
                     torch.sum(torch.pow(samples - visible_states, 2)), batch_size
                 ).detach()
-
-                # Calculating the current's batch logarithm pseudo-likelihood
                 batch_pl = self.pseudo_likelihood(samples).detach()
 
-                # Summing up to epochs' MSE and pseudo-likelihood
                 mse += batch_mse
                 pl += batch_pl
 
-            # Normalizing the MSE and pseudo-likelihood with the number of batches
             mse /= len(batches)
             pl /= len(batches)
 
-            # Calculating the time of the epoch's ending
             end = time.time()
 
-            # Dumps the desired variables to the model's history
             self.dump(mse=mse.item(), pl=pl.item(), time=end - start)
 
             logger.info("MSE: %f | log-PL: %f", mse, pl)
@@ -544,42 +462,26 @@ class RBM(Model):
 
         logger.info("Reconstructing new samples ...")
 
-        # Resetting MSE to zero
         mse = 0
-
-        # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
 
-        # Transforming the dataset into training batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        # For every batch
         for samples, _ in tqdm(batches):
-            # Flattening the samples' batch
             samples = samples.reshape(len(samples), self.n_visible)
-
-            # Checking whether GPU is avaliable and if it should be used
             if self.device == "cuda":
-                # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Calculating positive phase hidden probabilities and states
             _, pos_hidden_states = self.hidden_sampling(samples)
-
-            # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
-            # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
                 torch.sum(torch.pow(samples - visible_states, 2)), batch_size
             )
-
-            # Summing up the reconstruction's MSE
             mse += batch_mse
 
-        # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
         logger.info("MSE: %f", mse)
@@ -597,7 +499,6 @@ class RBM(Model):
 
         """
 
-        # Calculates the outputs of the model
         x, _ = self.hidden_sampling(x)
 
         return x

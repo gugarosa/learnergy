@@ -61,39 +61,20 @@ class ConvDBN(Model):
 
         super(ConvDBN, self).__init__(use_gpu=use_gpu)
 
-        # Shape of visible units
         self.visible_shape = visible_shape
-
-        # Shape of filters
         self.filter_shape = filter_shape
 
-        # Number of filters
         self.n_filters = n_filters
-
-        # Number of channels
         self.n_channels = n_channels
-
-        # Number of layers
         self.n_layers = len(n_filters)
 
-        # Number of steps Gibbs' sampling steps
         self.steps = steps
-
-        # Learning rate
         self.lr = learning_rate
-
-        # Momentum parameter
         self.momentum = momentum
-
-        # Weight decay
         self.decay = decay
 
-        # List of models (RBMs)
         self.models = []
-
-        # For every possible layer
         for i in range(self.n_layers):
-            # Creates an CRBM
             m = MODELS[model](
                 visible_shape,
                 self.filter_shape[i],
@@ -106,21 +87,15 @@ class ConvDBN(Model):
                 use_gpu,
             )
 
-            # Re-defines the visible shape
             visible_shape = (
                 visible_shape[0] - self.filter_shape[i][0] + 1,
                 visible_shape[1] - self.filter_shape[i][1] + 1,
             )
-
-            # Also defines the new number of channels
             n_channels = self.n_filters[i]
 
-            # Appends the model to the list
             self.models.append(m)
 
-        # Checks if current device is CUDA-based
         if self.device == "cuda":
-            # If yes, uses CUDA in the whole class
             self.cuda()
 
         logger.info("Class overrided.")
@@ -261,72 +236,45 @@ class ConvDBN(Model):
 
         """
 
-        # Checking if the length of number of epochs' list is correct
         if len(epochs) != self.n_layers:
-            # If not, raises an error
             raise e.SizeError(("`epochs` should have size equal as %d", self.n_layers))
 
-        # Initializing MSE as a list
         mse = []
 
-        # Initializing the dataset's variables
         samples, targets, transform = (
             dataset.data.numpy(),
             dataset.targets.numpy(),
             dataset.transform,
         )
 
-        # For every possible model (ConvRBM)
         for i, model in enumerate(self.models):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
-            # Creating the dataset
             d = Dataset(samples, targets, transform)
 
-            # Fits the RBM
             model_mse = model.fit(d, batch_size, epochs[i])
-
-            # Appending the metrics
             mse.append(model_mse)
 
-            # If the dataset has a transform
             if d.transform:
-                # Applies the transform over the samples
                 samples = d.transform(d.data)
-
-            # If there is no transform
             else:
-                # Just gather the samples
                 samples = d.data
 
-            # Checking whether GPU is avaliable and if it should be used
             if self.device == "cuda":
-                # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Reshape the samples into an appropriate shape
             samples = samples.reshape(
                 len(dataset),
                 model.n_channels,
                 model.visible_shape[0],
                 model.visible_shape[1],
             )
-
-            # Gathers the targets
             targets = d.targets
-
-            # Gathers the transform callable from current dataset
             transform = None
 
-            # Performs a forward pass over the samples to get their probabilities
             samples, _ = model.hidden_sampling(samples)
-
-            # Checking whether GPU is being used
             if self.device == "cuda":
-                # If yes, get samples back to the CPU
                 samples = samples.cpu()
-
-            # Detaches the variable from the computing graph
             samples = samples.detach()
 
         return mse
@@ -346,57 +294,37 @@ class ConvDBN(Model):
 
         logger.info("Reconstructing new samples ...")
 
-        # Resetting MSE to zero
         mse = 0
-
-        # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
 
-        # Transforming the dataset into training batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        # For every batch
         for samples, _ in tqdm(batches):
-            # Flattening the samples' batch
             samples = samples.reshape(
                 len(samples),
                 self.n_channels,
                 self.visible_shape[0],
                 self.visible_shape[1],
             )
-
-            # Checking whether GPU is avaliable and if it should be used
             if self.device == "cuda":
-                # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Applying the initial hidden probabilities as the samples
             hidden_probs = samples
-
-            # For every possible model (CRBM)
             for model in self.models:
-                # Performing a hidden layer sampling
                 hidden_probs, _ = model.hidden_sampling(hidden_probs)
 
-            # Applying the initial visible probabilities as the hidden probabilities
             visible_probs = hidden_probs
-
-            # For every possible model (CRBM)
             for model in reversed(self.models):
-                # Performing a visible layer sampling
                 visible_probs, visible_states = model.visible_sampling(visible_probs)
 
-            # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
                 torch.sum(torch.pow(samples - visible_states, 2)), batch_size
             )
 
-            # Summing up to reconstruction's MSE
             mse += batch_mse
 
-        # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
         logger.info("MSE: %f", mse)
@@ -414,9 +342,7 @@ class ConvDBN(Model):
 
         """
 
-        # For every possible model
         for model in self.models:
-            # Calculates the outputs of the model
             x, _ = model.hidden_sampling(x)
 
         return x

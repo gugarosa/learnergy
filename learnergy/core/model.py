@@ -29,17 +29,13 @@ class Model(torch.nn.Module):
 
         super(Model, self).__init__()
 
-        # Creates a cpu-based device property
         self.device = "cpu"
-
-        # Checks if GPU is avaliable
         if torch.cuda.is_available() and use_gpu:
             self.device = "cuda"
 
-        # Creating an empty dictionary to hold historical values
         self.history = {}
 
-        # Setting default tensor type to float
+        # Sets default tensor type to float to avoid value errors
         torch.set_default_tensor_type(torch.FloatTensor)
 
         logger.debug("Device: %s.", self.device)

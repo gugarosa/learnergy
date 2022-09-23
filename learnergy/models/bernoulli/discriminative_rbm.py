@@ -67,27 +67,17 @@ class DiscriminativeRBM(RBM):
             use_gpu,
         )
 
-        # Number of classes
         self.n_classes = n_classes
 
-        # Class weights matrix
         self.U = nn.Parameter(torch.randn(n_classes, n_hidden) * 0.05)
-
-        # Class bias
         self.c = nn.Parameter(torch.zeros(n_classes))
 
-        # Creating the loss function for the DRBM
         self.loss = nn.CrossEntropyLoss()
 
-        # Updating optimizer's parameters with `U`
         self.optimizer.add_param_group({"params": self.U})
-
-        # Updating optimizer's parameters with `c`
         self.optimizer.add_param_group({"params": self.c})
 
-        # Re-checks if current device is CUDA-based due to new parameter
         if self.device == "cuda":
-            # If yes, re-uses CUDA in the whole class
             self.cuda()
 
         logger.info("Class overrided.")
@@ -146,21 +136,16 @@ class DiscriminativeRBM(RBM):
 
         """
 
-        # Creating an empty tensor for holding the probabilities per class
         probs = torch.zeros(samples.size(0), self.n_classes, device=self.device)
-
-        # Calculate samples' activations
         activations = F.linear(samples, self.W.t(), self.b)
 
-        # Creating a Softplus function for numerical stability
+        # Creates a Softplus function for numerical stability
         s = nn.Softplus()
 
-        # Iterating through every possible class
         for i in range(self.n_classes):
             # Calculates the logit-probability for the particular class
             probs[:, i] = self.c[i] + torch.sum(s(activations + self.U[i, :]), dim=1)
 
-        # Recovering the predictions based on the logit-probabilities
         preds = torch.argmax(probs.detach(), 1)
 
         return probs, preds
@@ -183,71 +168,46 @@ class DiscriminativeRBM(RBM):
 
         """
 
-        # Transforming the dataset into training batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
 
-        # For every epoch
         for epoch in range(epochs):
             logger.info("Epoch %d/%d", epoch + 1, epochs)
 
-            # Calculating the time of the epoch's starting
             start = time.time()
 
-            # Resetting epoch's MSE and pseudo-likelihood to zero
             loss = 0
             acc = 0
 
-            # For every batch
             for samples, labels in tqdm(batches):
-                # Flattening the samples' batch
                 samples = samples.reshape(len(samples), self.n_visible)
-
-                # Checking whether GPU is avaliable and if it should be used
                 if self.device == "cuda":
-                    # Applies the GPU usage to the data and labels
                     samples = samples.cuda()
                     labels = labels.cuda()
 
-                # Calculates labels probabilities and predictions by sampling
                 probs, _ = self.labels_sampling(samples)
-
-                # Calculates the loss for further gradients' computation
                 cost = self.loss(probs, labels)
 
-                # Initializing the gradient
                 self.optimizer.zero_grad()
-
-                # Computing the gradients
                 cost.backward()
-
-                # Updating the parameters
                 self.optimizer.step()
 
-                # Calculating labels predictions by sampling
                 _, preds = self.labels_sampling(samples)
 
-                # Gathering the size of the batch
                 batch_size = samples.size(0)
-
-                # Calculating current's batch accuracy
                 batch_acc = torch.mean(
                     (torch.sum(preds == labels).float()) / batch_size
                 )
 
-                # Summing up to epochs' loss and accuracy
                 loss += cost.detach()
                 acc += batch_acc
 
-            # Normalizing the loss and accuracy with the number of batches
             loss /= len(batches)
             acc /= len(batches)
 
-            # Calculating the time of the epoch's ending
             end = time.time()
 
-            # Dumps the desired variables to the model's history
             self.dump(loss=loss.item(), acc=acc.item(), time=end - start)
 
             logger.info("Loss: %f | Accuracy: %f", loss, acc)
@@ -269,38 +229,24 @@ class DiscriminativeRBM(RBM):
 
         logger.info("Predicting new samples ...")
 
-        # Resetting accuracy to zero
         acc = 0
-
-        # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
 
-        # Transforming the dataset into training batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        # For every batch
         for samples, labels in tqdm(batches):
-            # Flattening the samples' batch
             samples = samples.reshape(len(samples), self.n_visible)
-
-            # Checking whether GPU is avaliable and if it should be used
             if self.device == "cuda":
-                # Applies the GPU usage to the data and labels
                 samples = samples.cuda()
                 labels = labels.cuda()
 
-            # Calculating labels probabilities and predictions by sampling
             probs, preds = self.labels_sampling(samples)
 
-            # Calculating current's batch accuracy
             batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
-
-            # Summing up the prediction accuracy
             acc += batch_acc
 
-        # Normalizing the accuracy with the number of batches
         acc /= len(batches)
 
         logger.info("Accuracy: %f", acc)
@@ -362,7 +308,6 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             use_gpu,
         )
 
-        # Defining a property for the generative loss penalization
         self.alpha = alpha
 
     @property
@@ -393,20 +338,13 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
-        # Calculating neurons' activations
         activations = F.linear(v, self.W.t(), self.b) + torch.matmul(y, self.U)
 
-        # If scaling is true
         if scale:
-            # Calculate probabilities with temperature
             probs = torch.sigmoid(torch.div(activations, self.T))
-
-        # If scaling is false
         else:
-            # Calculate probabilities as usual
             probs = torch.sigmoid(activations)
 
-        # Sampling current states
         states = torch.bernoulli(probs)
 
         return probs, states
@@ -422,13 +360,8 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
-        # Calculating neurons' activations
         activations = torch.exp(F.linear(h, self.U, self.c))
-
-        # Calculating activations
         probs = torch.div(activations, torch.sum(activations, dim=1).unsqueeze(1))
-
-        # Sampling current states
         states = torch.nn.functional.one_hot(
             torch.argmax(probs, dim=1), num_classes=self.n_classes
         ).float()
@@ -451,24 +384,16 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
-        # Transforming labels to one-hot encoding
         y = torch.nn.functional.one_hot(y, num_classes=self.n_classes).float()
 
-        # Calculating positive phase hidden probabilities and states
         pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v, y)
-
-        # Initially defining the negative phase
         neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
         for _ in range(self.steps):
-            # Calculating visible probabilities and states
             _, visible_states = self.visible_sampling(neg_hidden_states, True)
-
-            # Calculating class probabilities and states
             _, class_states = self.class_sampling(neg_hidden_states)
 
-            # Calculating hidden probabilities and states
             neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
                 visible_states, class_states, True
             )
@@ -499,86 +424,54 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
-        # Transforming the dataset into training batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
 
-        # For every epoch
         for epoch in range(epochs):
             logger.info("Epoch %d/%d", epoch + 1, epochs)
 
-            # Calculating the time of the epoch's starting
             start = time.time()
 
-            # Resetting epoch's losses and accuracy to zero
             d_loss, g_loss, loss, acc = 0, 0, 0, 0
 
-            # For every batch
             for samples, labels in tqdm(batches):
-                # Flattening the samples' batch
                 samples = samples.reshape(len(samples), self.n_visible)
-
-                # Checking whether GPU is avaliable and if it should be used
                 if self.device == "cuda":
-                    # Applies the GPU usage to the data and labels
                     samples = samples.cuda()
                     labels = labels.cuda()
 
-                # Performs the Gibbs sampling procedure
                 _, _, _, _, visible_states = self.gibbs_sampling(samples, labels)
-
-                # Detaching the visible states from GPU for further computation
                 visible_states = visible_states.detach()
-
-                # Calculates discriminator labels probabilities by sampling
                 disc_probs, _ = self.labels_sampling(samples)
 
-                # Calculates the discriminator loss for further gradients' computation
                 d_cost = self.loss(disc_probs, labels)
-
-                # Calculates the generator loss for further gradients' computation
                 g_cost = -self.pseudo_likelihood(samples)
-
-                # Calculates the total loss
                 cost = d_cost + self.alpha * g_cost
 
-                # Initializing the gradient
                 self.optimizer.zero_grad()
-
-                # Computing the gradients
                 cost.backward()
-
-                # Updating the parameters
                 self.optimizer.step()
 
-                # Calculating labels predictions by sampling
                 _, preds = self.labels_sampling(samples)
 
-                # Gathering the size of the batch
                 batch_size = samples.size(0)
-
-                # Calculating current's batch accuracy
                 batch_acc = torch.mean(
                     (torch.sum(preds == labels).float()) / batch_size
                 )
 
-                # Summing up to epochs' genator, discriminator and total loss, and accuracy
                 d_loss += d_cost
                 g_loss += g_cost
                 loss += cost.detach()
                 acc += batch_acc
 
-            # Normalizing the losses and accuracy with the number of batches
             d_loss /= len(batches)
             g_loss /= len(batches)
             loss /= len(batches)
             acc /= len(batches)
 
-            # Calculating the time of the epoch's ending
             end = time.time()
 
-            # Dumps the desired variables to the model's history
             self.dump(
                 d_loss=d_loss.item(),
                 g_loss=g_loss.item(),

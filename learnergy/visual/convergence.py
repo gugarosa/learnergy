@@ -35,18 +35,13 @@ def plot(
 
     """
 
-    # Gathering the amount of possible ticks
     ticks = np.arange(1, len(args[0]) + 1)
 
-    # Creating figure and axis subplots
     _, ax = plt.subplots(figsize=(7, 5))
 
-    # Defining some properties, such as axis labels, ticks and limits
     ax.set(xlabel=xlabel, ylabel=ylabel)
     ax.set_xticks(ticks)
     ax.set_xlim(xmin=1, xmax=ticks[-1])
-
-    # Setting both title and subtitles
     ax.set_title(title, loc="left", fontsize=14)
     ax.set_title(subtitle, loc="right", fontsize=8, color="grey")
 
@@ -54,19 +49,15 @@ def plot(
         ax.grid()
 
     if labels:
-
         if len(labels) != len(args):
             raise e.SizeError("`args` and `labels` should have the same size")
-
     else:
         labels = [f"variable_{i}" for i in range(len(args))]
 
-    # Plotting the axis
     for (arg, label) in zip(args, labels):
         ax.plot(ticks, arg, label=label)
 
     if legend:
         ax.legend()
 
-    # Displaying the plot
     plt.show()

@@ -65,7 +65,6 @@ class DropoutRBM(RBM):
             use_gpu,
         )
 
-        # Intensity of dropout
         self.p = dropout
 
         logger.info("Class overrided.")
@@ -98,10 +97,8 @@ class DropoutRBM(RBM):
 
         """
 
-        # Calculating neurons' activations
         activations = F.linear(v, self.W.t(), self.b)
 
-        # Sampling a dropout mask from Bernoulli's distribution
         mask = (
             torch.full(
                 (activations.size(0), activations.size(1)),
@@ -111,17 +108,11 @@ class DropoutRBM(RBM):
             )
         ).bernoulli()
 
-        # If scaling is true
         if scale:
-            # Calculate probabilities with temperature
             probs = torch.mul(torch.sigmoid(torch.div(activations, self.T)), mask)
-
-        # If scaling is false
         else:
-            # Calculate probabilities as usual
             probs = torch.mul(torch.sigmoid(activations), mask)
 
-        # Sampling current states
         states = torch.bernoulli(probs)
 
         return probs, states
@@ -141,48 +132,32 @@ class DropoutRBM(RBM):
 
         logger.info("Reconstructing new samples ...")
 
-        # Resetting mse to zero
         mse = 0
-
-        # Defining the batch size as the amount of samples in the dataset
         batch_size = len(dataset)
 
         # Saving dropout rate to an auxiliary variable
+        # and temporarily disabling dropout
         p = self.p
-
-        # Temporarily disabling dropout
         self.p = 0
 
-        # Transforming the dataset into testing batches
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        # For every batch
         for samples, _ in tqdm(batches):
-            # Flattening the samples' batch
             samples = samples.reshape(len(samples), self.n_visible)
 
-            # Checking whether GPU is avaliable and if it should be used
             if self.device == "cuda":
-                # Applies the GPU usage to the data
                 samples = samples.cuda()
 
-            # Calculating positive phase hidden probabilities and states
             _, pos_hidden_states = self.hidden_sampling(samples)
-
-            # Calculating visible probabilities and states
             visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
-            # Calculating current's batch reconstruction MSE
             batch_mse = torch.div(
                 torch.sum(torch.pow(samples - visible_states, 2)), batch_size
             )
-
-            # Summing up the reconstruction's MSE
             mse += batch_mse
 
-        # Normalizing the MSE with the number of batches
         mse /= len(batches)
 
         # Recovering initial dropout rate
@@ -259,7 +234,6 @@ class DropConnectRBM(DropoutRBM):
 
         """
 
-        # Sampling a dropconnect mask from Bernoulli's distribution
         mask = (
             torch.full(
                 (self.W.size(0), self.W.size(1)),
@@ -269,20 +243,13 @@ class DropConnectRBM(DropoutRBM):
             )
         ).bernoulli()
 
-        # Calculating neurons' activations
         activations = F.linear(v, torch.mul(self.W, mask).t(), self.b)
 
-        # If scaling is true
         if scale:
-            # Calculate probabilities with temperature
             probs = torch.sigmoid(torch.div(activations, self.T))
-
-        # If scaling is false
         else:
-            # Calculate probabilities as usual
             probs = torch.sigmoid(activations)
 
-        # Sampling current states
         states = torch.bernoulli(probs)
 
         return probs, states

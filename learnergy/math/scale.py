@@ -17,13 +17,9 @@ def unitary_scale(x: np.array) -> np.array:
 
     """
 
-    # Makes sure the array is float typed
     x = x.astype("float32")
 
-    # Gathers array minimum and subtract
     x -= x.min()
-
-    # Normalizes the array using its maximum
     x *= 1.0 / (x.max() + c.EPSILON)
 
     return x

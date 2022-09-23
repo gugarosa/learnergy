@@ -29,13 +29,8 @@ class Dataset(torch.utils.data.Dataset):
 
         logger.info("Creating class: Dataset.")
 
-        # Samples array
         self.data = data
-
-        # Labels array
         self.targets = targets
-
-        # Transform callable
         self.transform = transform
 
         logger.info("Class created.")
