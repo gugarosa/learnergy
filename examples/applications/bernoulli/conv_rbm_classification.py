@@ -9,12 +9,12 @@ from learnergy.models.bernoulli import ConvRBM
 
 # Defining some input variables
 v_shape = 28
-n_filters = 10
+n_filters = 16
 f_shape = 7
 n_channels = 1
 batch_size = 128
 n_classes = 10
-fine_tune_epochs = 20
+fine_tune_epochs = 10
 
 # Creating training and validation/testing dataset
 train = torchvision.datasets.MNIST(
@@ -36,9 +36,10 @@ model = ConvRBM(
     filter_shape=(f_shape, f_shape),
     n_filters=n_filters,
     n_channels=n_channels,
-    learning_rate=0.01,
+    learning_rate=0.001,
     momentum=0,
     decay=0,
+    maxpooling=True,
     use_gpu=True,
 )
 
@@ -46,7 +47,11 @@ model = ConvRBM(
 model.fit(train, batch_size=batch_size, epochs=5)
 
 # Creating the Fully Connected layer to append on top of RBM
-fc = nn.Linear(model.hidden_shape[0] * model.hidden_shape[1] * n_filters, n_classes)
+if model.maxpooling:
+    input_fc = n_filters * (model.hidden_shape[0] * model.hidden_shape[1])//2
+else:
+    input_fc = n_filters * model.hidden_shape[0] * model.hidden_shape[1]
+fc = nn.Linear(input_fc , n_classes)
 
 # Check if model uses GPU
 if model.device == "cuda":
@@ -63,8 +68,8 @@ optimizer = [
 ]
 
 # Creating training and validation batches
-train_batch = DataLoader(train, batch_size=batch_size, shuffle=False, num_workers=1)
-val_batch = DataLoader(test, batch_size=10000, shuffle=False, num_workers=1)
+train_batch = DataLoader(train, batch_size=batch_size, shuffle=False, num_workers=0)
+val_batch = DataLoader(test, batch_size=10000, shuffle=False, num_workers=0)
 
 # For amount of fine-tuning epochs
 for e in range(fine_tune_epochs):
@@ -91,8 +96,7 @@ for e in range(fine_tune_epochs):
 
         # Reshaping the outputs
         y = y.reshape(
-            x_batch.size(0), model.hidden_shape[0] * model.hidden_shape[1] * n_filters
-        )
+            x_batch.size(0), input_fc)
 
         # Calculating the fully-connected outputs
         y = fc(y)
@@ -124,8 +128,7 @@ for e in range(fine_tune_epochs):
 
         # Reshaping the outputs
         y = y.reshape(
-            x_batch.size(0), model.hidden_shape[0] * model.hidden_shape[1] * n_filters
-        )
+            x_batch.size(0), input_fc)
 
         # Calculating the fully-connected outputs
         y = fc(y)

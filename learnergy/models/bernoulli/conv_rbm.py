@@ -39,6 +39,7 @@ class ConvRBM(Model):
         learning_rate: Optional[float] = 0.1,
         momentum: Optional[float] = 0.0,
         decay: Optional[float] = 0.0,
+        maxpooling: Optional[bool] = False,
         use_gpu: Optional[bool] = False,
     ) -> None:
         """Initialization method.
@@ -52,6 +53,7 @@ class ConvRBM(Model):
             learning_rate: Learning rate.
             momentum: Momentum parameter.
             decay: Weight decay used for penalization.
+            maxpooling: Whether MaxPooling should be applied or not.
             use_gpu: Whether GPU should be used or not.
 
         """
@@ -74,6 +76,12 @@ class ConvRBM(Model):
         self.lr = learning_rate
         self.momentum = momentum
         self.decay = decay
+        if maxpooling:
+            self.maxpol2d = nn.MaxPool2d(kernel_size=2, stride=2, padding=1)
+            self.maxpooling = True
+        else:
+            self.maxpol2d = maxpooling
+            self.maxpooling = False
 
         self.W = nn.Parameter(
             torch.randn(n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01
@@ -92,7 +100,8 @@ class ConvRBM(Model):
         logger.debug(
             "Visible: %s | Filters: %d x %s | Hidden: %s | "
             "Channels: %d | Learning: CD-%d | "
-            "Hyperparameters: lr = %s, momentum = %s, decay = %s.",
+            "Hyperparameters: lr = %s, momentum = %s, decay = %s | "
+            "Pooling: MaxPooling2D: %s.",
             self.visible_shape,
             self.n_filters,
             self.filter_shape,
@@ -102,6 +111,7 @@ class ConvRBM(Model):
             self.lr,
             self.momentum,
             self.decay,
+            self.maxpooling,
         )
 
     @property
@@ -476,5 +486,7 @@ class ConvRBM(Model):
         """
 
         x, _ = self.hidden_sampling(x)
+        if self.maxpooling:
+            x = self.maxpol2d(x)
 
         return x

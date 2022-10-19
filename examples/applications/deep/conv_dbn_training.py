@@ -28,6 +28,7 @@ model = ConvDBN(
     learning_rate=(0.1, 0.1),
     momentum=(0, 0),
     decay=(0, 0),
+    maxpooling=True,
     use_gpu=True,
 )
 

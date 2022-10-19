@@ -2,6 +2,7 @@
 """
 
 from typing import Optional, Tuple
+from xmlrpc.client import Boolean
 
 import numpy as np
 import torch
@@ -16,7 +17,8 @@ class Dataset(torch.utils.data.Dataset):
     """A custom dataset class, inherited from PyTorch's dataset."""
 
     def __init__(
-        self, data: np.array, targets: np.array, transform: Optional[callable] = None
+        self, data: np.array, targets: np.array, 
+        transform: Optional[callable] = None, show_log: Optional[Boolean] = True
     ) -> None:
         """Initialization method.
 
@@ -27,19 +29,19 @@ class Dataset(torch.utils.data.Dataset):
 
         """
 
-        logger.info("Creating class: Dataset.")
-
         self.data = data
         self.targets = targets
         self.transform = transform
 
-        logger.info("Class created.")
-        logger.debug(
-            "Data: %s | Targets: %s | Transforms: %s.",
-            self.data.shape,
-            self.targets.shape,
-            self.transform,
-        )
+        if show_log:
+            logger.info("Creating class: Dataset.")
+            logger.info("Class created.")
+            logger.debug(
+                "Data: %s | Targets: %s | Transforms: %s.",
+                self.data.shape,
+                self.targets.shape,
+                self.transform,
+            )
 
     @property
     def data(self) -> np.array:
