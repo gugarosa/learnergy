@@ -47,10 +47,14 @@ model = ConvRBM(
 model.fit(train, batch_size=batch_size, epochs=5)
 
 # Creating the Fully Connected layer to append on top of RBM
+h1 = model.hidden_shape[0]
+h2 = model.hidden_shape[1]
+nf = model.n_filters
+
 if model.maxpooling:
-    input_fc = n_filters * (model.hidden_shape[0] * model.hidden_shape[1])//2
+    input_fc = nf * (h1//2 + 1) * (h2//2 + 1)
 else:
-    input_fc = n_filters * model.hidden_shape[0] * model.hidden_shape[1]
+    input_fc = nf * h1 * h2
 fc = nn.Linear(input_fc , n_classes)
 
 # Check if model uses GPU
