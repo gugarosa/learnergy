@@ -1,22 +1,13 @@
 import torch
+import torchvision
 import torch.nn as nn
 import torch.optim as optim
-import torchvision
+
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from learnergy.models.deep import ConvDBN
 
-from learnergy.models.bernoulli import ConvRBM
-
-# Defining some input variables
-v_shape = 28
-n_filters = 16
-f_shape = 7
-n_channels = 1
-batch_size = 128
-n_classes = 10
-fine_tune_epochs = 10
-
-# Creating training and validation/testing dataset
+# Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -30,29 +21,44 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating a ConvRBM
-model = ConvRBM(
-    visible_shape=(v_shape, v_shape),
-    filter_shape=(f_shape, f_shape),
-    n_filters=n_filters,
-    n_channels=n_channels,
-    learning_rate=0.001,
-    momentum=0,
-    decay=0,
-    maxpooling=True,
+# Creating a ConvDBN
+model = ConvDBN(
+    model="gaussian",
+    visible_shape=(28, 28),
+    filter_shape=((5, 5), (5, 5)),
+    n_filters=(32, 32),
+    steps=(1, 1),
+    n_channels=1,
+    learning_rate=(0.0001, 0.00001),
+    momentum=(0, 0),
+    decay=(0, 0),
+    maxpooling=(True, False),
+    #pooling_kernel=(2, 0), # WORKING ON ...
     use_gpu=True,
 )
 
-# Training a ConvRBM
-model.fit(train, batch_size=batch_size, epochs=5)
+batch_size = 128
+n_classes = 10
+fine_tune_epochs = 10
+epochs = (1, 1)
 
-# Creating the Fully Connected layer to append on top of RBM
-h1 = model.hidden_shape[0]
-h2 = model.hidden_shape[1]
-nf = model.n_filters
+# Training a ConvDBN
+model.fit(train, batch_size=batch_size, epochs=epochs)
 
-if model.maxpooling:
+# Reconstructing test set
+#rec_mse, v = model.reconstruct(test)
+
+# Saving model
+torch.save(model, "model.pth")
+
+# Creating the Fully Connected layer to append on top of DBN
+h1 = model.models[len(model.models)-1].hidden_shape[0]
+h2 = model.models[len(model.models)-1].hidden_shape[1]
+nf = model.models[len(model.models)-1].n_filters
+
+if model.models[len(model.models)-1].maxpooling:    
     input_fc = nf * (h1//2 + 1) * (h2//2 + 1)
+    print('pooling', input_fc)
 else:
     input_fc = nf * h1 * h2
 fc = nn.Linear(input_fc , n_classes)
@@ -67,12 +73,13 @@ criterion = nn.CrossEntropyLoss()
 
 # Creating the optimzers
 optimizer = [
-    optim.Adam(model.parameters(), lr=0.0001),
+    optim.Adam(model.models[0].parameters(), lr=0.0001),
+    optim.Adam(model.models[1].parameters(), lr=0.0001),
     optim.Adam(fc.parameters(), lr=0.001),
 ]
 
 # Creating training and validation batches
-train_batch = DataLoader(train, batch_size=batch_size, shuffle=False, num_workers=0)
+train_batch = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=0)
 val_batch = DataLoader(test, batch_size=10000, shuffle=False, num_workers=0)
 
 # For amount of fine-tuning epochs
@@ -97,7 +104,7 @@ for e in range(fine_tune_epochs):
 
         # Passing the batch down the model
         y = model(x_batch)
-
+        
         # Reshaping the outputs
         y = y.reshape(
             x_batch.size(0), input_fc)
@@ -129,7 +136,7 @@ for e in range(fine_tune_epochs):
 
         # Passing the batch down the model
         y = model(x_batch)
-
+        
         # Reshaping the outputs
         y = y.reshape(
             x_batch.size(0), input_fc)
@@ -149,4 +156,5 @@ for e in range(fine_tune_epochs):
 torch.save(model, "tuned_model.pth")
 
 # Checking the model's history
-print(model.history)
+for m in model.models:
+    print(m.history)

@@ -4,18 +4,19 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as e
 from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import ConvRBM
-from learnergy.models.gaussian import GaussianConvRBM
+from learnergy.models.gaussian import GaussianConvRBM, GaussianConvRBM4deep
 from learnergy.utils import logging
 
 logger = logging.get_logger(__name__)
 
-MODELS = {"bernoulli": ConvRBM, "gaussian": GaussianConvRBM}
+MODELS = {"bernoulli": ConvRBM, "gaussian": GaussianConvRBM, "gaussiandeep": GaussianConvRBM4deep}
 
 
 class ConvDBN(Model):
@@ -39,6 +40,8 @@ class ConvDBN(Model):
         learning_rate: Optional[Tuple[float, ...]] = (0.1,),
         momentum: Optional[Tuple[float, ...]] = (0.0,),
         decay: Optional[Tuple[float, ...]] = (0.0,),
+        maxpooling: Optional[Tuple[bool,...]] = (False, False),
+        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2),
         use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
@@ -53,6 +56,8 @@ class ConvDBN(Model):
             learning_rate: Learning rate per layer.
             momentum: Momentum parameter per layer.
             decay: Weight decay used for penalization per layer.
+            maxpooling: Whether MaxPooling2D should be used or not.
+            pooling_kernel: The kernel size of each square-sized MaxPooling layer (when maxpooling=True).
             use_gpu: Whether GPU should be used or not.
 
         """
@@ -71,11 +76,22 @@ class ConvDBN(Model):
         self.steps = steps
         self.lr = learning_rate
         self.momentum = momentum
-        self.decay = decay
+        self.decay = decay        
+
+        self.maxpooling = maxpooling
+        self.maxpol2d = []
+
+        for i, mx in enumerate(maxpooling):
+            if mx:
+                self.maxpol2d.append(nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1))
+            else:
+                self.maxpol2d.append(None)
 
         self.models = []
         for i in range(self.n_layers):
-            m = MODELS[model](
+            
+            if i > 0 and model=='gaussian':
+                m = MODELS['gaussiandeep'](
                 visible_shape,
                 self.filter_shape[i],
                 self.n_filters[i],
@@ -84,6 +100,22 @@ class ConvDBN(Model):
                 self.lr[i],
                 self.momentum[i],
                 self.decay[i],
+                self.maxpooling[i],
+                pooling_kernel[i],
+                use_gpu,
+            )
+            else:
+                m = MODELS[model](
+                visible_shape,
+                self.filter_shape[i],
+                self.n_filters[i],
+                n_channels,
+                self.steps[i],
+                self.lr[i],
+                self.momentum[i],
+                self.decay[i],
+                self.maxpooling[i],
+                pooling_kernel[i],
                 use_gpu,
             )
 
@@ -91,6 +123,11 @@ class ConvDBN(Model):
                 visible_shape[0] - self.filter_shape[i][0] + 1,
                 visible_shape[1] - self.filter_shape[i][1] + 1,
             )
+            if self.maxpooling[i]:
+                # TODO: Needs to be adjusted to when pooling_kernel != 2 
+                visible_shape = ((m.hidden_shape[0]//2) + 1, (m.hidden_shape[1]//2) + 1)
+                
+
             n_channels = self.n_filters[i]
 
             self.models.append(m)
@@ -209,6 +246,19 @@ class ConvDBN(Model):
         self._decay = decay
 
     @property
+    def maxpooling(self) -> Tuple[bool, ...]:
+        """Usage of MaxPooling."""
+
+        return self._maxpooling
+
+    @maxpooling.setter
+    def maxpooling(self, maxpooling: Tuple[bool, ...]) -> None:
+        if len(maxpooling) != self.n_layers:
+            raise e.ValueError("`maxpooling` should be a Tuple of True or False")
+
+        self._maxpooling = maxpooling
+
+    @property
     def models(self) -> List[torch.nn.Module]:
         """List of models (RBMs)."""
 
@@ -241,41 +291,53 @@ class ConvDBN(Model):
 
         mse = []
 
-        samples, targets, transform = (
-            dataset.data.numpy(),
-            dataset.targets.numpy(),
-            dataset.transform,
-        )
+        try: 
+            samples, targets, transform = (
+                    dataset.data.numpy(),
+                    dataset.targets.numpy(),
+                    dataset.transform,
+            )
+        except:
+            samples, targets, transform = (
+                    dataset.data,
+                    dataset.targets,
+                    dataset.transform,
+            )
+        
+        d = Dataset(samples, targets, transform)
+        batches = DataLoader(d, batch_size=batch_size, shuffle=True)
 
         for i, model in enumerate(self.models):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
-            d = Dataset(samples, targets, transform)
+            #d = Dataset(samples, targets, transform)
 
-            model_mse = model.fit(d, batch_size, epochs[i])
-            mse.append(model_mse)
+            if i ==0:
+                model_mse = model.fit(d, batch_size, epochs[i])
+                mse.append(model_mse)
+            else:                
+                # creating the training phase for deeper models
+                for ep in range(epochs[i]):
+                    logger.info("Epoch %d/%d", ep + 1, epochs[i])
+                    model_mse = 0
+                    for step, (samples, y) in enumerate(batches):
 
-            if d.transform:
-                samples = d.transform(d.data)
-            else:
-                samples = d.data
+                        if self.device == "cuda":
+                            samples = samples.cuda()
 
-            if self.device == "cuda":
-                samples = samples.cuda()
+                        for ii in range(i):
+                            samples, _ = self.models[ii].hidden_sampling(samples)
+                            if self.maxpooling[ii]:
+                                samples = self.maxpol2d[ii](samples)
 
-            samples = samples.reshape(
-                len(dataset),
-                model.n_channels,
-                model.visible_shape[0],
-                model.visible_shape[1],
-            )
-            targets = d.targets
-            transform = None
+                        # Creating the dataset to ''mini-fit'' the i-th model                        
+                        ds = Dataset(samples, y, None, show_log=False)
+                        # Fiting the model with the batch
+                        model_mse += model.fit(ds, samples.size(0), 1)
 
-            samples, _ = model.hidden_sampling(samples)
-            if self.device == "cuda":
-                samples = samples.cpu()
-            samples = samples.detach()
+                    model_mse/=len(batches)
+                    logger.info("MSE: %f", model_mse)
+                mse.append(model_mse)                
 
         return mse
 
@@ -342,7 +404,11 @@ class ConvDBN(Model):
 
         """
 
+        i = 0
         for model in self.models:
             x, _ = model.hidden_sampling(x)
+            if self.maxpooling[i]:
+                x = self.maxpol2d[i](x)
+            i+=1
 
         return x
