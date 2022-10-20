@@ -32,7 +32,7 @@ model = ConvDBN(
     learning_rate=(0.0001, 0.00001),
     momentum=(0, 0),
     decay=(0, 0),
-    maxpooling=(True, True),
+    maxpooling=(False, True),
     use_gpu=True,
 )
 
@@ -40,6 +40,7 @@ batch_size = 128
 n_classes = 10
 fine_tune_epochs = 10
 epochs = (1, 1)
+
 # Training a ConvDBN
 model.fit(train, batch_size=batch_size, epochs=epochs)
 
@@ -49,19 +50,17 @@ model.fit(train, batch_size=batch_size, epochs=epochs)
 # Saving model
 torch.save(model, "model.pth")
 
-# Creating the Fully Connected layer to append on top of RBM
+# Creating the Fully Connected layer to append on top of DBN
 h1 = model.models[len(model.models)-1].hidden_shape[0]
 h2 = model.models[len(model.models)-1].hidden_shape[1]
 nf = model.models[len(model.models)-1].n_filters
 
 if model.models[len(model.models)-1].maxpooling:
     input_fc = nf * (h1//2 + 1) * (h2//2 + 1)
-    #input_fc = nf * (h1//2) * (h2//2)
 else:
-    input_fc = model.models[len(model.models)-1].n_filters * model.models[len(model.models)-1].hidden_shape[0] * model.models[len(model.models)-1].hidden_shape[1]
+    input_fc = nf * h1 * h2
 fc = nn.Linear(input_fc , n_classes)
 
-print(input_fc)
 # Check if model uses GPU
 if model.device == "cuda":
     # If yes, put fully-connected on GPU

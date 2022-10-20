@@ -242,6 +242,19 @@ class ConvDBN(Model):
         self._decay = decay
 
     @property
+    def maxpooling(self) -> Tuple[bool, ...]:
+        """Usage of MaxPooling."""
+
+        return self._maxpooling
+
+    @maxpooling.setter
+    def maxpooling(self, maxpooling: Tuple[bool, ...]) -> None:
+        if len(maxpooling) != self.n_layers:
+            raise e.ValueError("`maxpooling` should be a Tuple of True or False")
+
+        self._maxpooling = maxpooling
+
+    @property
     def models(self) -> List[torch.nn.Module]:
         """List of models (RBMs)."""
 
@@ -394,4 +407,5 @@ class ConvDBN(Model):
             if self.maxpooling[i]:
                 x = self.maxpol2d[i](x)
             i+=1
+
         return x

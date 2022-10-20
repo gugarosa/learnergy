@@ -76,6 +76,7 @@ class ConvRBM(Model):
         self.lr = learning_rate
         self.momentum = momentum
         self.decay = decay
+
         if maxpooling:
             self.maxpol2d = nn.MaxPool2d(kernel_size=2, stride=2, padding=1)
             self.maxpooling = True
@@ -226,6 +227,19 @@ class ConvRBM(Model):
             raise e.ValueError("`decay` should be >= 0")
 
         self._decay = decay
+
+    @property
+    def maxpooling(self) -> bool:
+        """Usage of MaxPooling."""
+
+        return self._maxpooling
+
+    @maxpooling.setter
+    def maxpooling(self, maxpooling: bool) -> None:
+        if type(maxpooling) != bool:
+            raise e.ValueError("`maxpooling` should be True or False")
+
+        self._maxpooling = maxpooling
 
     @property
     def W(self) -> torch.nn.Parameter:
