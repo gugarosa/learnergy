@@ -41,6 +41,7 @@ class ConvDBN(Model):
         momentum: Optional[Tuple[float, ...]] = (0.0,),
         decay: Optional[Tuple[float, ...]] = (0.0,),
         maxpooling: Optional[Tuple[bool,...]] = (False, False),
+        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2),
         use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
@@ -55,6 +56,8 @@ class ConvDBN(Model):
             learning_rate: Learning rate per layer.
             momentum: Momentum parameter per layer.
             decay: Weight decay used for penalization per layer.
+            maxpooling: Whether MaxPooling2D should be used or not.
+            pooling_kernel: The kernel size of each square-sized MaxPooling layer (when maxpooling=True).
             use_gpu: Whether GPU should be used or not.
 
         """
@@ -78,9 +81,9 @@ class ConvDBN(Model):
         self.maxpooling = maxpooling
         self.maxpol2d = []
 
-        for mx in maxpooling:
+        for i, mx in enumerate(maxpooling):
             if mx:
-                self.maxpol2d.append(nn.MaxPool2d(kernel_size=2, stride=2, padding=1))
+                self.maxpol2d.append(nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1))
             else:
                 self.maxpol2d.append(None)
 
@@ -98,6 +101,7 @@ class ConvDBN(Model):
                 self.momentum[i],
                 self.decay[i],
                 self.maxpooling[i],
+                pooling_kernel[i],
                 use_gpu,
             )
             else:
@@ -111,6 +115,7 @@ class ConvDBN(Model):
                 self.momentum[i],
                 self.decay[i],
                 self.maxpooling[i],
+                pooling_kernel[i],
                 use_gpu,
             )
 
@@ -119,10 +124,9 @@ class ConvDBN(Model):
                 visible_shape[1] - self.filter_shape[i][1] + 1,
             )
             if self.maxpooling[i]:
+                # TODO: Needs to be adjusted to when pooling_kernel != 2 
                 visible_shape = ((m.hidden_shape[0]//2) + 1, (m.hidden_shape[1]//2) + 1)
-
-            #print("Max", self.maxpooling[i], i)
-            #print("Shape", visible_shape, self.maxpooling[i], i)
+                
 
             n_channels = self.n_filters[i]
 
@@ -328,7 +332,6 @@ class ConvDBN(Model):
 
                         # Creating the dataset to ''mini-fit'' the i-th model                        
                         ds = Dataset(samples, y, None, show_log=False)
-
                         # Fiting the model with the batch
                         model_mse += model.fit(ds, samples.size(0), 1)
 

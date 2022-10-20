@@ -32,7 +32,8 @@ model = ConvDBN(
     learning_rate=(0.0001, 0.00001),
     momentum=(0, 0),
     decay=(0, 0),
-    maxpooling=(False, True),
+    maxpooling=(True, False),
+    #pooling_kernel=(2, 0), # WORKING ON ...
     use_gpu=True,
 )
 
@@ -55,8 +56,9 @@ h1 = model.models[len(model.models)-1].hidden_shape[0]
 h2 = model.models[len(model.models)-1].hidden_shape[1]
 nf = model.models[len(model.models)-1].n_filters
 
-if model.models[len(model.models)-1].maxpooling:
+if model.models[len(model.models)-1].maxpooling:    
     input_fc = nf * (h1//2 + 1) * (h2//2 + 1)
+    print('pooling', input_fc)
 else:
     input_fc = nf * h1 * h2
 fc = nn.Linear(input_fc , n_classes)

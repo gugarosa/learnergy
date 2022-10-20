@@ -40,6 +40,7 @@ class ConvRBM(Model):
         momentum: Optional[float] = 0.0,
         decay: Optional[float] = 0.0,
         maxpooling: Optional[bool] = False,
+        pooling_kernel: Optional[int] = 2,
         use_gpu: Optional[bool] = False,
     ) -> None:
         """Initialization method.
@@ -53,7 +54,8 @@ class ConvRBM(Model):
             learning_rate: Learning rate.
             momentum: Momentum parameter.
             decay: Weight decay used for penalization.
-            maxpooling: Whether MaxPooling should be applied or not.
+            maxpooling: Whether MaxPooling2D should be used or not.
+            pooling_kernel: The kernel size of MaxPooling layer (when maxpooling=True).
             use_gpu: Whether GPU should be used or not.
 
         """
@@ -78,7 +80,7 @@ class ConvRBM(Model):
         self.decay = decay
 
         if maxpooling:
-            self.maxpol2d = nn.MaxPool2d(kernel_size=2, stride=2, padding=1)
+            self.maxpol2d = nn.MaxPool2d(kernel_size=pooling_kernel, stride=2, padding=1)
             self.maxpooling = True
         else:
             self.maxpol2d = maxpooling
@@ -102,7 +104,7 @@ class ConvRBM(Model):
             "Visible: %s | Filters: %d x %s | Hidden: %s | "
             "Channels: %d | Learning: CD-%d | "
             "Hyperparameters: lr = %s, momentum = %s, decay = %s | "
-            "Pooling: MaxPooling2D: %s.",
+            "Pooling: MaxPooling2D = %s: (%s, %s).",
             self.visible_shape,
             self.n_filters,
             self.filter_shape,
@@ -113,6 +115,7 @@ class ConvRBM(Model):
             self.momentum,
             self.decay,
             self.maxpooling,
+            pooling_kernel, pooling_kernel,
         )
 
     @property

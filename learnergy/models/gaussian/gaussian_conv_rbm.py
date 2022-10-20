@@ -39,6 +39,7 @@ class GaussianConvRBM(ConvRBM):
         momentum: Optional[float] = 0.0,
         decay: Optional[float] = 0.0,
         maxpooling: Optional[bool] = False,
+        pooling_kernel: Optional[int] = 2,
         use_gpu: Optional[bool] = False,
     ) -> None:
         """Initialization method.
@@ -68,6 +69,7 @@ class GaussianConvRBM(ConvRBM):
             momentum,
             decay,
             maxpooling,
+            pooling_kernel,
             use_gpu,
         )
 
@@ -220,6 +222,7 @@ class GaussianConvRBM4deep(ConvRBM):
         momentum: Optional[float] = 0.0,
         decay: Optional[float] = 0.0,
         maxpooling: Optional[bool] = False,
+        pooling_kernel: Optional[int] = 2,
         use_gpu: Optional[bool] = False,
     ) -> None:
         """Initialization method.
@@ -249,6 +252,7 @@ class GaussianConvRBM4deep(ConvRBM):
             momentum,
             decay,
             maxpooling,
+            pooling_kernel,
             use_gpu,
         )
 
