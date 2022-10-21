@@ -72,11 +72,8 @@ if model.device == "cuda":
 criterion = nn.CrossEntropyLoss()
 
 # Creating the optimzers
-optimizer = [
-    optim.Adam(model.models[0].parameters(), lr=0.0001),
-    optim.Adam(model.models[1].parameters(), lr=0.0001),
-    optim.Adam(fc.parameters(), lr=0.001),
-]
+optimizer = [optim.Adam(m.parameters(), lr=0.0001) for m in model.models]
+optimizer.append(optim.Adam(fc.parameters(), lr=0.001))
 
 # Creating training and validation batches
 train_batch = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=0)

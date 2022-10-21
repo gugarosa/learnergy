@@ -297,20 +297,21 @@ class ConvDBN(Model):
                     dataset.targets.numpy(),
                     dataset.transform,
             )
+            d = Dataset(samples, targets, transform)
         except:
-            samples, targets, transform = (
-                    dataset.data,
-                    dataset.targets,
-                    dataset.transform,
-            )
-        
-        d = Dataset(samples, targets, transform)
+            try:
+                samples, targets, transform = (
+                        dataset.data,
+                        dataset.targets,
+                        dataset.transform,
+                )
+                d = Dataset(samples, targets, transform)
+            except:
+                d = dataset
         batches = DataLoader(d, batch_size=batch_size, shuffle=True)
 
         for i, model in enumerate(self.models):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
-
-            #d = Dataset(samples, targets, transform)
 
             if i ==0:
                 model_mse = model.fit(d, batch_size, epochs[i])

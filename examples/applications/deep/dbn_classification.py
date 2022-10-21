@@ -28,11 +28,11 @@ test = torchvision.datasets.MNIST(
 
 # Creating a DBN
 model = DBN(
-    model="bernoulli",
+    model=("gaussian", "sigmoid"),
     n_visible=784,
     n_hidden=(256, 256),
     steps=(1, 1),
-    learning_rate=(0.1, 0.1),
+    learning_rate=(0.0001, 0.001),
     momentum=(0, 0),
     decay=(0, 0),
     temperature=(1, 1),
@@ -59,12 +59,12 @@ if model.device == "cuda":
 criterion = nn.CrossEntropyLoss()
 
 # Creating the optimzers
-optimizer = [optim.Adam(m.parameters(), lr=0.001) for m in model.models]
+optimizer = [optim.Adam(m.parameters(), lr=0.0001) for m in model.models]
 optimizer.append(optim.Adam(fc.parameters(), lr=0.001))
 
 # Creating training and validation batches
-train_batch = DataLoader(train, batch_size=batch_size, shuffle=False, num_workers=1)
-val_batch = DataLoader(test, batch_size=10000, shuffle=False, num_workers=1)
+train_batch = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=0)
+val_batch = DataLoader(test, batch_size=10000, shuffle=False, num_workers=0)
 
 # For amount of fine-tuning epochs
 for e in range(fine_tune_epochs):
