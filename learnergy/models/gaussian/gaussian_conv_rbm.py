@@ -340,7 +340,7 @@ class GaussianConvRBM4deep(ConvRBM):
 
             mse = 0            
 
-            for _, (samples, _) in enumerate(batches):                
+            for _, (samples, _) in enumerate(batches):
                 samples = samples.reshape(
                     len(samples),
                     self.n_channels,
