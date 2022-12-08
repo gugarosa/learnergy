@@ -306,8 +306,8 @@ class GaussianConvRBM4deep(ConvRBM):
             # Uses the previously calculated activations
             probs = activations.detach()
         else:
-            #probs = F.relu6(activations).detach()
-            probs = self.sig(activations).detach()
+            probs = F.relu6(activations).detach()
+            #probs = self.sig(activations).detach()
 
         return probs, probs
 
