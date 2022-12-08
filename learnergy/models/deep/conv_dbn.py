@@ -37,11 +37,11 @@ class ConvDBN(Model):
         n_filters: Optional[Tuple[int, ...]] = (16,),
         n_channels: Optional[int] = 1,
         steps: Optional[Tuple[int, ...]] = (1,),
-        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
+        learning_rate: Optional[Tuple[float, ...]] = (0.0001,),
         momentum: Optional[Tuple[float, ...]] = (0.0,),
         decay: Optional[Tuple[float, ...]] = (0.0,),
-        maxpooling: Optional[Tuple[bool,...]] = (False, False),
-        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2),
+        maxpooling: Optional[Tuple[bool,...]] = (False, False,),
+        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2,),
         use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
