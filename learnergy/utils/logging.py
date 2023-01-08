@@ -14,7 +14,7 @@ def get_console_handler() -> StreamHandler:
     """Gets a console handler to handle logging into console.
 
     Returns:
-        (StreamHandler): Handler to output information into console.
+        Handler to output information into console.
 
     """
 
@@ -28,7 +28,7 @@ def get_timed_file_handler() -> TimedRotatingFileHandler:
     """Gets a timed file handler to handle logging into files.
 
     Returns:
-        (TimedRotatingFileHandler): Handler to output information into timed files.
+        Handler to output information into timed files.
 
     """
 
@@ -45,7 +45,7 @@ def get_logger(logger_name: str) -> Logger:
         logger_name: The name of the logger.
 
     Returns:
-        (Logger): Logger instance.
+        Logger instance.
 
     """
 

@@ -109,7 +109,7 @@ class GaussianRBM(RBM):
             samples: Samples to be energy-freed.
 
         Returns:
-            (torch.Tensor): The system's energy based on input samples.
+            The system's energy based on input samples.
 
         """
 
@@ -135,7 +135,7 @@ class GaussianRBM(RBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
+            The probabilities and states of the visible layer sampling.
 
         """
 
@@ -164,7 +164,7 @@ class GaussianRBM(RBM):
             epochs: Number of training epochs.
 
         Returns:
-            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -233,7 +233,7 @@ class GaussianRBM(RBM):
             dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
 
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -278,7 +278,7 @@ class GaussianRBM(RBM):
             x: An input tensor for computing the forward pass.
 
         Returns:
-            (torch.Tensor): A tensor containing the RBM's outputs.
+            A tensor containing the RBM's outputs.
 
         """
 
@@ -360,7 +360,7 @@ class GaussianReluRBM(GaussianRBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -449,7 +449,7 @@ class GaussianSeluRBM(GaussianRBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -550,7 +550,7 @@ class VarianceGaussianRBM(RBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -577,7 +577,7 @@ class VarianceGaussianRBM(RBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
+            The probabilities and states of the visible layer sampling.
 
         """
 
@@ -601,7 +601,7 @@ class VarianceGaussianRBM(RBM):
             samples: Samples to be energy-freed.
 
         Returns:
-            (torch.Tensor): The system's energy based on input samples.
+            The system's energy based on input samples.
 
         """
 
@@ -617,6 +617,7 @@ class VarianceGaussianRBM(RBM):
         energy = -v - h
 
         return energy
+
 
 class GaussianRBM4deep(GaussianRBM):
     """A GaussianRBM class provides the basic implementation for
@@ -682,7 +683,6 @@ class GaussianRBM4deep(GaussianRBM):
 
         logger.info("Class overrided.")
 
-  
     def fit(
         self,
         dataset: torch.utils.data.Dataset,
@@ -697,7 +697,7 @@ class GaussianRBM4deep(GaussianRBM):
             epochs: Number of training epochs.
 
         Returns:
-            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -823,7 +823,7 @@ class GaussianReluRBM4deep(GaussianRBM4deep):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 

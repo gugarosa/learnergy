@@ -1,9 +1,6 @@
-coverage>=5.5
 matplotlib>=3.3.4
 Pillow>=8.1.2
 pre-commit>=2.17.0
-pylint>=2.7.2
-pytest>=6.2.2
 requests>=2.23.0
 scikit-image>=0.17.2
 torch>=1.8.0

@@ -89,7 +89,7 @@ class EDropoutRBM(RBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (torch.Tensor): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -112,7 +112,7 @@ class EDropoutRBM(RBM):
             v: Visible sampling states.
 
         Returns:
-            (torch.Tensor): The total energy of the model.
+            The total energy of the model.
 
         """
 
@@ -160,7 +160,7 @@ class EDropoutRBM(RBM):
             epochs: Number of training epochs.
 
         Returns:
-            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -240,7 +240,7 @@ class EDropoutRBM(RBM):
             dataset: A Dataset object containing the testing data.
 
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 

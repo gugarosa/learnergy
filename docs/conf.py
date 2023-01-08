@@ -27,10 +27,10 @@ copyright = "2020, Mateus Roder and Gustavo de Rosa"
 author = "Mateus Roder and Gustavo de Rosa"
 
 # The short X.Y version
-version = "1.1.3"
+version = "1.1.4"
 
 # The full version, including alpha/beta/rc tags
-release = "1.1.3"
+release = "1.1.4"
 
 
 # -- General configuration ---------------------------------------------------

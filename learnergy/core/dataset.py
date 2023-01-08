@@ -2,7 +2,6 @@
 """
 
 from typing import Optional, Tuple
-from xmlrpc.client import Boolean
 
 import numpy as np
 import torch
@@ -17,8 +16,11 @@ class Dataset(torch.utils.data.Dataset):
     """A custom dataset class, inherited from PyTorch's dataset."""
 
     def __init__(
-        self, data: np.array, targets: np.array, 
-        transform: Optional[callable] = None, show_log: Optional[Boolean] = True
+        self,
+        data: np.array,
+        targets: np.array,
+        transform: Optional[callable] = None,
+        show_log: Optional[bool] = True,
     ) -> None:
         """Initialization method.
 
@@ -26,6 +28,7 @@ class Dataset(torch.utils.data.Dataset):
             data: An n-dimensional array containing the data.
             targets: An 1-dimensional array containing the data's labels.
             transform: Optional transform to be applied over a sample.
+            show_log: Whether to show log information or not.
 
         """
 
@@ -83,7 +86,7 @@ class Dataset(torch.utils.data.Dataset):
             idx: The idx of desired sample.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): Data and label tensors.
+            Data and label tensors.
 
         """
 
@@ -99,7 +102,7 @@ class Dataset(torch.utils.data.Dataset):
         """A private method that will be the base for PyTorch's iterator getting dataset's length.
 
         Returns:
-            (int): Length of dataset.
+            Length of dataset.
 
         """
 

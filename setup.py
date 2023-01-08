@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="learnergy",
-    version="1.1.3",
+    version="1.1.4",
     description="Energy-based Machine Learners",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -14,12 +14,9 @@ setup(
     url="https://github.com/gugarosa/learnergy",
     license="Apache 2.0",
     install_requires=[
-        "coverage>=5.5",
         "matplotlib>=3.3.4",
         "Pillow>=8.1.2",
         "pre-commit>=2.17.0",
-        "pylint>=2.7.2",
-        "pytest>=6.2.2",
         "requests>2.23.0",
         "scikit-image>=0.17.2",
         "torch>=1.8.0",
@@ -29,6 +26,7 @@ setup(
     extras_require={
         "tests": [
             "coverage",
+            "pylint",
             "pytest",
             "pytest-pep8",
         ],

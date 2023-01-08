@@ -10,7 +10,7 @@ from tqdm import tqdm
 import learnergy.utils.exception as e
 from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import RBM, DropoutRBM, EDropoutRBM
-from learnergy.models.extra import SigmoidRBM, SigmoidRBM4deep
+from learnergy.models.extra import SigmoidRBM, SigmoidRBM4Deep
 from learnergy.models.gaussian import (
     GaussianRBM,
     GaussianRBM4deep,
@@ -33,7 +33,7 @@ MODELS = {
     "gaussian_relu4deep": GaussianReluRBM4deep,
     "gaussian_selu": GaussianSeluRBM,
     "sigmoid": SigmoidRBM,
-    "sigmoid4deep": SigmoidRBM4deep,
+    "sigmoid4deep": SigmoidRBM4Deep,
     "variance_gaussian": VarianceGaussianRBM,
 }
 
@@ -49,7 +49,7 @@ class DBN(Model):
 
     def __init__(
         self,
-        model: Optional[Tuple[str, ...]] = ("gaussian", ),
+        model: Optional[Tuple[str, ...]] = ("gaussian",),
         n_visible: Optional[int] = 128,
         n_hidden: Optional[Tuple[int, ...]] = (128,),
         steps: Optional[Tuple[int, ...]] = (1,),
@@ -90,12 +90,16 @@ class DBN(Model):
         self.decay = decay
         self.T = temperature
 
-        self.models = []
-        model = list(model)
+        if not isinstance(model, tuple):
+            model = (model,)
         if len(model) < self.n_layers:
-            logger.info("\n\n> Incomplete number of RBMs, adding SigmoidRBMs to fill the stack!! <\n")
-            for i in range(len(model)-1, self.n_layers):
-                model.append("sigmoid4deep")
+            logger.info(
+                "Incomplete number of RBMs. Adding SigmoidRBMs to fill the stack ..."
+            )
+            for _ in range(len(model) - 1, self.n_layers):
+                model += ("sigmoid4deep",)
+
+        self.models = []
         for i in range(self.n_layers):
             if i == 0:
                 n_input = self.n_visible
@@ -104,38 +108,37 @@ class DBN(Model):
                 n_input = self.n_hidden[i - 1]
 
                 if model[i] == "sigmoid":
-                    model[i] = "sigmoid4deep"                    
+                    model[i] = "sigmoid4deep"
                 elif model[i] == "gaussian":
                     model[i] = "gaussian4deep"
                 elif model[i] == "gaussian_relu":
                     model[i] = "gaussian_relu4deep"
             try:
                 m = MODELS[model[i]](
-                        n_input,
-                        self.n_hidden[i],
-                        self.steps[i],
-                        self.lr[i],
-                        self.momentum[i],
-                        self.decay[i],
-                        self.T[i],
-                        use_gpu,
-                        normalize,
-                        input_normalize,
+                    n_input,
+                    self.n_hidden[i],
+                    self.steps[i],
+                    self.lr[i],
+                    self.momentum[i],
+                    self.decay[i],
+                    self.T[i],
+                    use_gpu,
+                    normalize,
+                    input_normalize,
                 )
-                    
+
             except:
                 m = MODELS[model[i]](
-                        n_input,
-                        self.n_hidden[i],
-                        self.steps[i],
-                        self.lr[i],
-                        self.momentum[i],
-                        self.decay[i],
-                        self.T[i],
-                        use_gpu,
+                    n_input,
+                    self.n_hidden[i],
+                    self.steps[i],
+                    self.lr[i],
+                    self.momentum[i],
+                    self.decay[i],
+                    self.T[i],
+                    use_gpu,
                 )
             self.models.append(m)
-        model = tuple(model)
 
         if self.device == "cuda":
             self.cuda()
@@ -268,7 +271,7 @@ class DBN(Model):
             epochs: Number of training epochs per layer.
 
         Returns:
-            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -277,19 +280,19 @@ class DBN(Model):
 
         mse, pl = [], []
 
-        try: 
+        try:
             samples, targets, transform = (
-                    dataset.data.numpy(),
-                    dataset.targets.numpy(),
-                    dataset.transform,
+                dataset.data.numpy(),
+                dataset.targets.numpy(),
+                dataset.transform,
             )
             d = Dataset(samples, targets, transform)
         except:
             try:
                 samples, targets, transform = (
-                        dataset.data,
-                        dataset.targets,
-                        dataset.transform,
+                    dataset.data,
+                    dataset.targets,
+                    dataset.transform,
                 )
                 d = Dataset(samples, targets, transform)
             except:
@@ -299,12 +302,12 @@ class DBN(Model):
 
         for i, model in enumerate(self.models):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
-            
-            if i ==0:
+
+            if i == 0:
                 model_mse, model_pl = model.fit(d, batch_size, epochs[i])
                 mse.append(model_mse)
                 pl.append(model_pl)
-            else:                
+            else:
                 # creating the training phase for deeper models
                 for ep in range(epochs[i]):
                     logger.info("Epoch %d/%d", ep + 1, epochs[i])
@@ -316,26 +319,24 @@ class DBN(Model):
 
                         if self.device == "cuda":
                             samples = samples.cuda()
-                        
 
                         for ii in range(i):
                             samples, _ = self.models[ii].hidden_sampling(samples)
 
-                        # Creating the dataset to ''mini-fit'' the i-th model                        
+                        # Creating the dataset to ''mini-fit'' the i-th model
                         ds = Dataset(samples, y, None, show_log=False)
                         # Fiting the model with the batch
                         mse_, plh = model.fit(ds, samples.size(0), 1)
                         model_mse += mse_
                         pl_ += plh
 
-                    model_mse/=len(batches)
-                    pl_/=len(batches)
+                    model_mse /= len(batches)
+                    pl_ /= len(batches)
 
-                    #logger.info("MSE: %f", model_mse)
+                    # logger.info("MSE: %f", model_mse)
                     logger.info("MSE: %f | log-PL: %f", model_mse, pl_)
                 mse.append(model_mse)
                 pl.append(pl_)
-        
 
         return mse, pl
 
@@ -348,7 +349,7 @@ class DBN(Model):
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
 
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -394,7 +395,7 @@ class DBN(Model):
             x: An input tensor for computing the forward pass.
 
         Returns:
-            (torch.Tensor): A tensor containing the DBN's outputs.
+            A tensor containing the DBN's outputs.
 
         """
 

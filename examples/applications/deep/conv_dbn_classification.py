@@ -1,10 +1,10 @@
 import torch
-import torchvision
 import torch.nn as nn
 import torch.optim as optim
-
+import torchvision
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
 from learnergy.models.deep import ConvDBN
 
 # Creating training and testing dataset
@@ -33,7 +33,7 @@ model = ConvDBN(
     momentum=(0, 0),
     decay=(0, 0),
     maxpooling=(True, False),
-    #pooling_kernel=(2, 0), # WORKING ON ...
+    # pooling_kernel=(2, 0), # WORKING ON ...
     use_gpu=True,
 )
 
@@ -46,22 +46,22 @@ epochs = (1, 1)
 model.fit(train, batch_size=batch_size, epochs=epochs)
 
 # Reconstructing test set
-#rec_mse, v = model.reconstruct(test)
+# rec_mse, v = model.reconstruct(test)
 
 # Saving model
 torch.save(model, "model.pth")
 
 # Creating the Fully Connected layer to append on top of DBN
-h1 = model.models[len(model.models)-1].hidden_shape[0]
-h2 = model.models[len(model.models)-1].hidden_shape[1]
-nf = model.models[len(model.models)-1].n_filters
+h1 = model.models[len(model.models) - 1].hidden_shape[0]
+h2 = model.models[len(model.models) - 1].hidden_shape[1]
+nf = model.models[len(model.models) - 1].n_filters
 
-if model.models[len(model.models)-1].maxpooling:    
-    input_fc = nf * (h1//2 + 1) * (h2//2 + 1)
-    print('pooling', input_fc)
+if model.models[len(model.models) - 1].maxpooling:
+    input_fc = nf * (h1 // 2 + 1) * (h2 // 2 + 1)
+    print("pooling", input_fc)
 else:
     input_fc = nf * h1 * h2
-fc = nn.Linear(input_fc , n_classes)
+fc = nn.Linear(input_fc, n_classes)
 
 # Check if model uses GPU
 if model.device == "cuda":
@@ -101,10 +101,9 @@ for e in range(fine_tune_epochs):
 
         # Passing the batch down the model
         y = model(x_batch)
-        
+
         # Reshaping the outputs
-        y = y.reshape(
-            x_batch.size(0), input_fc)
+        y = y.reshape(x_batch.size(0), input_fc)
 
         # Calculating the fully-connected outputs
         y = fc(y)
@@ -133,10 +132,9 @@ for e in range(fine_tune_epochs):
 
         # Passing the batch down the model
         y = model(x_batch)
-        
+
         # Reshaping the outputs
-        y = y.reshape(
-            x_batch.size(0), input_fc)
+        y = y.reshape(x_batch.size(0), input_fc)
 
         # Calculating the fully-connected outputs
         y = fc(y)

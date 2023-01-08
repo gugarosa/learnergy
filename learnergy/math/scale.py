@@ -13,7 +13,7 @@ def unitary_scale(x: np.array) -> np.array:
         x: A numpy array to be scaled.
 
     Returns:
-        (np.array): Scaled array.
+        Scaled array.
 
     """
 

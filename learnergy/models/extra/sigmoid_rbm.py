@@ -2,12 +2,10 @@
 """
 
 import time
-
 from typing import Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-
 from torch.utils.data import DataLoader
 
 from learnergy.models.bernoulli import RBM
@@ -76,7 +74,7 @@ class SigmoidRBM(RBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The states and probabilities of the visible layer sampling.
+            The states and probabilities of the visible layer sampling.
 
         """
 
@@ -93,7 +91,7 @@ class SigmoidRBM(RBM):
         return states, probs
 
 
-class SigmoidRBM4deep(SigmoidRBM):
+class SigmoidRBM4Deep(SigmoidRBM):
     """A SigmoidRBM class provides the basic implementation for
     Sigmoid-Bernoulli Restricted Boltzmann Machines.
 
@@ -157,7 +155,7 @@ class SigmoidRBM4deep(SigmoidRBM):
             epochs: Number of training epochs.
 
         Returns:
-            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 

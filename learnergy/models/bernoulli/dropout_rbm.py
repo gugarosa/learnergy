@@ -93,7 +93,7 @@ class DropoutRBM(RBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -126,7 +126,7 @@ class DropoutRBM(RBM):
             dataset: A Dataset object containing the testing data.
 
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -230,7 +230,7 @@ class DropConnectRBM(DropoutRBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 

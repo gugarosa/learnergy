@@ -55,7 +55,7 @@ class ConvRBM(Model):
             momentum: Momentum parameter.
             decay: Weight decay used for penalization.
             maxpooling: Whether MaxPooling2D should be used or not.
-            pooling_kernel: The kernel size of MaxPooling layer (when maxpooling=True).
+            pooling_kernel: The kernel size of MaxPooling2D layer (when maxpooling=True).
             use_gpu: Whether GPU should be used or not.
 
         """
@@ -80,7 +80,9 @@ class ConvRBM(Model):
         self.decay = decay
 
         if maxpooling:
-            self.maxpol2d = nn.MaxPool2d(kernel_size=pooling_kernel, stride=2, padding=1)
+            self.maxpol2d = nn.MaxPool2d(
+                kernel_size=pooling_kernel, stride=2, padding=1
+            )
             self.maxpooling = True
         else:
             self.maxpol2d = maxpooling
@@ -115,7 +117,8 @@ class ConvRBM(Model):
             self.momentum,
             self.decay,
             self.maxpooling,
-            pooling_kernel, pooling_kernel,
+            pooling_kernel,
+            pooling_kernel,
         )
 
     @property
@@ -233,7 +236,7 @@ class ConvRBM(Model):
 
     @property
     def maxpooling(self) -> bool:
-        """Usage of MaxPooling."""
+        """Usage of MaxPooling2D."""
 
         return self._maxpooling
 
@@ -291,7 +294,7 @@ class ConvRBM(Model):
             v: A tensor incoming from the visible layer.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -308,7 +311,7 @@ class ConvRBM(Model):
             h: A tensor incoming from the hidden layer.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
+            The probabilities and states of the visible layer sampling.
 
         """
 
@@ -327,7 +330,7 @@ class ConvRBM(Model):
             v: A tensor incoming from the visible layer.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling (positive),
+            The probabilities and states of the hidden layer sampling (positive),
                 the probabilities and states of the hidden layer sampling (negative)
                 and the states of the visible layer sampling (negative).
 
@@ -362,7 +365,7 @@ class ConvRBM(Model):
             samples: Samples to be energy-freed.
 
         Returns:
-            (torch.Tensor): The system's energy based on input samples.
+            The system's energy based on input samples.
 
         """
 
@@ -392,7 +395,7 @@ class ConvRBM(Model):
             epochs: Number of training epochs.
 
         Returns:
-            (float): MSE (mean squared error) from the training step.
+            MSE (mean squared error) from the training step.
 
         """
 
@@ -454,7 +457,7 @@ class ConvRBM(Model):
             dataset: A Dataset object containing the testing data.
 
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -498,7 +501,7 @@ class ConvRBM(Model):
             x: An input tensor for computing the forward pass.
 
         Returns:
-            (torch.Tensor): A tensor containing the Convolutional RBM's outputs.
+            A tensor containing the Convolutional RBM's outputs.
 
         """
 

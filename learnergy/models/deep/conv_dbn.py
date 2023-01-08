@@ -11,12 +11,16 @@ from tqdm import tqdm
 import learnergy.utils.exception as e
 from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import ConvRBM
-from learnergy.models.gaussian import GaussianConvRBM, GaussianConvRBM4deep
+from learnergy.models.gaussian import GaussianConvRBM, GaussianConvRBM4Deep
 from learnergy.utils import logging
 
 logger = logging.get_logger(__name__)
 
-MODELS = {"bernoulli": ConvRBM, "gaussian": GaussianConvRBM, "gaussiandeep": GaussianConvRBM4deep}
+MODELS = {
+    "bernoulli": ConvRBM,
+    "gaussian": GaussianConvRBM,
+    "gaussiandeep": GaussianConvRBM4Deep,
+}
 
 
 class ConvDBN(Model):
@@ -40,8 +44,8 @@ class ConvDBN(Model):
         learning_rate: Optional[Tuple[float, ...]] = (0.0001,),
         momentum: Optional[Tuple[float, ...]] = (0.0,),
         decay: Optional[Tuple[float, ...]] = (0.0,),
-        maxpooling: Optional[Tuple[bool,...]] = (False, False,),
-        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2,),
+        maxpooling: Optional[Tuple[bool, ...]] = (False,),
+        pooling_kernel: Optional[Tuple[int, ...]] = (2,),
         use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
@@ -57,7 +61,7 @@ class ConvDBN(Model):
             momentum: Momentum parameter per layer.
             decay: Weight decay used for penalization per layer.
             maxpooling: Whether MaxPooling2D should be used or not.
-            pooling_kernel: The kernel size of each square-sized MaxPooling layer (when maxpooling=True).
+            pooling_kernel: The kernel size of each square-sized MaxPooling2D layer (when maxpooling=True).
             use_gpu: Whether GPU should be used or not.
 
         """
@@ -76,57 +80,61 @@ class ConvDBN(Model):
         self.steps = steps
         self.lr = learning_rate
         self.momentum = momentum
-        self.decay = decay        
+        self.decay = decay
 
         self.maxpooling = maxpooling
         self.maxpol2d = []
 
         for i, mx in enumerate(maxpooling):
             if mx:
-                self.maxpol2d.append(nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1))
+                self.maxpol2d.append(
+                    nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1)
+                )
             else:
                 self.maxpol2d.append(None)
 
         self.models = []
         for i in range(self.n_layers):
-            
-            if i > 0 and model=='gaussian':
-                m = MODELS['gaussiandeep'](
-                visible_shape,
-                self.filter_shape[i],
-                self.n_filters[i],
-                n_channels,
-                self.steps[i],
-                self.lr[i],
-                self.momentum[i],
-                self.decay[i],
-                self.maxpooling[i],
-                pooling_kernel[i],
-                use_gpu,
-            )
+
+            if i > 0 and model == "gaussian":
+                m = MODELS["gaussiandeep"](
+                    visible_shape,
+                    self.filter_shape[i],
+                    self.n_filters[i],
+                    n_channels,
+                    self.steps[i],
+                    self.lr[i],
+                    self.momentum[i],
+                    self.decay[i],
+                    self.maxpooling[i],
+                    pooling_kernel[i],
+                    use_gpu,
+                )
             else:
                 m = MODELS[model](
-                visible_shape,
-                self.filter_shape[i],
-                self.n_filters[i],
-                n_channels,
-                self.steps[i],
-                self.lr[i],
-                self.momentum[i],
-                self.decay[i],
-                self.maxpooling[i],
-                pooling_kernel[i],
-                use_gpu,
-            )
+                    visible_shape,
+                    self.filter_shape[i],
+                    self.n_filters[i],
+                    n_channels,
+                    self.steps[i],
+                    self.lr[i],
+                    self.momentum[i],
+                    self.decay[i],
+                    self.maxpooling[i],
+                    pooling_kernel[i],
+                    use_gpu,
+                )
 
             visible_shape = (
                 visible_shape[0] - self.filter_shape[i][0] + 1,
                 visible_shape[1] - self.filter_shape[i][1] + 1,
             )
             if self.maxpooling[i]:
-                # TODO: Needs to be adjusted to when pooling_kernel != 2 
-                visible_shape = ((m.hidden_shape[0]//2) + 1, (m.hidden_shape[1]//2) + 1)
-                
+                # TODO: Needs to be adjusted to when pooling_kernel != 2
+                visible_shape = (
+                    (m.hidden_shape[0] // 2) + 1,
+                    (m.hidden_shape[1] // 2) + 1,
+                )
 
             n_channels = self.n_filters[i]
 
@@ -247,14 +255,14 @@ class ConvDBN(Model):
 
     @property
     def maxpooling(self) -> Tuple[bool, ...]:
-        """Usage of MaxPooling."""
+        """Usage of MaxPooling2D."""
 
         return self._maxpooling
 
     @maxpooling.setter
     def maxpooling(self, maxpooling: Tuple[bool, ...]) -> None:
         if len(maxpooling) != self.n_layers:
-            raise e.ValueError("`maxpooling` should be a Tuple of True or False")
+            raise e.SizeError(f"`maxpooling` should have size equal as {self.n_layers}")
 
         self._maxpooling = maxpooling
 
@@ -282,7 +290,7 @@ class ConvDBN(Model):
             epochs: Number of training epochs per layer.
 
         Returns:
-            (float): MSE (mean squared error) from the training step.
+            MSE (mean squared error) from the training step.
 
         """
 
@@ -291,19 +299,19 @@ class ConvDBN(Model):
 
         mse = []
 
-        try: 
+        try:
             samples, targets, transform = (
-                    dataset.data.numpy(),
-                    dataset.targets.numpy(),
-                    dataset.transform,
+                dataset.data.numpy(),
+                dataset.targets.numpy(),
+                dataset.transform,
             )
             d = Dataset(samples, targets, transform)
         except:
             try:
                 samples, targets, transform = (
-                        dataset.data,
-                        dataset.targets,
-                        dataset.transform,
+                    dataset.data,
+                    dataset.targets,
+                    dataset.transform,
                 )
                 d = Dataset(samples, targets, transform)
             except:
@@ -313,16 +321,17 @@ class ConvDBN(Model):
         for i, model in enumerate(self.models):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
-            if i ==0:
+            if i == 0:
                 model_mse = model.fit(d, batch_size, epochs[i])
                 mse.append(model_mse)
-            else:                
-                # creating the training phase for deeper models
+            else:
+                # Creates the training phase for deeper models
                 for ep in range(epochs[i]):
                     logger.info("Epoch %d/%d", ep + 1, epochs[i])
-                    model_mse = 0
-                    for step, (samples, y) in enumerate(batches):
 
+                    model_mse = 0
+
+                    for _, (samples, y) in enumerate(batches):
                         if self.device == "cuda":
                             samples = samples.cuda()
 
@@ -331,14 +340,16 @@ class ConvDBN(Model):
                             if self.maxpooling[ii]:
                                 samples = self.maxpol2d[ii](samples)
 
-                        # Creating the dataset to ''mini-fit'' the i-th model                        
+                        # Creating the dataset to "mini-fit" the i-th model
                         ds = Dataset(samples, y, None, show_log=False)
+
                         # Fiting the model with the batch
                         model_mse += model.fit(ds, samples.size(0), 1)
 
-                    model_mse/=len(batches)
+                    model_mse /= len(batches)
                     logger.info("MSE: %f", model_mse)
-                mse.append(model_mse)                
+
+                mse.append(model_mse)
 
         return mse
 
@@ -351,7 +362,7 @@ class ConvDBN(Model):
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
 
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -401,15 +412,17 @@ class ConvDBN(Model):
             x: An input tensor for computing the forward pass.
 
         Returns:
-            (torch.Tensor): A tensor containing the ConvDBN's outputs.
+            A tensor containing the ConvDBN's outputs.
 
         """
 
         i = 0
         for model in self.models:
             x, _ = model.hidden_sampling(x)
+
             if self.maxpooling[i]:
                 x = self.maxpol2d[i](x)
-            i+=1
+
+            i += 1
 
         return x

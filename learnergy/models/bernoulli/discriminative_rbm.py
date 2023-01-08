@@ -132,7 +132,7 @@ class DiscriminativeRBM(RBM):
             samples: Samples to be labels-calculated.
 
         Returns:
-            (torch.Tensor): Labels' probabilities based on input samples.
+            Labels' probabilities based on input samples.
 
         """
 
@@ -164,7 +164,7 @@ class DiscriminativeRBM(RBM):
             epochs: Number of training epochs.
 
         Returns:
-            (Tuple[float, float]): Loss and accuracy from the training step.
+            Loss and accuracy from the training step.
 
         """
 
@@ -223,7 +223,7 @@ class DiscriminativeRBM(RBM):
             dataset: A Dataset object containing the testing data.
 
         Returns:
-            (Tuple[float, torch.Tensor, torch.Tensor]): Accuracy, prediction probabilities and labels, i.e., P(y|v).
+            Accuracy, prediction probabilities and labels, i.e., P(y|v).
 
         """
 
@@ -334,7 +334,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -356,7 +356,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             h: A tensor incoming from the hidden layer.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the class layer sampling.
+            The probabilities and states of the class layer sampling.
 
         """
 
@@ -378,7 +378,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             y: A tensor incoming from the class layer.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling (positive),
+            The probabilities and states of the hidden layer sampling (positive),
                 the probabilities and states of the hidden layer sampling (negative)
                 and the states of the visible layer sampling (negative).
 
@@ -420,7 +420,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             epochs: Number of training epochs.
 
         Returns:
-            (Tuple[float, float]): Loss and accuracy from the training step.
+            Loss and accuracy from the training step.
 
         """
 

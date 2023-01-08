@@ -52,10 +52,10 @@ h2 = model.hidden_shape[1]
 nf = model.n_filters
 
 if model.maxpooling:
-    input_fc = nf * (h1//2 + 1) * (h2//2 + 1)
+    input_fc = nf * (h1 // 2 + 1) * (h2 // 2 + 1)
 else:
     input_fc = nf * h1 * h2
-fc = nn.Linear(input_fc , n_classes)
+fc = nn.Linear(input_fc, n_classes)
 
 # Check if model uses GPU
 if model.device == "cuda":
@@ -99,8 +99,7 @@ for e in range(fine_tune_epochs):
         y = model(x_batch)
 
         # Reshaping the outputs
-        y = y.reshape(
-            x_batch.size(0), input_fc)
+        y = y.reshape(x_batch.size(0), input_fc)
 
         # Calculating the fully-connected outputs
         y = fc(y)
@@ -131,8 +130,7 @@ for e in range(fine_tune_epochs):
         y = model(x_batch)
 
         # Reshaping the outputs
-        y = y.reshape(
-            x_batch.size(0), input_fc)
+        y = y.reshape(x_batch.size(0), input_fc)
 
         # Calculating the fully-connected outputs
         y = fc(y)

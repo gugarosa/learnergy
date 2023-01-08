@@ -231,7 +231,7 @@ class RBM(Model):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (torch.Tensor): An input for any type of activation function.
+            An input for any type of activation function.
 
         """
 
@@ -252,7 +252,7 @@ class RBM(Model):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (torch.Tensor): The probabilities and states of the hidden layer sampling.
+            The probabilities and states of the hidden layer sampling.
 
         """
 
@@ -277,7 +277,7 @@ class RBM(Model):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            (torch.Tensor): The probabilities and states of the visible layer sampling.
+            The probabilities and states of the visible layer sampling.
 
         """
 
@@ -301,7 +301,7 @@ class RBM(Model):
             v: A tensor incoming from the visible layer.
 
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling (positive),
+            The probabilities and states of the hidden layer sampling (positive),
                 the probabilities and states of the hidden layer sampling (negative)
                 and the states of the visible layer sampling (negative).
 
@@ -332,7 +332,7 @@ class RBM(Model):
             samples: Samples to be energy-freed.
 
         Returns:
-            (torch.Tensor): The system's energy based on input samples.
+            The system's energy based on input samples.
 
         """
 
@@ -355,7 +355,7 @@ class RBM(Model):
             samples: Samples to be calculated.
 
         Returns:
-            (torch.Tensor): The logarithm of the pseudo-likelihood based on input samples.
+            The logarithm of the pseudo-likelihood based on input samples.
 
         """
 
@@ -395,7 +395,7 @@ class RBM(Model):
             epochs: Number of training epochs.
 
         Returns:
-            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -456,7 +456,7 @@ class RBM(Model):
             dataset: A Dataset object containing the testing data.
 
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
+            Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -495,7 +495,7 @@ class RBM(Model):
             x: An input tensor for computing the forward pass.
 
         Returns:
-            (torch.Tensor): A tensor containing the RBM's outputs.
+            A tensor containing the RBM's outputs.
 
         """
 

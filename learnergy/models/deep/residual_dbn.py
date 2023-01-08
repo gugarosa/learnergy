@@ -48,8 +48,8 @@ class ResidualDBN(DBN):
             momentum (tuple): Momentum parameter per layer.
             decay (tuple): Weight decay used for penalization per layer.
             temperature (tuple): Temperature factor per layer.
-            zetta1 (float): Penalization factor for original learning.
-            zetta2 (float): Penalization factor for residual learning.
+            zetta1 Penalization factor for original learning.
+            zetta2 Penalization factor for residual learning.
             use_gpu (boolean): Whether GPU should be used or not.
 
         """
@@ -101,10 +101,10 @@ class ResidualDBN(DBN):
         """Calculates the residual learning over input.
 
         Args:
-            pre_activations (torch.Tensor): Pre-activations to be used.
+            pre_activations Pre-activations to be used.
 
         Returns:
-            (torch.Tensor): The residual learning based on input pre-activations.
+            The residual learning based on input pre-activations.
 
         """
 
@@ -127,7 +127,7 @@ class ResidualDBN(DBN):
             epochs: Number of training epochs per layer.
 
         Returns:
-            (Tuple[float, float]): MSE (mean squared error) and log pseudo-likelihood from the training step.
+            MSE (mean squared error) and log pseudo-likelihood from the training step.
 
         """
 
@@ -187,7 +187,7 @@ class ResidualDBN(DBN):
             x: An input tensor for computing the forward pass.
 
         Returns:
-            (torch.Tensor): A tensor containing the DBN's outputs.
+            A tensor containing the DBN's outputs.
 
         """
 
