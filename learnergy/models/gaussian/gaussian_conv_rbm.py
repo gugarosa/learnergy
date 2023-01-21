@@ -6,13 +6,14 @@ from typing import Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from tqdm import tqdm
 
-import learnergy.utils.constants as c
-import learnergy.utils.exception as e
-from learnergy.models.bernoulli import ConvRBM
+from tqdm import tqdm
+from torch.utils.data import DataLoader
+
 from learnergy.utils import logging
+import learnergy.utils.constants as c
+#import learnergy.utils.exception as e
+from learnergy.models.bernoulli import ConvRBM
 
 logger = logging.get_logger(__name__)
 
@@ -75,9 +76,6 @@ class GaussianConvRBM(ConvRBM):
 
         self.normalize = True
 
-        # Creating a Sigmoid function to employ on sampling
-        self.sig = torch.nn.Sigmoid()
-
         logger.info("Class overrided.")
 
     @property
@@ -94,17 +92,17 @@ class GaussianConvRBM(ConvRBM):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v A tensor incoming from the visible layer.
+            v (torch.Tensor): A tensor incoming from the visible layer.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
         activations = F.conv2d(v, self.W, bias=self.b)
         probs = F.relu6(activations).detach()
 
-        return probs, probs
+        return probs, activations
 
     def visible_sampling(self, h: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
@@ -113,20 +111,20 @@ class GaussianConvRBM(ConvRBM):
             h: A tensor incoming from the hidden layer.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
 
         """
 
-        activations = F.conv_transpose2d(h, self.W, bias=self.a)
+        activations = F.conv_transpose2d(h, self.W, bias=self.a).detach()
 
         if self.normalize:
             # Uses the previously calculated activations
-            probs = activations.detach()
+            probs = activations#.detach()
         else:
-            # probs = F.relu6(activations).detach()
+            #probs = F.relu6(activations).detach()
             probs = self.sig(activations).detach()
 
-        return probs, probs
+        return probs, activations
 
     def fit(
         self,
@@ -142,7 +140,7 @@ class GaussianConvRBM(ConvRBM):
             epochs: Number of training epochs.
 
         Returns:
-            MSE (mean squared error) from the training step.
+            (float): MSE (mean squared error) from the training step.
 
         """
 
@@ -199,6 +197,26 @@ class GaussianConvRBM(ConvRBM):
 
         return mse
 
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Performs a forward pass over the data.
+
+        Args:
+            x: An input tensor for computing the forward pass.
+
+        Returns:
+            (torch.Tensor): A tensor containing the Convolutional RBM's outputs.
+
+        """
+
+        if self.normalize:
+            x = (x - torch.mean(x, 0, True)) / (
+                        torch.std(x, 0, True) + c.EPSILON)
+        x, _ = self.hidden_sampling(x)
+        if self.maxpooling:
+            x = self.maxpol2d(x)
+
+        return x           
+
 
 class GaussianConvRBM4Deep(ConvRBM):
     """A GaussianConvRBM class provides the basic implementation for
@@ -236,13 +254,11 @@ class GaussianConvRBM4Deep(ConvRBM):
             learning_rate: Learning rate.
             momentum: Momentum parameter.
             decay: Weight decay used for penalization.
-            maxpooling: Whether MaxPooling2D should be used or not.
-            pooling_kernel: Pooling kernel size.
             use_gpu: Whether GPU should be used or not.
 
         """
 
-        logger.info("Overriding class: ConvRBM -> GaussianConvRBM4Deep.")
+        logger.info("Overriding class: ConvRBM -> GaussianConvRBM.")
 
         super(GaussianConvRBM4Deep, self).__init__(
             visible_shape,
@@ -260,7 +276,7 @@ class GaussianConvRBM4Deep(ConvRBM):
 
         self.normalize = True
 
-        # Creates a Sigmoid function to employ on sampling
+        # Creating a Sigmoid function to employ on sampling
         self.sig = torch.nn.Sigmoid()
 
         logger.info("Class overrided.")
@@ -279,17 +295,17 @@ class GaussianConvRBM4Deep(ConvRBM):
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
-            v A tensor incoming from the visible layer.
+            v (torch.Tensor): A tensor incoming from the visible layer.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
 
         activations = F.conv2d(v, self.W, bias=self.b)
         probs = F.relu6(activations).detach()
 
-        return probs, probs
+        return probs, activations
 
     def visible_sampling(self, h: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
@@ -298,7 +314,7 @@ class GaussianConvRBM4Deep(ConvRBM):
             h: A tensor incoming from the hidden layer.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
 
         """
 
@@ -309,8 +325,9 @@ class GaussianConvRBM4Deep(ConvRBM):
             probs = activations.detach()
         else:
             probs = F.relu6(activations).detach()
-
-        return probs, probs
+            #probs = self.sig(activations).detach()
+        # must return prob, state
+        return probs, activations
 
     def fit(
         self,
@@ -326,7 +343,7 @@ class GaussianConvRBM4Deep(ConvRBM):
             epochs: Number of training epochs.
 
         Returns:
-            MSE (mean squared error) from the training step.
+            (float): MSE (mean squared error) from the training step.
 
         """
 
@@ -335,11 +352,11 @@ class GaussianConvRBM4Deep(ConvRBM):
         )
 
         for epoch in range(epochs):
-            logger.info("Epoch %d/%d", epoch + 1, epochs)
+            #logger.info("Epoch %d/%d", epoch + 1, epochs)
 
             start = time.time()
 
-            mse = 0
+            mse = 0            
 
             for _, (samples, _) in enumerate(batches):
                 samples = samples.reshape(
@@ -379,6 +396,26 @@ class GaussianConvRBM4Deep(ConvRBM):
 
             self.dump(mse=mse.item(), time=end - start)
 
-            logger.info("MSE: %f", mse)
+            #logger.info("MSE: %f", mse)
 
         return mse
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Performs a forward pass over the data.
+
+        Args:
+            x: An input tensor for computing the forward pass.
+
+        Returns:
+            (torch.Tensor): A tensor containing the Convolutional RBM's outputs.
+
+        """
+
+        if self.normalize:
+            x = (x - torch.mean(x, 0, True)) / (
+                        torch.std(x, 0, True) + c.EPSILON)
+        x, _ = self.hidden_sampling(x)
+        if self.maxpooling:
+            x = self.maxpol2d(x)
+
+        return x        
