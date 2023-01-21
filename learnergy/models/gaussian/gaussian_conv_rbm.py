@@ -39,6 +39,8 @@ class GaussianConvRBM(ConvRBM):
         learning_rate: Optional[float] = 0.1,
         momentum: Optional[float] = 0.0,
         decay: Optional[float] = 0.0,
+        maxpooling: Optional[bool] = False,
+        pooling_kernel: Optional[int] = 2,
         use_gpu: Optional[bool] = False,
     ) -> None:
         """Initialization method.
@@ -67,6 +69,8 @@ class GaussianConvRBM(ConvRBM):
             learning_rate,
             momentum,
             decay,
+            maxpooling,
+            pooling_kernel,
             use_gpu,
         )
 
@@ -117,7 +121,8 @@ class GaussianConvRBM(ConvRBM):
             # Uses the previously calculated activations
             probs = activations#.detach()
         else:
-            probs = F.relu6(activations).detach()
+            #probs = F.relu6(activations).detach()
+            probs = self.sig(activations).detach()
 
         return probs, activations
 
@@ -191,8 +196,6 @@ class GaussianConvRBM(ConvRBM):
             logger.info("MSE: %f", mse)
 
         return mse
-<<<<<<< Updated upstream
-=======
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the data.
@@ -215,7 +218,7 @@ class GaussianConvRBM(ConvRBM):
         return x           
 
 
-class GaussianConvRBM4deep(ConvRBM):
+class GaussianConvRBM4Deep(ConvRBM):
     """A GaussianConvRBM class provides the basic implementation for
     Gaussian-based Convolutional Restricted Boltzmann Machines.
 
@@ -257,7 +260,7 @@ class GaussianConvRBM4deep(ConvRBM):
 
         logger.info("Overriding class: ConvRBM -> GaussianConvRBM.")
 
-        super(GaussianConvRBM4deep, self).__init__(
+        super(GaussianConvRBM4Deep, self).__init__(
             visible_shape,
             filter_shape,
             n_filters,
@@ -416,4 +419,3 @@ class GaussianConvRBM4deep(ConvRBM):
             x = self.maxpol2d(x)
 
         return x        
->>>>>>> Stashed changes

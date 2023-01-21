@@ -21,12 +21,10 @@ logger = logging.get_logger(__name__)
 class ConvRBM(Model):
     """A ConvRBM class provides the basic implementation for
     Convolutional Bernoulli-Bernoulli Restricted Boltzmann Machines.
-
     References:
         H. Lee, et al.
         Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations.
         Proceedings of the 26th annual international conference on machine learning (2009).
-
     """
 
     def __init__(
@@ -39,10 +37,11 @@ class ConvRBM(Model):
         learning_rate: Optional[float] = 0.1,
         momentum: Optional[float] = 0.0,
         decay: Optional[float] = 0.0,
+        maxpooling: Optional[bool] = False,
+        pooling_kernel: Optional[int] = 2,
         use_gpu: Optional[bool] = False,
     ) -> None:
         """Initialization method.
-
         Args:
             visible_shape: Shape of visible units.
             filter_shape: Shape of filters.
@@ -52,8 +51,9 @@ class ConvRBM(Model):
             learning_rate: Learning rate.
             momentum: Momentum parameter.
             decay: Weight decay used for penalization.
+            maxpooling: Whether MaxPooling2D should be used or not.
+            pooling_kernel: The kernel size of MaxPooling2D layer (when maxpooling=True).
             use_gpu: Whether GPU should be used or not.
-
         """
 
         logger.info("Overriding class: Model -> ConvRBM.")
@@ -75,6 +75,15 @@ class ConvRBM(Model):
         self.momentum = momentum
         self.decay = decay
 
+        if maxpooling:
+            self.maxpol2d = nn.MaxPool2d(
+                kernel_size=pooling_kernel, stride=2, padding=1
+            )
+            self.maxpooling = True
+        else:
+            self.maxpol2d = maxpooling
+            self.maxpooling = False
+
         self.W = nn.Parameter(
             torch.randn(n_filters, n_channels, filter_shape[0], filter_shape[1]) * 0.01
         )
@@ -92,7 +101,8 @@ class ConvRBM(Model):
         logger.debug(
             "Visible: %s | Filters: %d x %s | Hidden: %s | "
             "Channels: %d | Learning: CD-%d | "
-            "Hyperparameters: lr = %s, momentum = %s, decay = %s.",
+            "Hyperparameters: lr = %s, momentum = %s, decay = %s | "
+            "Pooling: MaxPooling2D = %s: (%s, %s).",
             self.visible_shape,
             self.n_filters,
             self.filter_shape,
@@ -102,6 +112,9 @@ class ConvRBM(Model):
             self.lr,
             self.momentum,
             self.decay,
+            self.maxpooling,
+            pooling_kernel,
+            pooling_kernel,
         )
 
     @property
@@ -218,6 +231,19 @@ class ConvRBM(Model):
         self._decay = decay
 
     @property
+    def maxpooling(self) -> bool:
+        """Usage of MaxPooling2D."""
+
+        return self._maxpooling
+
+    @maxpooling.setter
+    def maxpooling(self, maxpooling: bool) -> None:
+        if type(maxpooling) != bool:
+            raise e.ValueError("`maxpooling` should be True or False")
+
+        self._maxpooling = maxpooling
+
+    @property
     def W(self) -> torch.nn.Parameter:
         """Filters' matrix."""
 
@@ -259,13 +285,10 @@ class ConvRBM(Model):
 
     def hidden_sampling(self, v: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
-
         Args:
             v: A tensor incoming from the visible layer.
-
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
-
+            The probabilities and states of the hidden layer sampling.
         """
 
         activations = F.conv2d(v, self.W, bias=self.b)
@@ -276,13 +299,10 @@ class ConvRBM(Model):
 
     def visible_sampling(self, h: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
-
         Args:
             h: A tensor incoming from the hidden layer.
-
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
-
+            The probabilities and states of the visible layer sampling.
         """
 
         activations = F.conv_transpose2d(h, self.W, bias=self.a)
@@ -295,15 +315,12 @@ class ConvRBM(Model):
         self, v: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Performs the whole Gibbs sampling procedure.
-
         Args:
             v: A tensor incoming from the visible layer.
-
         Returns:
-            (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling (positive),
+            The probabilities and states of the hidden layer sampling (positive),
                 the probabilities and states of the hidden layer sampling (negative)
                 and the states of the visible layer sampling (negative).
-
         """
 
         # Calculating positive phase hidden probabilities and states
@@ -330,13 +347,10 @@ class ConvRBM(Model):
 
     def energy(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates and frees the system's energy.
-
         Args:
             samples: Samples to be energy-freed.
-
         Returns:
-            (torch.Tensor): The system's energy based on input samples.
-
+            The system's energy based on input samples.
         """
 
         activations = F.conv2d(samples, self.W, bias=self.b)
@@ -358,15 +372,12 @@ class ConvRBM(Model):
         epochs: Optional[int] = 10,
     ) -> float:
         """Fits a new ConvRBM model.
-
         Args:
             dataset: A Dataset object containing the training data.
             batch_size: Amount of samples per batch.
             epochs: Number of training epochs.
-
         Returns:
-            (float): MSE (mean squared error) from the training step.
-
+            MSE (mean squared error) from the training step.
         """
 
         batches = DataLoader(
@@ -422,13 +433,10 @@ class ConvRBM(Model):
         self, dataset: torch.utils.data.Dataset
     ) -> Tuple[float, torch.Tensor]:
         """Reconstructs batches of new samples.
-
         Args:
             dataset: A Dataset object containing the testing data.
-
         Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
-
+            Reconstruction error and visible probabilities, i.e., P(v|h).
         """
 
         logger.info("Reconstructing new samples ...")
@@ -466,15 +474,14 @@ class ConvRBM(Model):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the data.
-
         Args:
             x: An input tensor for computing the forward pass.
-
         Returns:
-            (torch.Tensor): A tensor containing the Convolutional RBM's outputs.
-
+            A tensor containing the Convolutional RBM's outputs.
         """
 
         x, _ = self.hidden_sampling(x)
+        if self.maxpooling:
+            x = self.maxpol2d(x)
 
         return x

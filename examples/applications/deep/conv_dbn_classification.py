@@ -8,24 +8,24 @@ from torch.utils.data import DataLoader
 from learnergy.models.deep import ConvDBN
 
 # Creating training and testing dataset
-train = torchvision.datasets.CIFAR10(
+train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
     download=True,
     transform=torchvision.transforms.ToTensor(),
 )
-test = torchvision.datasets.CIFAR10(
+test = torchvision.datasets.MNIST(
     root="./data",
     train=False,
     download=True,
     transform=torchvision.transforms.ToTensor(),
 )
 
-vshape = 32
-channels = 3
+vshape = 28
+channels = 1
 # Creating a ConvDBN
 model = ConvDBN(
-    model="gaussian",
+    model="bernoulli",
     visible_shape=(vshape, vshape),
     filter_shape=((3, 3), (5, 5)),
     n_filters=(32, 32),
@@ -66,7 +66,7 @@ nf = model.models[len(model.models)-1].n_filters
 
 if model.models[len(model.models)-1].maxpooling:    
     input_fc = nf * (h1//2 + 1) * (h2//2 + 1)
-    print('pooling', input_fc)
+    print('Pooling:', input_fc)
 else:
     input_fc = nf * h1 * h2
 fc = nn.Linear(input_fc , n_classes)

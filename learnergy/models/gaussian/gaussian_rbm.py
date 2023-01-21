@@ -617,8 +617,6 @@ class VarianceGaussianRBM(RBM):
         energy = -v - h
 
         return energy
-<<<<<<< Updated upstream
-=======
 
 class GaussianRBM4deep(GaussianRBM):
     """A GaussianRBM class provides the basic implementation for
@@ -840,4 +838,3 @@ class GaussianReluRBM4deep(GaussianRBM4deep):
         states = probs
 
         return probs, states
->>>>>>> Stashed changes
