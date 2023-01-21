@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as e
+#import learnergy.utils.constants as c
 from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import ConvRBM
 from learnergy.models.gaussian import GaussianConvRBM, GaussianConvRBM4Deep
@@ -16,11 +17,7 @@ from learnergy.utils import logging
 
 logger = logging.get_logger(__name__)
 
-MODELS = {
-    "bernoulli": ConvRBM,
-    "gaussian": GaussianConvRBM,
-    "gaussiandeep": GaussianConvRBM4Deep,
-}
+MODELS = {"bernoulli": ConvRBM, "gaussian": GaussianConvRBM, "gaussiandeep": GaussianConvRBM4Deep}
 
 
 class ConvDBN(Model):
@@ -41,11 +38,11 @@ class ConvDBN(Model):
         n_filters: Optional[Tuple[int, ...]] = (16,),
         n_channels: Optional[int] = 1,
         steps: Optional[Tuple[int, ...]] = (1,),
-        learning_rate: Optional[Tuple[float, ...]] = (0.0001,),
+        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
         momentum: Optional[Tuple[float, ...]] = (0.0,),
         decay: Optional[Tuple[float, ...]] = (0.0,),
-        maxpooling: Optional[Tuple[bool, ...]] = (False,),
-        pooling_kernel: Optional[Tuple[int, ...]] = (2,),
+        maxpooling: Optional[Tuple[bool,...]] = (False, False),
+        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2,),
         use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
@@ -60,8 +57,6 @@ class ConvDBN(Model):
             learning_rate: Learning rate per layer.
             momentum: Momentum parameter per layer.
             decay: Weight decay used for penalization per layer.
-            maxpooling: Whether MaxPooling2D should be used or not.
-            pooling_kernel: The kernel size of each square-sized MaxPooling2D layer (when maxpooling=True).
             use_gpu: Whether GPU should be used or not.
 
         """
@@ -81,23 +76,27 @@ class ConvDBN(Model):
         self.lr = learning_rate
         self.momentum = momentum
         self.decay = decay
+        self.decay = decay        
 
         self.maxpooling = maxpooling
         self.maxpol2d = []
 
+        if len(pooling_kernel) < self.n_layers:
+            pooling_kernel = list(pooling_kernel)
+            for _ in range(len(pooling_kernel)-1, self.n_layers):
+                pooling_kernel.append(2)
+            pooling_kernel = tuple(pooling_kernel)
+
         for i, mx in enumerate(maxpooling):
             if mx:
-                self.maxpol2d.append(
-                    nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1)
-                )
+                self.maxpol2d.append(nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1))
             else:
                 self.maxpol2d.append(None)
 
         self.models = []
         for i in range(self.n_layers):
-
-            if i > 0 and model == "gaussian":
-                m = MODELS["gaussiandeep"](
+            if i == 0 and model=='gaussian' :
+                m = MODELS[model](
                     visible_shape,
                     self.filter_shape[i],
                     self.n_filters[i],
@@ -110,8 +109,20 @@ class ConvDBN(Model):
                     pooling_kernel[i],
                     use_gpu,
                 )
-            else:
+            elif i == 0 and model == 'bernoulli':
                 m = MODELS[model](
+                    visible_shape,
+                    self.filter_shape[i],
+                    self.n_filters[i],
+                    n_channels,
+                    self.steps[i],
+                    self.lr[i],
+                    self.momentum[i],
+                    self.decay[i],
+                    use_gpu,
+                )
+            if i > 0:
+                m = MODELS['gaussiandeep'](
                     visible_shape,
                     self.filter_shape[i],
                     self.n_filters[i],
@@ -135,7 +146,7 @@ class ConvDBN(Model):
                     (m.hidden_shape[0] // 2) + 1,
                     (m.hidden_shape[1] // 2) + 1,
                 )
-
+            
             n_channels = self.n_filters[i]
 
             self.models.append(m)
@@ -254,19 +265,6 @@ class ConvDBN(Model):
         self._decay = decay
 
     @property
-    def maxpooling(self) -> Tuple[bool, ...]:
-        """Usage of MaxPooling2D."""
-
-        return self._maxpooling
-
-    @maxpooling.setter
-    def maxpooling(self, maxpooling: Tuple[bool, ...]) -> None:
-        if len(maxpooling) != self.n_layers:
-            raise e.SizeError(f"`maxpooling` should have size equal as {self.n_layers}")
-
-        self._maxpooling = maxpooling
-
-    @property
     def models(self) -> List[torch.nn.Module]:
         """List of models (RBMs)."""
 
@@ -290,7 +288,7 @@ class ConvDBN(Model):
             epochs: Number of training epochs per layer.
 
         Returns:
-            MSE (mean squared error) from the training step.
+            (float): MSE (mean squared error) from the training step.
 
         """
 
@@ -316,6 +314,7 @@ class ConvDBN(Model):
                 d = Dataset(samples, targets, transform)
             except:
                 d = dataset
+
         batches = DataLoader(d, batch_size=batch_size, shuffle=True)
 
         for i, model in enumerate(self.models):
@@ -349,7 +348,7 @@ class ConvDBN(Model):
                     model_mse /= len(batches)
                     logger.info("MSE: %f", model_mse)
 
-                mse.append(model_mse)
+                mse.append(model_mse)            
 
         return mse
 
@@ -362,7 +361,7 @@ class ConvDBN(Model):
             dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
 
         """
 
@@ -407,13 +406,10 @@ class ConvDBN(Model):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the data.
-
         Args:
             x: An input tensor for computing the forward pass.
-
         Returns:
             A tensor containing the ConvDBN's outputs.
-
         """
 
         i = 0
