@@ -76,6 +76,9 @@ class GaussianConvRBM(ConvRBM):
 
         self.normalize = True
 
+        # Creating a Sigmoid function to employ on sampling
+        self.sig = torch.nn.Sigmoid()
+
         logger.info("Class overrided.")
 
     @property

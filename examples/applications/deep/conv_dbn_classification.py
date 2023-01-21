@@ -8,13 +8,13 @@ from torch.utils.data import DataLoader
 from learnergy.models.deep import ConvDBN
 
 # Creating training and testing dataset
-train = torchvision.datasets.MNIST(
+train = torchvision.datasets.FashionMNIST(
     root="./data",
     train=True,
     download=True,
     transform=torchvision.transforms.ToTensor(),
 )
-test = torchvision.datasets.MNIST(
+test = torchvision.datasets.FashionMNIST(
     root="./data",
     train=False,
     download=True,
@@ -25,7 +25,7 @@ vshape = 28
 channels = 1
 # Creating a ConvDBN
 model = ConvDBN(
-    model="bernoulli",
+    model="gaussian",
     visible_shape=(vshape, vshape),
     filter_shape=((3, 3), (5, 5)),
     n_filters=(32, 32),
