@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import learnergy.utils.exception as e
+#import learnergy.utils.constants as c
 from learnergy.core import Dataset, Model
 from learnergy.models.bernoulli import ConvRBM
 from learnergy.models.gaussian import GaussianConvRBM
@@ -39,6 +40,11 @@ class ConvDBN(Model):
         learning_rate: Optional[Tuple[float, ...]] = (0.1,),
         momentum: Optional[Tuple[float, ...]] = (0.0,),
         decay: Optional[Tuple[float, ...]] = (0.0,),
+<<<<<<< Updated upstream
+=======
+        maxpooling: Optional[Tuple[bool,...]] = (False, False),
+        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2,),
+>>>>>>> Stashed changes
         use_gpu: Optional[bool] = False,
     ):
         """Initialization method.
@@ -71,7 +77,26 @@ class ConvDBN(Model):
         self.steps = steps
         self.lr = learning_rate
         self.momentum = momentum
+<<<<<<< Updated upstream
         self.decay = decay
+=======
+        self.decay = decay        
+
+        self.maxpooling = maxpooling
+        self.maxpol2d = []
+
+        if len(pooling_kernel) < self.n_layers:
+            pooling_kernel = list(pooling_kernel)
+            for _ in range(len(pooling_kernel)-1, self.n_layers):
+                pooling_kernel.append(2)
+            pooling_kernel = tuple(pooling_kernel)
+
+        for i, mx in enumerate(maxpooling):
+            if mx:
+                self.maxpol2d.append(nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1))
+            else:
+                self.maxpol2d.append(None)
+>>>>>>> Stashed changes
 
         self.models = []
         for i in range(self.n_layers):
@@ -250,6 +275,7 @@ class ConvDBN(Model):
         for i, model in enumerate(self.models):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
+<<<<<<< Updated upstream
             d = Dataset(samples, targets, transform)
 
             model_mse = model.fit(d, batch_size, epochs[i])
@@ -276,6 +302,32 @@ class ConvDBN(Model):
             if self.device == "cuda":
                 samples = samples.cpu()
             samples = samples.detach()
+=======
+            if i ==0:
+                model_mse = model.fit(d, batch_size, epochs[i])
+                mse.append(model_mse)
+            else:                
+                # creating the training phase for deeper models
+                for ep in range(epochs[i]):
+                    logger.info("Epoch %d/%d", ep + 1, epochs[i])
+                    model_mse = 0
+                    for step, (samples, y) in enumerate(batches):
+
+                        if self.device == "cuda":
+                            samples = samples.cuda()
+
+                        for ii in range(i):
+                            samples = self.models[ii].forward(samples)
+
+                        # Creating the dataset to ''mini-fit'' the i-th model
+                        ds = Dataset(samples, y, None, show_log=False)
+                        # Fiting the model with the batch
+                        model_mse += model.fit(ds, samples.size(0), 1)
+
+                    model_mse/=len(batches)
+                    logger.info("MSE: %f", model_mse)
+                mse.append(model_mse)                
+>>>>>>> Stashed changes
 
         return mse
 
@@ -343,6 +395,10 @@ class ConvDBN(Model):
         """
 
         for model in self.models:
+<<<<<<< Updated upstream
             x, _ = model.hidden_sampling(x)
+=======
+            x = model.forward(x)
+>>>>>>> Stashed changes
 
         return x
