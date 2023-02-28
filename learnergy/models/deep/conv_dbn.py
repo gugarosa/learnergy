@@ -279,6 +279,7 @@ class ConvDBN(Model):
         dataset: Union[torch.utils.data.Dataset, Dataset],
         batch_size: Optional[int] = 128,
         epochs: Optional[Tuple[int, ...]] = (10, 10),
+        log: Optional[bool]=True,
     ) -> float:
         """Fits a new ConvDBN model.
 
@@ -286,6 +287,7 @@ class ConvDBN(Model):
             dataset: A Dataset object containing the training data.
             batch_size: Amount of samples per batch.
             epochs: Number of training epochs per layer.
+            log: To show or not to show the training progress.
 
         Returns:
             (float): MSE (mean squared error) from the training step.
@@ -321,16 +323,19 @@ class ConvDBN(Model):
             logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
             if i == 0:
-                model_mse = model.fit(d, batch_size, epochs[i])
+                model_mse = model.fit(d, batch_size, epochs[i], log)
                 mse.append(model_mse)
             else:
+                disable = False
+                if not log:
+                    disable = True
                 # Creates the training phase for deeper models
                 for ep in range(epochs[i]):
                     logger.info("Epoch %d/%d", ep + 1, epochs[i])
 
                     model_mse = 0
 
-                    for _, (samples, y) in enumerate(batches):
+                    for samples, y in tqdm(batches, disable=disable):
                         if self.device == "cuda":
                             samples = samples.cuda()
 

@@ -76,9 +76,6 @@ class GaussianConvRBM(ConvRBM):
 
         self.normalize = True
 
-        # Creating a Sigmoid function to employ on sampling
-        self.sig = torch.nn.Sigmoid()
-
         logger.info("Class overrided.")
 
     @property
@@ -125,7 +122,7 @@ class GaussianConvRBM(ConvRBM):
             probs = activations#.detach()
         else:
             #probs = F.relu6(activations).detach()
-            probs = self.sig(activations).detach()
+            probs = torch.sigmoid(activations).detach()
 
         return probs, activations
 
@@ -134,6 +131,7 @@ class GaussianConvRBM(ConvRBM):
         dataset: torch.utils.data.Dataset,
         batch_size: Optional[int] = 128,
         epochs: Optional[int] = 10,
+        log: Optional[bool]=False,
     ) -> float:
         """Fits a new GaussianConvRBM model.
 
@@ -141,6 +139,7 @@ class GaussianConvRBM(ConvRBM):
             dataset: A Dataset object containing the training data.
             batch_size: Amount of samples per batch.
             epochs: Number of training epochs.
+            log: To show or not to show the training progress.
 
         Returns:
             (float): MSE (mean squared error) from the training step.
@@ -151,14 +150,18 @@ class GaussianConvRBM(ConvRBM):
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
 
+        disable = False
+        if not log:
+            disable = True
+
         for epoch in range(epochs):
-            logger.info("Epoch %d/%d", epoch + 1, epochs)
+            if log:
+                logger.info("Epoch %d/%d", epoch + 1, epochs)
 
             start = time.time()
-
             mse = 0
 
-            for samples, _ in tqdm(batches):
+            for samples, _ in tqdm(batches, disable=disable):
                 samples = samples.reshape(
                     len(samples),
                     self.n_channels,
@@ -196,7 +199,8 @@ class GaussianConvRBM(ConvRBM):
 
             self.dump(mse=mse.item(), time=end - start)
 
-            logger.info("MSE: %f", mse)
+            if log:
+                logger.info("MSE: %f", mse)
 
         return mse
 
@@ -279,9 +283,6 @@ class GaussianConvRBM4Deep(ConvRBM):
 
         self.normalize = True
 
-        # Creating a Sigmoid function to employ on sampling
-        self.sig = torch.nn.Sigmoid()
-
         logger.info("Class overrided.")
 
     @property
@@ -328,7 +329,7 @@ class GaussianConvRBM4Deep(ConvRBM):
             probs = activations.detach()
         else:
             probs = F.relu6(activations).detach()
-            #probs = self.sig(activations).detach()
+            #probs = torch.sigmoid(activations).detach()
         # must return prob, state
         return probs, activations
 
@@ -337,6 +338,7 @@ class GaussianConvRBM4Deep(ConvRBM):
         dataset: torch.utils.data.Dataset,
         batch_size: Optional[int] = 128,
         epochs: Optional[int] = 10,
+        log: Optional[bool]=False,
     ) -> float:
         """Fits a new GaussianConvRBM model.
 
@@ -344,6 +346,7 @@ class GaussianConvRBM4Deep(ConvRBM):
             dataset: A Dataset object containing the training data.
             batch_size: Amount of samples per batch.
             epochs: Number of training epochs.
+            log: To show or not to show the training progress.
 
         Returns:
             (float): MSE (mean squared error) from the training step.
@@ -353,15 +356,18 @@ class GaussianConvRBM4Deep(ConvRBM):
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
+        disable = False
+        if not log:
+            disable = True
 
         for epoch in range(epochs):
             #logger.info("Epoch %d/%d", epoch + 1, epochs)
 
             start = time.time()
 
-            mse = 0            
+            mse = 0
 
-            for _, (samples, _) in enumerate(batches):
+            for samples, _ in tqdm(batches, disable=disable):
                 samples = samples.reshape(
                     len(samples),
                     self.n_channels,

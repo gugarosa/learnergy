@@ -48,7 +48,7 @@ fine_tune_epochs = 20
 epochs = (20, 20)
 
 # Training a ConvDBN
-model.fit(train, batch_size=batch_size, epochs=epochs)
+model.fit(train, batch_size=batch_size, epochs=epochs, log=True)
 
 # Reconstructing test set
 #rec_mse, v = model.reconstruct(test)
