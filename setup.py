@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="learnergy",
-    version="1.1.4",
+    version="1.1.5",
     description="Energy-based Machine Learners",
     long_description=long_description,
     long_description_content_type="text/markdown",
