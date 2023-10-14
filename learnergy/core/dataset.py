@@ -1,7 +1,7 @@
 """Dataset-related classes.
 """
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable
 
 import numpy as np
 import torch
@@ -19,8 +19,8 @@ class Dataset(torch.utils.data.Dataset):
         self,
         data: np.array,
         targets: np.array,
-        transform: Optional[callable] = None,
-        show_log: Optional[bool] = True,
+        transform: Optional[Callable] = None,
+        show_log: bool = True,
     ) -> None:
         """Initialization method.
 
@@ -73,7 +73,7 @@ class Dataset(torch.utils.data.Dataset):
         return self._transform
 
     @transform.setter
-    def transform(self, transform: callable) -> None:
+    def transform(self, transform: Callable) -> None:
         if not (hasattr(transform, "__call__") or transform is None):
             raise e.TypeError("`transform` should be a callable or None")
 

@@ -12,12 +12,12 @@ import learnergy.utils.exception as e
 def plot(
     *args,
     labels: Optional[List[str]] = None,
-    title: Optional[str] = "",
-    subtitle: Optional[str] = "",
-    xlabel: Optional[str] = "epoch",
-    ylabel: Optional[str] = "value",
-    grid: Optional[bool] = True,
-    legend: Optional[bool] = True,
+    title: str = "",
+    subtitle: str = "",
+    xlabel: str = "epoch",
+    ylabel: str = "value",
+    grid: bool = True,
+    legend: bool = True,
 ) -> None:
     """Plots the convergence graph of desired variables.
 

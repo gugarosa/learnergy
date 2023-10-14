@@ -29,14 +29,14 @@ class EDropoutRBM(RBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.1,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.1,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        use_gpu: bool = False,
     ) -> None:
         """Initialization method.
 
@@ -80,7 +80,7 @@ class EDropoutRBM(RBM):
         self._M = M
 
     def hidden_sampling(
-        self, v: torch.Tensor, scale: Optional[bool] = False
+        self, v: torch.Tensor, scale: bool = False
     ) -> torch.Tensor:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
@@ -149,8 +149,8 @@ class EDropoutRBM(RBM):
     def fit(
         self,
         dataset: torch.utils.data.Dataset,
-        batch_size: Optional[int] = 128,
-        epochs: Optional[int] = 10,
+        batch_size: int = 128,
+        epochs: int = 10,
     ) -> Tuple[float, float]:
         """Fits a new RBM model.
 

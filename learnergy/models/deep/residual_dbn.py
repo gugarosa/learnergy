@@ -25,17 +25,17 @@ class ResidualDBN(DBN):
 
     def __init__(
         self,
-        model: Optional[str] = "bernoulli",
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[Tuple[int, ...]] = (128,),
-        steps: Optional[Tuple[int, ...]] = (1,),
-        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
-        momentum: Optional[Tuple[float, ...]] = (0.0,),
-        decay: Optional[Tuple[float, ...]] = (0.0,),
-        temperature: Optional[Tuple[float, ...]] = (1.0,),
-        zetta1: Optional[float] = 1.0,
-        zetta2: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
+        model: str = "bernoulli",
+        n_visible: int = 128,
+        n_hidden: Tuple[int, ...] = (128,),
+        steps: Tuple[int, ...] = (1,),
+        learning_rate: Tuple[float, ...] = (0.1,),
+        momentum: Tuple[float, ...] = (0.0,),
+        decay: Tuple[float, ...] = (0.0,),
+        temperature: Tuple[float, ...] = (1.0,),
+        zetta1: float = 1.0,
+        zetta2: float = 1.0,
+        use_gpu: bool = False,
     ):
         """Initialization method.
 
@@ -116,8 +116,8 @@ class ResidualDBN(DBN):
     def fit(
         self,
         dataset: Union[torch.utils.data.Dataset, Dataset],
-        batch_size: Optional[int] = 128,
-        epochs: Optional[Tuple[int, ...]] = (10,),
+        batch_size: int = 128,
+        epochs: Tuple[int, ...] = (10,),
     ) -> Tuple[float, float]:
         """Fits a new ResidualDBN model.
 

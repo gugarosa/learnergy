@@ -31,17 +31,17 @@ class ConvRBM(Model):
 
     def __init__(
         self,
-        visible_shape: Optional[Tuple[int, int]] = (28, 28),
-        filter_shape: Optional[Tuple[int, int]] = (7, 7),
-        n_filters: Optional[int] = 5,
-        n_channels: Optional[int] = 1,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.1,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        maxpooling: Optional[bool] = False,
-        pooling_kernel: Optional[int] = 2,
-        use_gpu: Optional[bool] = False,
+        visible_shape: Tuple[int, int] = (28, 28),
+        filter_shape: Tuple[int, int] = (7, 7),
+        n_filters: int = 5,
+        n_channels: int = 1,
+        steps: int = 1,
+        learning_rate: float = 0.1,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        maxpooling: bool = False,
+        pooling_kernel: int = 2,
+        use_gpu: bool = False,
     ) -> None:
         """Initialization method.
 
@@ -384,8 +384,8 @@ class ConvRBM(Model):
     def fit(
         self,
         dataset: torch.utils.data.Dataset,
-        batch_size: Optional[int] = 128,
-        epochs: Optional[int] = 10,
+        batch_size: int = 128,
+        epochs: int = 10,
     ) -> float:
         """Fits a new ConvRBM model.
 

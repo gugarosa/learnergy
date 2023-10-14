@@ -49,17 +49,17 @@ class DBN(Model):
 
     def __init__(
         self,
-        model: Optional[Tuple[str, ...]] = ("gaussian",),
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[Tuple[int, ...]] = (128,),
-        steps: Optional[Tuple[int, ...]] = (1,),
-        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
-        momentum: Optional[Tuple[float, ...]] = (0.0,),
-        decay: Optional[Tuple[float, ...]] = (0.0,),
-        temperature: Optional[Tuple[float, ...]] = (1.0,),
-        use_gpu: Optional[bool] = False,
-        normalize: Optional[bool] = True,
-        input_normalize: Optional[bool] = True,
+        model: Tuple[str, ...] = ("gaussian",),
+        n_visible: int = 128,
+        n_hidden: Tuple[int, ...] = (128,),
+        steps: Tuple[int, ...] = (1,),
+        learning_rate: Tuple[float, ...] = (0.1,),
+        momentum: Tuple[float, ...] = (0.0,),
+        decay: Tuple[float, ...] = (0.0,),
+        temperature: Tuple[float, ...] = (1.0,),
+        use_gpu: bool = False,
+        normalize: bool = True,
+        input_normalize: bool = True,
     ):
         """Initialization method.
 
@@ -260,8 +260,8 @@ class DBN(Model):
     def fit(
         self,
         dataset: Union[torch.utils.data.Dataset, Dataset],
-        batch_size: Optional[int] = 128,
-        epochs: Optional[Tuple[int, ...]] = (10,),
+        batch_size: int = 128,
+        epochs: Tuple[int, ...] = (10,),
     ) -> Tuple[float, float]:
         """Fits a new DBN model.
 

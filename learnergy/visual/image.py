@@ -15,9 +15,9 @@ def _rasterize(
     x: np.array,
     img_shape: Tuple[int, int],
     tile_shape: Tuple[int, int],
-    tile_spacing: Optional[Tuple[int, int]] = (0, 0),
-    scale: Optional[bool] = True,
-    output: Optional[bool] = True,
+    tile_spacing: Tuple[int, int] = (0, 0),
+    scale: bool = True,
+    output: bool = True,
 ) -> np.array:
     """Rasterizes and prepares an image to be outputted as a mosaic.
 
@@ -122,7 +122,7 @@ def create_mosaic(tensor: torch.Tensor) -> None:
     img.show()
 
 
-def create_rgb_mosaic(tensor: torch.Tensor, n_samples: Optional[int] = 1) -> None:
+def create_rgb_mosaic(tensor: torch.Tensor, n_samples: int = 1) -> None:
     """Creates a squared mosaic for RGB images.
 
     Args:

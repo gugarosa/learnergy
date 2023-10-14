@@ -32,18 +32,18 @@ class ConvDBN(Model):
 
     def __init__(
         self,
-        model: Optional[str] = "bernoulli",
-        visible_shape: Optional[Tuple[int, int]] = (28, 28),
-        filter_shape: Optional[Tuple[Tuple[int, int], ...]] = ((7, 7),),
-        n_filters: Optional[Tuple[int, ...]] = (16,),
-        n_channels: Optional[int] = 1,
-        steps: Optional[Tuple[int, ...]] = (1,),
-        learning_rate: Optional[Tuple[float, ...]] = (0.1,),
-        momentum: Optional[Tuple[float, ...]] = (0.0,),
-        decay: Optional[Tuple[float, ...]] = (0.0,),
-        maxpooling: Optional[Tuple[bool,...]] = (False, False),
-        pooling_kernel: Optional[Tuple[int, ...]] = (2, 2,),
-        use_gpu: Optional[bool] = False,
+        model: str = "bernoulli",
+        visible_shape: Tuple[int, int] = (28, 28),
+        filter_shape: Tuple[Tuple[int, int], ...] = ((7, 7),),
+        n_filters: Tuple[int, ...] = (16,),
+        n_channels: int = 1,
+        steps: Tuple[int, ...] = (1,),
+        learning_rate: Tuple[float, ...] = (0.1,),
+        momentum: Tuple[float, ...] = (0.0,),
+        decay: Tuple[float, ...] = (0.0,),
+        maxpooling: Tuple[bool,...] = (False, False),
+        pooling_kernel: Tuple[int, ...] = (2, 2,),
+        use_gpu: bool = False,
     ):
         """Initialization method.
 
@@ -277,9 +277,9 @@ class ConvDBN(Model):
     def fit(
         self,
         dataset: Union[torch.utils.data.Dataset, Dataset],
-        batch_size: Optional[int] = 128,
-        epochs: Optional[Tuple[int, ...]] = (10, 10),
-        log: Optional[bool]=True,
+        batch_size: int = 128,
+        epochs: Tuple[int, ...] = (10, 10),
+        log: bool = True,
     ) -> float:
         """Fits a new ConvDBN model.
 

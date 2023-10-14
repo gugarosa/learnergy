@@ -27,15 +27,15 @@ class DropoutRBM(RBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.1,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        dropout: Optional[float] = 0.5,
-        use_gpu: Optional[bool] = False,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.1,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        dropout: float = 0.5,
+        use_gpu: bool = False,
     ) -> None:
         """Initialization method.
 
@@ -84,7 +84,7 @@ class DropoutRBM(RBM):
         self._p = p
 
     def hidden_sampling(
-        self, v: torch.Tensor, scale: Optional[bool] = False
+        self, v: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).
 
@@ -180,15 +180,15 @@ class DropConnectRBM(DropoutRBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.1,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        dropout: Optional[float] = 0.5,
-        use_gpu: Optional[bool] = False,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.1,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        dropout: float = 0.5,
+        use_gpu: bool = False,
     ) -> None:
         """Initialization method.
 
@@ -221,7 +221,7 @@ class DropConnectRBM(DropoutRBM):
         )
 
     def hidden_sampling(
-        self, v: torch.Tensor, scale: Optional[bool] = False
+        self, v: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling using a dropconnect mask, i.e., P(h|m,v).
 

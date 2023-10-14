@@ -37,16 +37,16 @@ class GaussianRBM(RBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.1,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
-        normalize: Optional[bool] = True,
-        input_normalize: Optional[bool] = True,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.1,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        use_gpu: bool = False,
+        normalize: bool = True,
+        input_normalize: bool = True,
     ) -> None:
         """Initialization method.
 
@@ -126,7 +126,7 @@ class GaussianRBM(RBM):
         return energy
 
     def visible_sampling(
-        self, h: torch.Tensor, scale: Optional[bool] = False
+        self, h: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
 
@@ -153,8 +153,8 @@ class GaussianRBM(RBM):
     def fit(
         self,
         dataset: torch.utils.data.Dataset,
-        batch_size: Optional[int] = 128,
-        epochs: Optional[int] = 10,
+        batch_size: int = 128,
+        epochs: int = 10,
     ) -> Tuple[float, float]:
         """Fits a new GaussianRBM model.
 
@@ -305,16 +305,16 @@ class GaussianReluRBM(GaussianRBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.001,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
-        normalize: Optional[bool] = True,
-        input_normalize: Optional[bool] = True,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.001,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        use_gpu: bool = False,
+        normalize: bool = True,
+        input_normalize: bool = True,
     ) -> None:
         """Initialization method.
 
@@ -351,7 +351,7 @@ class GaussianReluRBM(GaussianRBM):
         logger.info("Class overrided.")
 
     def hidden_sampling(
-        self, v: torch.Tensor, scale: Optional[bool] = False
+        self, v: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
@@ -394,16 +394,16 @@ class GaussianSeluRBM(GaussianRBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.001,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
-        normalize: Optional[bool] = False,
-        input_normalize: Optional[bool] = True,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.001,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        use_gpu: bool = False,
+        normalize: bool = False,
+        input_normalize: bool = True,
     ) -> None:
         """Initialization method.
 
@@ -440,7 +440,7 @@ class GaussianSeluRBM(GaussianRBM):
         logger.info("Class overrided.")
 
     def hidden_sampling(
-        self, v: torch.Tensor, scale: Optional[bool] = False
+        self, v: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
@@ -485,14 +485,14 @@ class VarianceGaussianRBM(RBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.1,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.1,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        use_gpu: bool = False,
     ) -> None:
         """Initialization method.
 
@@ -541,7 +541,7 @@ class VarianceGaussianRBM(RBM):
         self._sigma = sigma
 
     def hidden_sampling(
-        self, v: torch.Tensor, scale: Optional[bool] = False
+        self, v: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
@@ -568,7 +568,7 @@ class VarianceGaussianRBM(RBM):
         return probs, states
 
     def visible_sampling(
-        self, h: torch.Tensor, scale: Optional[bool] = False
+        self, h: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the visible layer sampling, i.e., P(v|h).
 
@@ -638,16 +638,16 @@ class GaussianRBM4deep(GaussianRBM):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.1,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
-        normalize: Optional[bool] = True,
-        input_normalize: Optional[bool] = True,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.1,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        use_gpu: bool = False,
+        normalize: bool = True,
+        input_normalize: bool = True,
     ) -> None:
         """Initialization method.
 
@@ -686,8 +686,8 @@ class GaussianRBM4deep(GaussianRBM):
     def fit(
         self,
         dataset: torch.utils.data.Dataset,
-        batch_size: Optional[int] = 128,
-        epochs: Optional[int] = 1,
+        batch_size: int = 128,
+        epochs: int = 1,
     ) -> Tuple[float, float]:
         """Fits a new GaussianRBM model.
 
@@ -768,16 +768,16 @@ class GaussianReluRBM4deep(GaussianRBM4deep):
 
     def __init__(
         self,
-        n_visible: Optional[int] = 128,
-        n_hidden: Optional[int] = 128,
-        steps: Optional[int] = 1,
-        learning_rate: Optional[float] = 0.001,
-        momentum: Optional[float] = 0.0,
-        decay: Optional[float] = 0.0,
-        temperature: Optional[float] = 1.0,
-        use_gpu: Optional[bool] = False,
-        normalize: Optional[bool] = True,
-        input_normalize: Optional[bool] = True,
+        n_visible: int = 128,
+        n_hidden: int = 128,
+        steps: int = 1,
+        learning_rate: float = 0.001,
+        momentum: float = 0.0,
+        decay: float = 0.0,
+        temperature: float = 1.0,
+        use_gpu: bool = False,
+        normalize: bool = True,
+        input_normalize: bool = True,
     ) -> None:
         """Initialization method.
 
@@ -814,7 +814,7 @@ class GaussianReluRBM4deep(GaussianRBM4deep):
         logger.info("Class overrided.")
 
     def hidden_sampling(
-        self, v: torch.Tensor, scale: Optional[bool] = False
+        self, v: torch.Tensor, scale: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 

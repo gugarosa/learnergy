@@ -19,7 +19,7 @@ class Model(torch.nn.Module):
 
     """
 
-    def __init__(self, use_gpu: Optional[bool] = False) -> None:
+    def __init__(self, use_gpu: bool = False) -> None:
         """Initialization method.
 
         Args:
