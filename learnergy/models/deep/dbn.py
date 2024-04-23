@@ -5,6 +5,8 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 from torch.utils.data import DataLoader
+import torch.nn as nn
+
 from tqdm import tqdm
 
 import learnergy.utils.exception as e
@@ -99,7 +101,7 @@ class DBN(Model):
             for _ in range(len(model) - 1, self.n_layers):
                 model += ("sigmoid4deep",)
 
-        self.models = []
+        self.models = nn.ModuleList([])
         for i in range(self.n_layers):
             if i == 0:
                 n_input = self.n_visible

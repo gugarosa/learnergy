@@ -93,7 +93,7 @@ class ConvDBN(Model):
             else:
                 self.maxpol2d.append(None)
 
-        self.models = []
+        self.models = nn.ModuleList([])
         for i in range(self.n_layers):
             if i == 0 and model=='gaussian' :
                 m = MODELS[model](
