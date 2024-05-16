@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import torchvision
 
 from learnergy.models.deep import dbn
@@ -198,7 +199,7 @@ def test_dbn_models():
 def test_dbn_models_setter():
     new_dbn = dbn.DBN()
 
-    new_dbn.models = []
+    new_dbn.models = nn.ModuleList()
 
     assert len(new_dbn.models) == 0
 
