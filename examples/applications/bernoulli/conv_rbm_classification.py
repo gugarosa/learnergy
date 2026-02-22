@@ -139,9 +139,9 @@ for e in range(fine_tune_epochs):
         _, preds = torch.max(y, 1)
 
         # Calculating validation set accuracy
-        val_acc = torch.mean((torch.sum(preds == y_batch).float()) / x_batch.size(0))
+        val_acc += torch.mean((torch.sum(preds == y_batch).float()) / x_batch.size(0))
 
-    print(f"Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc}")
+    print(f"Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc / len(val_batch)}")
 
 # Saving the fine-tuned model
 torch.save(model, "tuned_model.pth")

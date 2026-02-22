@@ -129,7 +129,7 @@ class DBN(Model):
                     input_normalize,
                 )
 
-            except:
+            except (TypeError, AttributeError):
                 m = MODELS[model[i]](
                     n_input,
                     self.n_hidden[i],
@@ -289,7 +289,7 @@ class DBN(Model):
                 dataset.transform,
             )
             d = Dataset(samples, targets, transform)
-        except:
+        except (AttributeError, TypeError):
             try:
                 samples, targets, transform = (
                     dataset.data,
@@ -297,7 +297,7 @@ class DBN(Model):
                     dataset.transform,
                 )
                 d = Dataset(samples, targets, transform)
-            except:
+            except (AttributeError, TypeError):
                 d = dataset
 
         batches = DataLoader(d, batch_size=batch_size, shuffle=True)

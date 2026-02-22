@@ -126,9 +126,9 @@ class SigmoidRBM4Deep(SigmoidRBM):
 
         """
 
-        logger.info("Overriding class: RBM -> SigmoidRBM.")
+        logger.info("Overriding class: SigmoidRBM -> SigmoidRBM4Deep.")
 
-        super(SigmoidRBM, self).__init__(
+        super(SigmoidRBM4Deep, self).__init__(
             n_visible,
             n_hidden,
             steps,

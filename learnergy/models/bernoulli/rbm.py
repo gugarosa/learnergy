@@ -176,8 +176,8 @@ class RBM(Model):
 
     @T.setter
     def T(self, T: float) -> None:
-        if T <= 0 or T > 1:
-            raise e.ValueError("`T` should be between 0 and 1")
+        if T <= 0:
+            raise e.ValueError("`T` should be > 0")
 
         self._T = T
 
@@ -463,10 +463,9 @@ class RBM(Model):
         logger.info("Reconstructing new samples ...")
 
         mse = 0
-        batch_size = len(dataset)
 
         batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=0
+            dataset, batch_size=len(dataset), shuffle=False, num_workers=0
         )
 
         for samples, _ in tqdm(batches):
@@ -478,7 +477,7 @@ class RBM(Model):
             visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
             batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
+                torch.sum(torch.pow(samples - visible_states, 2)), samples.size(0)
             )
             mse += batch_mse
 

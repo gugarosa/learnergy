@@ -51,9 +51,10 @@ def get_logger(logger_name: str) -> Logger:
 
     logger = logging.getLogger(logger_name)
 
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(get_console_handler())
-    logger.addHandler(get_timed_file_handler())
-    logger.propagate = False
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
+        logger.addHandler(get_console_handler())
+        logger.addHandler(get_timed_file_handler())
+        logger.propagate = False
 
     return logger
