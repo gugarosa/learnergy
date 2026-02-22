@@ -1,6 +1,6 @@
 # Learnergy — Architecture Guide
 
-> **Version:** 1.1.5 · **License:** Apache 2.0 · **Python:** 3.9+
+> **Version:** 1.2.0 · **License:** Apache 2.0 · **Python:** 3.9+
 > Energy-based Machine Learners built on PyTorch.
 
 ---
