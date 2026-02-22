@@ -6,6 +6,7 @@ from typing import Optional, Tuple, Union
 import torch
 import torch.nn.functional as F
 
+import learnergy.utils.constants as c
 import learnergy.utils.exception as e
 from learnergy.core import Dataset
 from learnergy.models.deep import DBN
@@ -109,7 +110,7 @@ class ResidualDBN(DBN):
         """
 
         residual = F.relu(pre_activations)
-        residual = torch.div(residual, torch.max(residual))
+        residual = torch.div(residual, torch.max(residual) + c.EPSILON)
 
         return residual
 
@@ -171,8 +172,7 @@ class ResidualDBN(DBN):
                 self.calculate_residual(pre_activation), self.zetta2
             )
 
-            # Normalizes the input for the next layer
-            samples = torch.div(samples, torch.max(samples))
+            samples = torch.div(samples, torch.max(samples) + c.EPSILON)
 
             if self.device == "cuda":
                 samples = samples.cpu()
@@ -200,7 +200,6 @@ class ResidualDBN(DBN):
                 self.calculate_residual(pre_activation), self.zetta2
             )
 
-            # Normalizes the input for the next layer
-            x = torch.div(x, torch.max(x))
+            x = torch.div(x, torch.max(x) + c.EPSILON)
 
         return x

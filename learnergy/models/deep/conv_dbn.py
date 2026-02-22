@@ -76,9 +76,7 @@ class ConvDBN(Model):
         self.lr = learning_rate
         self.momentum = momentum
         self.decay = decay
-        self.decay = decay        
 
-        self.maxpooling = maxpooling
         self.maxpol2d = []
 
         if len(pooling_kernel) < self.n_layers:
@@ -86,6 +84,14 @@ class ConvDBN(Model):
             for _ in range(len(pooling_kernel)-1, self.n_layers):
                 pooling_kernel.append(2)
             pooling_kernel = tuple(pooling_kernel)
+
+        if len(maxpooling) < self.n_layers:
+            maxpooling = list(maxpooling)
+            for _ in range(len(maxpooling), self.n_layers):
+                maxpooling.append(False)
+            maxpooling = tuple(maxpooling)
+
+        self.maxpooling = maxpooling
 
         for i, mx in enumerate(maxpooling):
             if mx:
@@ -306,7 +312,7 @@ class ConvDBN(Model):
                 dataset.transform,
             )
             d = Dataset(samples, targets, transform)
-        except:
+        except (AttributeError, TypeError):
             try:
                 samples, targets, transform = (
                     dataset.data,
@@ -314,7 +320,7 @@ class ConvDBN(Model):
                     dataset.transform,
                 )
                 d = Dataset(samples, targets, transform)
-            except:
+            except (AttributeError, TypeError):
                 d = dataset
 
         batches = DataLoader(d, batch_size=batch_size, shuffle=True)

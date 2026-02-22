@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import learnergy.utils.constants as c
 import learnergy.utils.exception as ex
 from learnergy.models.bernoulli import RBM
 from learnergy.utils import logging
@@ -118,7 +119,7 @@ class EDropoutRBM(RBM):
 
         e_h = -torch.mv(h, self.b)
         e_v = -torch.mv(v, self.a)
-        e_rec = -torch.mean(torch.mm(v, torch.mm(self.W, h.t())), dim=1)
+        e_rec = -torch.sum(torch.mm(v, self.W) * h, dim=1)
 
         energy = torch.mean(e_h + e_v + e_rec)
 
@@ -137,7 +138,7 @@ class EDropoutRBM(RBM):
         """
 
         # Calculates and normalizes the Importance Level
-        I = torch.div(torch.div(n_prob, p_prob), torch.abs(e))
+        I = torch.div(torch.div(n_prob, p_prob + c.EPSILON), torch.abs(e) + c.EPSILON)
         I = torch.div(I, torch.max(I, 0)[0])
 
         # Samples a probability tensor
@@ -215,7 +216,7 @@ class EDropoutRBM(RBM):
                 batch_mse = torch.div(
                     torch.sum(torch.pow(samples - visible_states, 2)), batch_size
                 )
-                batch_pl = self.pseudo_likelihood(samples)
+                batch_pl = self.pseudo_likelihood(samples).detach()
 
                 mse += batch_mse
                 pl += batch_pl

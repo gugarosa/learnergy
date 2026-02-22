@@ -555,7 +555,7 @@ class VarianceGaussianRBM(RBM):
         """
 
         activations = F.linear(
-            torch.div(v, torch.pow(self.sigma, 2)), self.W.t(), self.b
+            torch.div(v, torch.pow(self.sigma, 2) + c.EPSILON), self.W.t(), self.b
         )
 
         if scale:
@@ -584,8 +584,8 @@ class VarianceGaussianRBM(RBM):
         activations = F.linear(h, self.W, self.a)
 
         if self.device == "cpu":
-            # If on cpu, variance needs to have size equal to (batch_size, n_visible)
-            sigma = torch.repeat_interleave(self.sigma, activations.size(0), dim=0)
+            # Variance needs to have size equal to (batch_size, n_visible)
+            sigma = self.sigma.unsqueeze(0).expand(activations.size(0), -1)
         else:
             # Variance needs to have size equal to (n_visible)
             sigma = self.sigma
@@ -605,10 +605,10 @@ class VarianceGaussianRBM(RBM):
 
         """
 
-        sigma = torch.pow(self.sigma, 2)
+        sigma = torch.pow(self.sigma, 2) + c.EPSILON
         activations = F.linear(torch.div(samples, sigma), self.W.t(), self.b)
 
-        # Createa a Softplus function for numerical stability
+        # Creates a Softplus function for numerical stability
         s = nn.Softplus()
 
         h = torch.sum(s(activations), dim=1)

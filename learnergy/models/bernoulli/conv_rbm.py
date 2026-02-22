@@ -375,7 +375,7 @@ class ConvRBM(Model):
         s = nn.Softplus()
 
         h = torch.sum(s(activations), dim=(1, 2, 3))
-        v = torch.sum(samples, dim=(1, 2, 3)) * torch.mean(self.a)
+        v = torch.sum(samples * self.a.view(1, -1, 1, 1), dim=(1, 2, 3))
 
         energy = -v - h
 
