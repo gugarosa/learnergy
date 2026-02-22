@@ -35,8 +35,7 @@ class Model(torch.nn.Module):
 
         self.history = {}
 
-        # Sets default tensor type to float to avoid value errors
-        torch.set_default_tensor_type(torch.FloatTensor)
+        torch.set_default_dtype(torch.float32)
 
         logger.debug("Device: %s.", self.device)
 

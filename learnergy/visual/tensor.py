@@ -20,12 +20,13 @@ def save_tensor(tensor: torch.Tensor, output_path: str) -> None:
         tensor = tensor.permute(1, 2, 0)
         plt.imshow(tensor.cpu().detach().numpy())
     else:
-        plt.imshow(tensor.cpu().detach().numpy(), cmap=plt.cm.get_cmap("gray"))
+        plt.imshow(tensor.cpu().detach().numpy(), cmap="gray")
 
     plt.xticks([])
     plt.yticks([])
 
     plt.savefig(output_path)
+    plt.close()
 
 
 def show_tensor(tensor: torch.Tensor) -> None:
@@ -42,9 +43,10 @@ def show_tensor(tensor: torch.Tensor) -> None:
         tensor = tensor.permute(1, 2, 0)
         plt.imshow(tensor.cpu().detach().numpy())
     else:
-        plt.imshow(tensor.cpu().detach().numpy(), cmap=plt.cm.get_cmap("gray"))
+        plt.imshow(tensor.cpu().detach().numpy(), cmap="gray")
 
     plt.xticks([])
     plt.yticks([])
 
     plt.show()
+    plt.close()

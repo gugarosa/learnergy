@@ -17,8 +17,8 @@ class Dataset(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        data: np.array,
-        targets: np.array,
+        data: np.ndarray,
+        targets: np.ndarray,
         transform: Optional[Callable] = None,
         show_log: bool = True,
     ) -> None:
@@ -47,23 +47,23 @@ class Dataset(torch.utils.data.Dataset):
             )
 
     @property
-    def data(self) -> np.array:
+    def data(self) -> np.ndarray:
         """An n-dimensional array containing the data."""
 
         return self._data
 
     @data.setter
-    def data(self, data: np.array) -> None:
+    def data(self, data: np.ndarray) -> None:
         self._data = data
 
     @property
-    def targets(self) -> np.array:
+    def targets(self) -> np.ndarray:
         """An 1-dimensional array containing the data's labels."""
 
         return self._targets
 
     @targets.setter
-    def targets(self, targets: np.array) -> None:
+    def targets(self, targets: np.ndarray) -> None:
         self._targets = targets
 
     @property

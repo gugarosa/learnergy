@@ -6,7 +6,7 @@ import numpy as np
 import learnergy.utils.constants as c
 
 
-def unitary_scale(x: np.array) -> np.array:
+def unitary_scale(x: np.ndarray) -> np.ndarray:
     """Scales an array between 0 and 1.
 
     Args:
