@@ -1,4 +1,3 @@
-import torch
 import torchvision
 
 from learnergy.models.bernoulli import ConvRBM

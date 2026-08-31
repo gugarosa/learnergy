@@ -1,20 +1,14 @@
-"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Energy-based Dropout.
-"""
+"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Energy-based Dropout."""
 
 import time
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
-import learnergy.utils.constants as c
-import learnergy.utils.exception as ex
-from learnergy.models.bernoulli import RBM
-from learnergy.utils import logging
-
-logger = logging.get_logger(__name__)
+from learnergy.core.model import _validated_property
+from learnergy.models.bernoulli.rbm import RBM
 
 
 class EDropoutRBM(RBM):
@@ -27,6 +21,8 @@ class EDropoutRBM(RBM):
         IEEE Transactions on Emerging Topics in Computational Intelligence (2020).
 
     """
+
+    M = _validated_property("M")
 
     def __init__(
         self,
@@ -53,9 +49,7 @@ class EDropoutRBM(RBM):
 
         """
 
-        logger.info("Overriding class: RBM -> EDropoutRBM.")
-
-        super(EDropoutRBM, self).__init__(
+        super().__init__(
             n_visible,
             n_hidden,
             steps,
@@ -66,23 +60,9 @@ class EDropoutRBM(RBM):
             use_gpu,
         )
 
-        self.M = torch.Tensor()
+        self.M = torch.empty(0, device=self.device)
 
-        logger.info("Class overrided.")
-
-    @property
-    def M(self) -> torch.Tensor:
-        """Energy-based Dropout mask."""
-
-        return self._M
-
-    @M.setter
-    def M(self, M: torch.Tensor) -> None:
-        self._M = M
-
-    def hidden_sampling(
-        self, v: torch.Tensor, scale: bool = False
-    ) -> torch.Tensor:
+    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> torch.Tensor:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
         Args:
@@ -95,11 +75,16 @@ class EDropoutRBM(RBM):
         """
 
         activations = F.linear(v, self.W.t(), self.b)
+        mask = (
+            self.M
+            if self.M.shape == activations.shape
+            else torch.ones_like(activations)
+        )
 
         if scale:
-            probs = torch.mul(torch.sigmoid(torch.div(activations, self.T)), self.M)
+            probs = torch.mul(torch.sigmoid(torch.div(activations, self.T)), mask)
         else:
-            probs = torch.mul(torch.sigmoid(activations), self.M)
+            probs = torch.mul(torch.sigmoid(activations), mask)
 
         states = torch.bernoulli(probs)
 
@@ -138,8 +123,9 @@ class EDropoutRBM(RBM):
         """
 
         # Calculates and normalizes the Importance Level
-        I = torch.div(torch.div(n_prob, p_prob + c.EPSILON), torch.abs(e) + c.EPSILON)
-        I = torch.div(I, torch.max(I, 0)[0])
+        eps = torch.finfo(p_prob.dtype).eps
+        I = n_prob / (p_prob + eps) / (torch.abs(e) + eps)
+        I = I / torch.max(I, 0)[0].clamp_min(eps)
 
         # Samples a probability tensor
         p = torch.rand((I.size(0), I.size(1)), device=self.device)
@@ -169,22 +155,18 @@ class EDropoutRBM(RBM):
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
 
-        for epoch in range(epochs):
-            logger.info("Epoch %d/%d", epoch + 1, epochs)
-
+        for _ in range(epochs):
             start = time.time()
 
             mse, pl = 0, 0
 
-            for samples, _ in tqdm(batches):
+            for samples, _ in batches:
                 batch_size = samples.size(0)
 
                 # Returns the Energy-based Dropout mask to one
                 self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
-                samples = samples.reshape(len(samples), self.n_visible)
-                if self.device == "cuda":
-                    samples = samples.cuda()
+                samples = samples.reshape(len(samples), self.n_visible).to(self.device)
 
                 # Performs the initial Gibbs sampling procedure (pre-dropout)
                 (
@@ -228,8 +210,6 @@ class EDropoutRBM(RBM):
 
             self.dump(mse=mse.item(), pl=pl.item(), time=end - start)
 
-            logger.info("MSE: %f | log-PL: %f", mse, pl)
-
         return mse, pl
 
     def reconstruct(
@@ -245,8 +225,6 @@ class EDropoutRBM(RBM):
 
         """
 
-        logger.info("Reconstructing new samples ...")
-
         mse = 0
         batch_size = len(dataset)
 
@@ -254,13 +232,11 @@ class EDropoutRBM(RBM):
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        for samples, _ in tqdm(batches):
+        for samples, _ in batches:
             # Returns the Energy-based Dropout mask to one
             self.M = torch.ones((batch_size, self.n_hidden), device=self.device)
 
-            samples = samples.reshape(len(samples), self.n_visible)
-            if self.device == "cuda":
-                samples = samples.cuda()
+            samples = samples.reshape(len(samples), self.n_visible).to(self.device)
 
             _, pos_hidden_states = self.hidden_sampling(samples)
             visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
@@ -271,7 +247,5 @@ class EDropoutRBM(RBM):
             mse += batch_mse
 
         mse /= len(batches)
-
-        logger.info("MSE: %f", mse)
 
         return mse, visible_probs

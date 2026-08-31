@@ -1,132 +1,94 @@
 # Learnergy: Energy-based Machine Learners
 
 [![Latest release](https://img.shields.io/github/release/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/releases)
-[![DOI](http://img.shields.io/badge/DOI-10.5281/zenodo.4390744-006DB9.svg)](https://doi.org/10.5281/zenodo.4390744)
-[![Open issues](https://img.shields.io/github/issues/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/issues)
-[![License](https://img.shields.io/github/license/gugarosa/learnergy.svg)](https://github.com/gugarosa/learnergy/blob/master/LICENSE)
+[![CI](https://github.com/gugarosa/learnergy/actions/workflows/ci.yml/badge.svg)](https://github.com/gugarosa/learnergy/actions/workflows/ci.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.4390744-006DB9.svg)](https://doi.org/10.5281/zenodo.4390744)
+[![License](https://img.shields.io/github/license/gugarosa/learnergy.svg)](LICENSE)
 
-## Welcome to Learnergy
+Learnergy provides PyTorch implementations of Restricted Boltzmann Machines
+(RBMs) and Deep Belief Networks (DBNs) for unsupervised feature learning,
+generative modeling, and classification. It also includes dataset adapters,
+image-quality metrics, and visualization helpers.
 
-Learnergy is a PyTorch-based framework for **energy-based machine learning**, providing ready-to-use implementations of Restricted Boltzmann Machines (RBMs) and Deep Belief Networks (DBNs). It is designed for researchers and practitioners who need a clean, modular library for unsupervised feature learning, generative modeling, and classification with energy-based models.
+## Installation
 
-### What you can do
+Learnergy requires Python 3.11 or newer.
 
-- **Train RBMs** with various unit types: Bernoulli, Gaussian, Sigmoid, ReLU, SeLU
-- **Apply regularization**: Dropout, DropConnect, and Energy-based Dropout
-- **Build deep architectures**: stack RBMs into DBNs and Convolutional DBNs
-- **Use residual learning**: ResidualDBN with skip connections for improved information flow
-- **Classify**: Discriminative and Hybrid Discriminative RBMs for supervised tasks
-- **Visualize**: convergence plots, weight mosaics, and tensor images
+```bash
+pip install learnergy
+```
 
-### Quick start
+Install the optional torchvision dependency to run the examples:
+
+```bash
+pip install "learnergy[examples]"
+```
+
+## Quick start
 
 ```python
-import torchvision
+import torch
+from torch.utils.data import TensorDataset
+
 from learnergy.models.bernoulli import RBM
 
-# Load MNIST
-train = torchvision.datasets.MNIST(
-    root="./data", train=True, download=True,
-    transform=torchvision.transforms.ToTensor(),
-)
+samples = torch.bernoulli(torch.rand(1_024, 784))
+targets = torch.zeros(1_024)
+dataset = TensorDataset(samples, targets)
 
-# Train a Bernoulli RBM
-model = RBM(n_visible=784, n_hidden=128, steps=1, learning_rate=0.1)
-mse, pl = model.fit(train, batch_size=128, epochs=5)
-
-# Reconstruct
-rec_mse, visible_probs = model.reconstruct(train)
+model = RBM(n_visible=784, n_hidden=128, learning_rate=0.1)
+mse, pseudo_likelihood = model.fit(dataset, batch_size=128, epochs=5)
+reconstruction_mse, reconstructed = model.reconstruct(dataset)
 ```
 
-For a Gaussian RBM with continuous inputs:
-
-```python
-from learnergy.models.gaussian import GaussianRBM
-
-model = GaussianRBM(n_visible=784, n_hidden=256, steps=1, learning_rate=0.005)
-mse, pl = model.fit(train, batch_size=128, epochs=10)
-```
-
-For a Deep Belief Network:
+Stack RBMs into a DBN:
 
 ```python
 from learnergy.models.deep import DBN
 
 model = DBN(
     model=("gaussian", "sigmoid"),
-    n_visible=784, n_hidden=(256, 128),
-    steps=(1, 1), learning_rate=(0.01, 0.01),
-    momentum=(0, 0), decay=(0, 0), temperature=(1, 1),
+    n_visible=784,
+    n_hidden=(256, 128),
+    steps=(1, 1),
+    learning_rate=(0.01, 0.01),
+    momentum=(0, 0),
+    decay=(0, 0),
+    temperature=(1, 1),
 )
-mse, pl = model.fit(train, batch_size=128, epochs=(5, 5))
+model.fit(dataset, batch_size=128, epochs=(5, 5))
 ```
 
-Browse the `examples/` directory for more use cases, including classification, convolutional models, and fine-tuning.
-
-Learnergy is compatible with: **Python 3.9+** and **PyTorch 1.8+**.
-
----
-
-## Architecture
-
-For a detailed walkthrough of the codebase design, class hierarchy, and design patterns, see [ARCHITECTURE.md](ARCHITECTURE.md).
-
-```
-learnergy/
-├── core/          # Dataset and Model base classes
-├── math/          # SSIM metrics, scaling utilities
-├── models/
-│   ├── bernoulli/ # RBM, ConvRBM, DiscriminativeRBM, Dropout/DropConnect, EDropout
-│   ├── gaussian/  # GaussianRBM (+ ReLU, SeLU, Variance), GaussianConvRBM
-│   ├── extra/     # SigmoidRBM
-│   └── deep/      # DBN, ConvDBN, ResidualDBN
-├── utils/         # Constants, custom exceptions, logging
-└── visual/        # Convergence plots, image mosaics, tensor display
-```
-
-### Available models
+## Available models
 
 | Family | Models |
 |---|---|
-| **Bernoulli** | `RBM`, `ConvRBM`, `DiscriminativeRBM`, `HybridDiscriminativeRBM`, `DropoutRBM`, `DropConnectRBM`, `EDropoutRBM` |
-| **Gaussian** | `GaussianRBM`, `GaussianReluRBM`, `GaussianSeluRBM`, `VarianceGaussianRBM`, `GaussianConvRBM` |
-| **Extra** | `SigmoidRBM` |
-| **Deep** | `DBN`, `ConvDBN`, `ResidualDBN` |
+| Bernoulli | `RBM`, `ConvRBM`, `DiscriminativeRBM`, `HybridDiscriminativeRBM`, `DropoutRBM`, `DropConnectRBM`, `EDropoutRBM` |
+| Gaussian | `GaussianRBM`, `GaussianReluRBM`, `GaussianSeluRBM`, `VarianceGaussianRBM`, `GaussianConvRBM` |
+| Extra | `SigmoidRBM` |
+| Deep | `DBN`, `ConvDBN`, `ResidualDBN` |
 
----
+The `learnergy.core.Dataset`, `learnergy.math`, and `learnergy.visual` modules
+remain available for array-backed datasets, SSIM/scaling helpers, convergence
+plots, image mosaics, and tensor rendering.
 
-## Installation
+See [`examples/applications`](examples/applications) for complete training and
+classification programs.
+
+## Development
+
+The repository uses [uv](https://docs.astral.sh/uv/) for reproducible
+environments and packaging:
 
 ```bash
-pip install learnergy
+uv sync --locked
+uv run pytest
+uv build
 ```
-
-Or install from source for the latest version:
-
-```bash
-git clone https://github.com/gugarosa/learnergy.git
-cd learnergy
-pip install -e .
-```
-
-### Dependencies
-
-| Package | Version | Purpose |
-|---|---|---|
-| PyTorch | ≥ 1.8.0 | Core tensor operations and GPU support |
-| torchvision | ≥ 0.9.0 | Dataset loading and transforms |
-| matplotlib | ≥ 3.3.4 | Visualization |
-| Pillow | ≥ 8.1.2 | Image mosaic creation |
-| scikit-image | ≥ 0.17.2 | SSIM metric |
-| tqdm | ≥ 4.49.0 | Progress bars |
-
----
 
 ## Citation
 
-If you use Learnergy to fulfill any of your needs, please cite us:
-
-```BibTex
+```bibtex
 @misc{roder2020learnergy,
     title={Learnergy: Energy-based Machine Learners},
     author={Mateus Roder and Gustavo Henrique de Rosa and João Paulo Papa},
@@ -137,10 +99,7 @@ If you use Learnergy to fulfill any of your needs, please cite us:
 }
 ```
 
----
-
 ## Support
 
-If you need to report a bug or have questions, please open an [issue](https://github.com/gugarosa/learnergy/issues) or reach out at mateus.roder@unesp.br and gustavo.rosa@unesp.br.
-
----
+Open an [issue](https://github.com/gugarosa/learnergy/issues) for bug reports
+and questions.

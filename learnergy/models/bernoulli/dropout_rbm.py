@@ -1,18 +1,14 @@
-"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout and DropConnect.
-"""
+"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout and DropConnect."""
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 import learnergy.utils.exception as e
-from learnergy.models.bernoulli import RBM
-from learnergy.utils import logging
-
-logger = logging.get_logger(__name__)
+from learnergy.core.model import _validated_property
+from learnergy.models.bernoulli.rbm import RBM
 
 
 class DropoutRBM(RBM):
@@ -24,6 +20,13 @@ class DropoutRBM(RBM):
         The journal of machine learning research (2014).
 
     """
+
+    p = _validated_property(
+        "p",
+        lambda _, value: 0 <= value <= 1,
+        e.ValueError,
+        "`p` should be between 0 and 1",
+    )
 
     def __init__(
         self,
@@ -52,9 +55,7 @@ class DropoutRBM(RBM):
 
         """
 
-        logger.info("Overriding class: RBM -> DropoutRBM.")
-
-        super(DropoutRBM, self).__init__(
+        super().__init__(
             n_visible,
             n_hidden,
             steps,
@@ -66,22 +67,6 @@ class DropoutRBM(RBM):
         )
 
         self.p = dropout
-
-        logger.info("Class overrided.")
-        logger.debug("Additional hyperparameters: p = %s.", self.p)
-
-    @property
-    def p(self) -> float:
-        """Probability of applying dropout."""
-
-        return self._p
-
-    @p.setter
-    def p(self, p: float) -> None:
-        if p < 0 or p > 1:
-            raise e.ValueError("`p` should be between 0 and 1")
-
-        self._p = p
 
     def hidden_sampling(
         self, v: torch.Tensor, scale: bool = False
@@ -130,8 +115,6 @@ class DropoutRBM(RBM):
 
         """
 
-        logger.info("Reconstructing new samples ...")
-
         mse = 0
         batch_size = len(dataset)
 
@@ -144,11 +127,8 @@ class DropoutRBM(RBM):
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        for samples, _ in tqdm(batches):
-            samples = samples.reshape(len(samples), self.n_visible)
-
-            if self.device == "cuda":
-                samples = samples.cuda()
+        for samples, _ in batches:
+            samples = samples.reshape(len(samples), self.n_visible).to(self.device)
 
             _, pos_hidden_states = self.hidden_sampling(samples)
             visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
@@ -163,8 +143,6 @@ class DropoutRBM(RBM):
         # Recovering initial dropout rate
         self.p = p
 
-        logger.info("MSE: %f", mse)
-
         return mse, visible_probs
 
 
@@ -177,48 +155,6 @@ class DropConnectRBM(DropoutRBM):
         The journal of machine learning research (2014).
 
     """
-
-    def __init__(
-        self,
-        n_visible: int = 128,
-        n_hidden: int = 128,
-        steps: int = 1,
-        learning_rate: float = 0.1,
-        momentum: float = 0.0,
-        decay: float = 0.0,
-        temperature: float = 1.0,
-        dropout: float = 0.5,
-        use_gpu: bool = False,
-    ) -> None:
-        """Initialization method.
-
-        Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            dropout: Dropout rate.
-            use_gpu: Whether GPU should be used or not.
-
-        """
-
-        logger.info("Overriding class: DropoutRBM -> DropConnectRBM.")
-
-        # Override its parent class
-        super(DropConnectRBM, self).__init__(
-            n_visible,
-            n_hidden,
-            steps,
-            learning_rate,
-            momentum,
-            decay,
-            temperature,
-            dropout,
-            use_gpu,
-        )
 
     def hidden_sampling(
         self, v: torch.Tensor, scale: bool = False

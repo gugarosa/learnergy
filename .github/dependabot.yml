@@ -11,13 +11,3 @@ updates:
       - "gugarosa"
     labels:
       - "dependencies"
-
-  - package-ecosystem: "pip"
-    directory: "/docs/"
-    schedule:
-      interval: "monthly"
-    assignees:
-      - "gugarosa"
-    labels:
-      - "docs"
-      - "dependencies"

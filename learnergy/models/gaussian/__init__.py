@@ -1,5 +1,4 @@
-"""A package contaning gaussian-valued models (networks) for all common learnergy modules.
-"""
+"""Gaussian-valued RBM variants."""
 
 from learnergy.models.gaussian.gaussian_conv_rbm import (
     GaussianConvRBM,
@@ -13,3 +12,14 @@ from learnergy.models.gaussian.gaussian_rbm import (
     GaussianSeluRBM,
     VarianceGaussianRBM,
 )
+
+__all__ = [
+    "GaussianConvRBM",
+    "GaussianConvRBM4Deep",
+    "GaussianRBM",
+    "GaussianRBM4deep",
+    "GaussianReluRBM",
+    "GaussianReluRBM4deep",
+    "GaussianSeluRBM",
+    "VarianceGaussianRBM",
+]

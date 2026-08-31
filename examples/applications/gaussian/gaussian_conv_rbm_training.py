@@ -1,4 +1,3 @@
-import torch
 import torchvision
 
 from learnergy.models.gaussian import GaussianConvRBM

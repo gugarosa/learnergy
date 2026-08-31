@@ -1,20 +1,16 @@
-"""Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machine.
-"""
+"""Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machine."""
 
 import time
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 import learnergy.utils.exception as e
-from learnergy.models.bernoulli import RBM
-from learnergy.utils import logging
-
-logger = logging.get_logger(__name__)
+from learnergy.core.model import _validated_property
+from learnergy.models.bernoulli.rbm import RBM
 
 
 class DiscriminativeRBM(RBM):
@@ -26,6 +22,16 @@ class DiscriminativeRBM(RBM):
         Proceedings of the 25th international conference on Machine learning (2008).
 
     """
+
+    n_classes = _validated_property(
+        "n_classes",
+        lambda _, value: value > 0,
+        e.ValueError,
+        "`n_classes` should be > 0",
+    )
+    U = _validated_property("U")
+    c = _validated_property("c")
+    loss = _validated_property("loss")
 
     def __init__(
         self,
@@ -54,9 +60,7 @@ class DiscriminativeRBM(RBM):
 
         """
 
-        logger.info("Overriding class: RBM -> DiscriminativeRBM.")
-
-        super(DiscriminativeRBM, self).__init__(
+        super().__init__(
             n_visible,
             n_hidden,
             steps,
@@ -71,59 +75,11 @@ class DiscriminativeRBM(RBM):
 
         self.U = nn.Parameter(torch.randn(n_classes, n_hidden) * 0.05)
         self.c = nn.Parameter(torch.zeros(n_classes))
-
         self.loss = nn.CrossEntropyLoss()
 
+        self.to(self.device)
         self.optimizer.add_param_group({"params": self.U})
         self.optimizer.add_param_group({"params": self.c})
-
-        if self.device == "cuda":
-            self.cuda()
-
-        logger.info("Class overrided.")
-
-    @property
-    def n_classes(self) -> int:
-        """Number of classes."""
-
-        return self._n_classes
-
-    @n_classes.setter
-    def n_classes(self, n_classes: int) -> None:
-        if n_classes <= 0:
-            raise e.ValueError("`n_classes` should be > 0")
-
-        self._n_classes = n_classes
-
-    @property
-    def U(self) -> torch.nn.Parameter:
-        """Class weights' matrix."""
-
-        return self._U
-
-    @U.setter
-    def U(self, U: torch.nn.Parameter) -> None:
-        self._U = U
-
-    @property
-    def c(self) -> torch.nn.Parameter:
-        """Class units bias."""
-
-        return self._c
-
-    @c.setter
-    def c(self, c: torch.nn.Parameter) -> None:
-        self._c = c
-
-    @property
-    def loss(self) -> torch.nn.CrossEntropyLoss:
-        """Cross-Entropy loss function."""
-
-        return self._loss
-
-    @loss.setter
-    def loss(self, loss: torch.nn.CrossEntropyLoss) -> None:
-        self._loss = loss
 
     def labels_sampling(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates labels probabilities by samplings, i.e., P(y|v).
@@ -139,12 +95,11 @@ class DiscriminativeRBM(RBM):
         probs = torch.zeros(samples.size(0), self.n_classes, device=self.device)
         activations = F.linear(samples, self.W.t(), self.b)
 
-        # Creates a Softplus function for numerical stability
-        s = nn.Softplus()
-
         for i in range(self.n_classes):
             # Calculates the logit-probability for the particular class
-            probs[:, i] = self.c[i] + torch.sum(s(activations + self.U[i, :]), dim=1)
+            probs[:, i] = self.c[i] + torch.sum(
+                F.softplus(activations + self.U[i, :]), dim=1
+            )
 
         preds = torch.argmax(probs.detach(), 1)
 
@@ -172,19 +127,15 @@ class DiscriminativeRBM(RBM):
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
 
-        for epoch in range(epochs):
-            logger.info("Epoch %d/%d", epoch + 1, epochs)
-
+        for _ in range(epochs):
             start = time.time()
 
             loss = 0
             acc = 0
 
-            for samples, labels in tqdm(batches):
-                samples = samples.reshape(len(samples), self.n_visible)
-                if self.device == "cuda":
-                    samples = samples.cuda()
-                    labels = labels.cuda()
+            for samples, labels in batches:
+                samples = samples.reshape(len(samples), self.n_visible).to(self.device)
+                labels = labels.to(self.device)
 
                 probs, _ = self.labels_sampling(samples)
                 cost = self.loss(probs, labels)
@@ -195,10 +146,7 @@ class DiscriminativeRBM(RBM):
 
                 _, preds = self.labels_sampling(samples)
 
-                batch_size = samples.size(0)
-                batch_acc = torch.mean(
-                    (torch.sum(preds == labels).float()) / batch_size
-                )
+                batch_acc = (preds == labels).float().mean()
 
                 loss += cost.detach()
                 acc += batch_acc
@@ -209,8 +157,6 @@ class DiscriminativeRBM(RBM):
             end = time.time()
 
             self.dump(loss=loss.item(), acc=acc.item(), time=end - start)
-
-            logger.info("Loss: %f | Accuracy: %f", loss, acc)
 
         return loss, acc
 
@@ -227,8 +173,6 @@ class DiscriminativeRBM(RBM):
 
         """
 
-        logger.info("Predicting new samples ...")
-
         acc = 0
         batch_size = len(dataset)
 
@@ -236,20 +180,16 @@ class DiscriminativeRBM(RBM):
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        for samples, labels in tqdm(batches):
-            samples = samples.reshape(len(samples), self.n_visible)
-            if self.device == "cuda":
-                samples = samples.cuda()
-                labels = labels.cuda()
+        for samples, labels in batches:
+            samples = samples.reshape(len(samples), self.n_visible).to(self.device)
+            labels = labels.to(self.device)
 
             probs, preds = self.labels_sampling(samples)
 
-            batch_acc = torch.mean((torch.sum(preds == labels).float()) / batch_size)
+            batch_acc = (preds == labels).float().mean()
             acc += batch_acc
 
         acc /= len(batches)
-
-        logger.info("Accuracy: %f", acc)
 
         return acc, probs, preds
 
@@ -263,6 +203,10 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         Proceedings of the 25th international conference on Machine learning (2008).
 
     """
+
+    alpha = _validated_property(
+        "alpha", lambda _, value: value >= 0, e.ValueError, "`alpha` should be >= 0"
+    )
 
     def __init__(
         self,
@@ -293,10 +237,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
-        logger.info("Overriding class: DiscriminativeRBM -> HybridDiscriminativeRBM.")
-
-        # Override its parent class
-        super(HybridDiscriminativeRBM, self).__init__(
+        super().__init__(
             n_visible,
             n_hidden,
             n_classes,
@@ -309,19 +250,6 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         )
 
         self.alpha = alpha
-
-    @property
-    def alpha(self) -> float:
-        """Generative loss penalization."""
-
-        return self._alpha
-
-    @alpha.setter
-    def alpha(self, alpha: float) -> None:
-        if alpha < 0:
-            raise e.ValueError("`alpha` should be >= 0")
-
-        self._alpha = alpha
 
     def hidden_sampling(
         self, v: torch.Tensor, y: torch.Tensor, scale: bool = False
@@ -428,18 +356,14 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
             dataset, batch_size=batch_size, shuffle=True, num_workers=0
         )
 
-        for epoch in range(epochs):
-            logger.info("Epoch %d/%d", epoch + 1, epochs)
-
+        for _ in range(epochs):
             start = time.time()
 
             d_loss, g_loss, loss, acc = 0, 0, 0, 0
 
-            for samples, labels in tqdm(batches):
-                samples = samples.reshape(len(samples), self.n_visible)
-                if self.device == "cuda":
-                    samples = samples.cuda()
-                    labels = labels.cuda()
+            for samples, labels in batches:
+                samples = samples.reshape(len(samples), self.n_visible).to(self.device)
+                labels = labels.to(self.device)
 
                 _, _, _, _, visible_states = self.gibbs_sampling(samples, labels)
                 visible_states = visible_states.detach()
@@ -455,10 +379,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
                 _, preds = self.labels_sampling(samples)
 
-                batch_size = samples.size(0)
-                batch_acc = torch.mean(
-                    (torch.sum(preds == labels).float()) / batch_size
-                )
+                batch_acc = (preds == labels).float().mean()
 
                 d_loss += d_cost
                 g_loss += g_cost
@@ -478,14 +399,6 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
                 loss=loss.item(),
                 acc=acc.item(),
                 time=end - start,
-            )
-
-            logger.info(
-                "Loss(D): %f | Loss(G): %f | Loss: %f | Accuracy: %f",
-                d_loss,
-                g_loss,
-                loss,
-                acc,
             )
 
         return loss, acc

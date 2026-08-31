@@ -1,23 +1,42 @@
-"""Standard model-related implementation.
-"""
+"""Standard model-related implementation."""
 
-from typing import Any, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 import torch
 
 import learnergy.utils.exception as e
-from learnergy.utils import logging
 
-logger = logging.get_logger(__name__)
+
+def _validated_property(
+    name: str,
+    validator: Callable[[Any, Any], bool] | None = None,
+    error: type[Exception] = ValueError,
+    message: str = "invalid value",
+) -> property:
+    storage_name = f"_{name}"
+
+    def getter(instance):
+        return getattr(instance, storage_name)
+
+    def setter(instance, value):
+        if validator is not None and not validator(instance, value):
+            raise error(message)
+        setattr(instance, storage_name, value)
+
+    return property(getter, setter)
 
 
 class Model(torch.nn.Module):
-    """The Model class is the basis for any custom model.
+    """Base class for Learnergy models."""
 
-    One can configure, if necessary, different properties or methods that
-    can be used throughout all childs.
-
-    """
+    device = _validated_property(
+        "device",
+        lambda _, value: value in ("cpu", "cuda"),
+        e.TypeError,
+        "`device` should be `cpu` or `cuda`",
+    )
+    history = _validated_property("history")
 
     def __init__(self, use_gpu: bool = False) -> None:
         """Initialization method.
@@ -27,46 +46,13 @@ class Model(torch.nn.Module):
 
         """
 
-        super(Model, self).__init__()
-
-        self.device = "cpu"
-        if torch.cuda.is_available() and use_gpu:
-            self.device = "cuda"
-
-        self.history = {}
-
+        super().__init__()
         torch.set_default_dtype(torch.float32)
-
-        logger.debug("Device: %s.", self.device)
-
-    @property
-    def device(self) -> str:
-        """Indicates which device is being used for computation."""
-
-        return self._device
-
-    @device.setter
-    def device(self, device: str) -> None:
-        if device not in ["cpu", "cuda"]:
-            raise e.TypeError("`device` should be `cpu` or `cuda`")
-
-        self._device = device
-
-    @property
-    def history(self) -> Dict[str, Any]:
-        """Dictionary containing historical values from the model."""
-
-        return self._history
-
-    @history.setter
-    def history(self, history: Dict[str, Any]) -> None:
-        self._history = history
+        self.device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
+        self.history = {}
 
     def dump(self, **kwargs) -> None:
         """Dumps any amount of keyword documents to lists in the history property."""
 
         for k, v in kwargs.items():
-            if k not in self.history.keys():
-                self.history[k] = []
-
-            self.history[k].append(v)
+            self.history.setdefault(k, []).append(v)

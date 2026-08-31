@@ -1,5 +1,4 @@
-"""Logging-based methods and helpers.
-"""
+"""Logging helpers."""
 
 import logging
 import sys
@@ -11,50 +10,28 @@ LOG_FILE = "learnergy.log"
 
 
 def get_console_handler() -> StreamHandler:
-    """Gets a console handler to handle logging into console.
+    """Return the configured console handler."""
 
-    Returns:
-        Handler to output information into console.
-
-    """
-
-    console_handler = StreamHandler(sys.stdout)
-    console_handler.setFormatter(FORMATTER)
-
-    return console_handler
+    handler = StreamHandler(sys.stdout)
+    handler.setFormatter(FORMATTER)
+    return handler
 
 
 def get_timed_file_handler() -> TimedRotatingFileHandler:
-    """Gets a timed file handler to handle logging into files.
+    """Return the configured rotating file handler."""
 
-    Returns:
-        Handler to output information into timed files.
-
-    """
-
-    file_handler = TimedRotatingFileHandler(LOG_FILE, delay=True, when="midnight")
-    file_handler.setFormatter(FORMATTER)
-
-    return file_handler
+    handler = TimedRotatingFileHandler(LOG_FILE, delay=True, when="midnight")
+    handler.setFormatter(FORMATTER)
+    return handler
 
 
 def get_logger(logger_name: str) -> Logger:
-    """Gets a logger and make it avaliable for further use.
-
-    Args:
-        logger_name: The name of the logger.
-
-    Returns:
-        Logger instance.
-
-    """
+    """Return a configured package logger without duplicating handlers."""
 
     logger = logging.getLogger(logger_name)
-
     if not logger.handlers:
         logger.setLevel(logging.DEBUG)
         logger.addHandler(get_console_handler())
         logger.addHandler(get_timed_file_handler())
         logger.propagate = False
-
     return logger

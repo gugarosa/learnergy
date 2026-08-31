@@ -1,205 +1,130 @@
-"""Residual-based Deep Belief Networks.
-"""
-
-from typing import Optional, Tuple, Union
+"""Residual Deep Belief Network."""
 
 import torch
 import torch.nn.functional as F
+from torch.utils.data import DataLoader, TensorDataset
 
-import learnergy.utils.constants as c
 import learnergy.utils.exception as e
-from learnergy.core import Dataset
-from learnergy.models.deep import DBN
-from learnergy.utils import logging
-
-logger = logging.get_logger(__name__)
+from learnergy.core.model import _validated_property
+from learnergy.models.deep.dbn import DBN
 
 
 class ResidualDBN(DBN):
-    """A ResidualDBN class provides the basic implementation for Residual-based Deep Belief Networks.
+    """Deep Belief Network with residual feature reinforcement."""
 
-    References:
-        M. Roder, et al. A Layer-Wise Information Reinforcement Approach to Improve Learning in Deep Belief Networks.
-        International Conference on Artificial Intelligence and Soft Computing (2020).
-
-    """
+    zetta1 = _validated_property(
+        "zetta1",
+        lambda _, value: value >= 0,
+        e.ValueError,
+        "`zetta1` should be >= 0",
+    )
+    zetta2 = _validated_property(
+        "zetta2",
+        lambda _, value: value >= 0,
+        e.ValueError,
+        "`zetta2` should be >= 0",
+    )
 
     def __init__(
         self,
-        model: str = "bernoulli",
+        model: str | tuple[str, ...] = "bernoulli",
         n_visible: int = 128,
-        n_hidden: Tuple[int, ...] = (128,),
-        steps: Tuple[int, ...] = (1,),
-        learning_rate: Tuple[float, ...] = (0.1,),
-        momentum: Tuple[float, ...] = (0.0,),
-        decay: Tuple[float, ...] = (0.0,),
-        temperature: Tuple[float, ...] = (1.0,),
+        n_hidden: tuple[int, ...] = (128,),
+        steps: tuple[int, ...] = (1,),
+        learning_rate: tuple[float, ...] = (0.1,),
+        momentum: tuple[float, ...] = (0.0,),
+        decay: tuple[float, ...] = (0.0,),
+        temperature: tuple[float, ...] = (1.0,),
         zetta1: float = 1.0,
         zetta2: float = 1.0,
         use_gpu: bool = False,
-    ):
-        """Initialization method.
+    ) -> None:
+        """Initialize a residual Deep Belief Network."""
 
-        Args:
-            model (str): Indicates which type of RBM should be used to compose the ResidualDBN.
-            n_visible (int): Amount of visible units.
-            n_hidden (tuple): Amount of hidden units per layer.
-            steps (tuple): Number of Gibbs' sampling steps per layer.
-            learning_rate (tuple): Learning rate per layer.
-            momentum (tuple): Momentum parameter per layer.
-            decay (tuple): Weight decay used for penalization per layer.
-            temperature (tuple): Temperature factor per layer.
-            zetta1 Penalization factor for original learning.
-            zetta2 Penalization factor for residual learning.
-            use_gpu (boolean): Whether GPU should be used or not.
-
-        """
-
-        logger.info("Overriding class: DBN -> ResidualDBN.")
-
-        super(ResidualDBN, self).__init__(
-            model,
-            n_visible,
-            n_hidden,
-            steps,
-            learning_rate,
-            momentum,
-            decay,
-            temperature,
-            use_gpu,
+        super().__init__(
+            model=model,
+            n_visible=n_visible,
+            n_hidden=n_hidden,
+            steps=steps,
+            learning_rate=learning_rate,
+            momentum=momentum,
+            decay=decay,
+            temperature=temperature,
+            use_gpu=use_gpu,
         )
 
         self.zetta1 = zetta1
         self.zetta2 = zetta2
 
-    @property
-    def zetta1(self) -> float:
-        """Penalization factor for original learning."""
-
-        return self._zetta1
-
-    @zetta1.setter
-    def zetta1(self, zetta1: float) -> None:
-        if zetta1 < 0:
-            raise e.ValueError("`zetta1` should be >= 0")
-
-        self._zetta1 = zetta1
-
-    @property
-    def zetta2(self) -> float:
-        """Penalization factor for residual learning."""
-
-        return self._zetta2
-
-    @zetta2.setter
-    def zetta2(self, zetta2: float) -> None:
-        if zetta2 < 0:
-            raise e.ValueError("`zetta2` should be >= 0")
-
-        self._zetta2 = zetta2
-
     def calculate_residual(self, pre_activations: torch.Tensor) -> torch.Tensor:
-        """Calculates the residual learning over input.
-
-        Args:
-            pre_activations Pre-activations to be used.
-
-        Returns:
-            The residual learning based on input pre-activations.
-
-        """
+        """Normalize positive pre-activations into a residual signal."""
 
         residual = F.relu(pre_activations)
-        residual = torch.div(residual, torch.max(residual) + c.EPSILON)
+        return residual / (residual.max() + torch.finfo(pre_activations.dtype).eps)
 
-        return residual
+    def _residual_forward(
+        self, model: torch.nn.Module, samples: torch.Tensor
+    ) -> torch.Tensor:
+        pre_activations = model.pre_activation(samples)
+        hidden, _ = model.hidden_sampling(samples)
+        encoded = (
+            hidden * self.zetta1
+            + self.calculate_residual(pre_activations) * self.zetta2
+        )
+        return encoded / (encoded.max() + torch.finfo(encoded.dtype).eps)
+
+    def _encode_residual_dataset(
+        self,
+        dataset: torch.utils.data.Dataset,
+        model: torch.nn.Module,
+        batch_size: int,
+    ) -> TensorDataset:
+        features = []
+        targets = []
+
+        with torch.no_grad():
+            for samples, labels in DataLoader(
+                dataset, batch_size=batch_size, shuffle=False
+            ):
+                samples = samples.reshape(len(samples), model.n_visible).to(self.device)
+                features.append(self._residual_forward(model, samples).cpu())
+                targets.append(labels.cpu())
+
+        return TensorDataset(torch.cat(features), torch.cat(targets))
 
     def fit(
         self,
-        dataset: Union[torch.utils.data.Dataset, Dataset],
+        dataset: torch.utils.data.Dataset,
         batch_size: int = 128,
-        epochs: Tuple[int, ...] = (10,),
-    ) -> Tuple[float, float]:
-        """Fits a new ResidualDBN model.
-
-        Args:
-            dataset: A Dataset object containing the training data.
-            batch_size: Amount of samples per batch.
-            epochs: Number of training epochs per layer.
-
-        Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
-
-        """
+        epochs: tuple[int, ...] = (10,),
+    ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+        """Fit each layer using residual representations from the previous layer."""
 
         if len(epochs) != self.n_layers:
-            raise e.SizeError(f"`epochs` should have size equal as {self.n_layers}")
+            raise e.SizeError(f"`epochs` should have {self.n_layers} values")
 
-        mse, pl = [], []
-
-        samples, targets, transform = (
-            dataset.data.numpy(),
-            dataset.targets.numpy(),
-            dataset.transform,
-        )
+        current_dataset = dataset
+        mse = []
+        pl = []
 
         for i, model in enumerate(self.models):
-            logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
-
-            d = Dataset(samples, targets, transform)
-
-            model_mse, model_pl = model.fit(d, batch_size, epochs[i])
+            model_mse, model_pl = model.fit(
+                current_dataset, batch_size=batch_size, epochs=epochs[i]
+            )
             mse.append(model_mse)
             pl.append(model_pl)
 
-            if d.transform:
-                samples = d.transform(d.data)
-            else:
-                samples = d.data
-
-            if self.device == "cuda":
-                samples = samples.cuda()
-
-            samples = samples.reshape(len(dataset), model.n_visible)
-            targets = d.targets
-            transform = None
-
-            pre_activation = model.pre_activation(samples)
-
-            # Aggregates the residual learning after forward pass
-            samples, _ = model.hidden_sampling(samples)
-            samples = torch.mul(samples, self.zetta1) + torch.mul(
-                self.calculate_residual(pre_activation), self.zetta2
-            )
-
-            samples = torch.div(samples, torch.max(samples) + c.EPSILON)
-
-            if self.device == "cuda":
-                samples = samples.cpu()
-            samples = samples.detach()
+            if i + 1 < self.n_layers:
+                current_dataset = self._encode_residual_dataset(
+                    current_dataset, model, batch_size
+                )
 
         return mse, pl
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Re-writes the forward pass for classification purposes.
-
-        Args:
-            x: An input tensor for computing the forward pass.
-
-        Returns:
-            A tensor containing the DBN's outputs.
-
-        """
+        """Return the residual representation produced by the final layer."""
 
         for model in self.models:
-            pre_activation = model.pre_activation(x)
-
-            # Aggregates the residual learning after forward pass
-            x, _ = model.hidden_sampling(x)
-            x = torch.mul(x, self.zetta1) + torch.mul(
-                self.calculate_residual(pre_activation), self.zetta2
-            )
-
-            x = torch.div(x, torch.max(x) + c.EPSILON)
+            x = self._residual_forward(model, x)
 
         return x

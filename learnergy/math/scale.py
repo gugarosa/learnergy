@@ -1,25 +1,14 @@
-"""Scaling-related mathematical functions.
-"""
+"""Scaling helpers."""
 
 import numpy as np
 
-import learnergy.utils.constants as c
+from learnergy.utils.constants import EPSILON
 
 
 def unitary_scale(x: np.ndarray) -> np.ndarray:
-    """Scales an array between 0 and 1.
+    """Scale an array to the interval from zero to one."""
 
-    Args:
-        x: A numpy array to be scaled.
-
-    Returns:
-        Scaled array.
-
-    """
-
-    x = x.astype("float32")
-
-    x -= x.min()
-    x *= 1.0 / (x.max() + c.EPSILON)
-
-    return x
+    scaled = x.astype("float32")
+    scaled -= scaled.min()
+    scaled /= scaled.max() + EPSILON
+    return scaled

@@ -1,399 +1,228 @@
-"""Convolutional Deep Belief Network.
-"""
-
-from typing import List, Optional, Tuple, Union
+"""Convolutional Deep Belief Network."""
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
+from torch.utils.data import DataLoader, TensorDataset
 
 import learnergy.utils.exception as e
-#import learnergy.utils.constants as c
-from learnergy.core import Dataset, Model
-from learnergy.models.bernoulli import ConvRBM
-from learnergy.models.gaussian import GaussianConvRBM, GaussianConvRBM4Deep
-from learnergy.utils import logging
+from learnergy.core.model import Model, _validated_property
+from learnergy.models.bernoulli.conv_rbm import ConvRBM
+from learnergy.models.gaussian.gaussian_conv_rbm import (
+    GaussianConvRBM,
+    GaussianConvRBM4Deep,
+)
 
-logger = logging.get_logger(__name__)
-
-MODELS = {"bernoulli": ConvRBM, "gaussian": GaussianConvRBM, "gaussiandeep": GaussianConvRBM4Deep}
+MODELS = {
+    "bernoulli": ConvRBM,
+    "gaussian": GaussianConvRBM,
+    "gaussiandeep": GaussianConvRBM4Deep,
+}
 
 
 class ConvDBN(Model):
-    """A ConvDBN class provides the basic implementation for Convolutional DBNs.
+    """Stack convolutional RBMs and train them layer by layer."""
 
-    References:
-        H. Lee, et al.
-        Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations.
-        Proceedings of the 26th annual international conference on machine learning (2009).
-
-    """
+    visible_shape = _validated_property("visible_shape")
+    filter_shape = _validated_property("filter_shape")
+    n_filters = _validated_property("n_filters")
+    n_channels = _validated_property(
+        "n_channels",
+        lambda _, value: value > 0,
+        e.ValueError,
+        "`n_channels` should be > 0",
+    )
+    n_layers = _validated_property(
+        "n_layers", lambda _, value: value > 0, e.ValueError, "`n_layers` should be > 0"
+    )
+    steps = _validated_property(
+        "steps",
+        lambda self, value: len(value) == self.n_layers,
+        e.SizeError,
+        "`steps` should match the number of layers",
+    )
+    lr = _validated_property(
+        "lr",
+        lambda self, value: len(value) == self.n_layers,
+        e.SizeError,
+        "`lr` should match the number of layers",
+    )
+    momentum = _validated_property(
+        "momentum",
+        lambda self, value: len(value) == self.n_layers,
+        e.SizeError,
+        "`momentum` should match the number of layers",
+    )
+    decay = _validated_property(
+        "decay",
+        lambda self, value: len(value) == self.n_layers,
+        e.SizeError,
+        "`decay` should match the number of layers",
+    )
+    models = _validated_property("models")
 
     def __init__(
         self,
         model: str = "bernoulli",
-        visible_shape: Tuple[int, int] = (28, 28),
-        filter_shape: Tuple[Tuple[int, int], ...] = ((7, 7),),
-        n_filters: Tuple[int, ...] = (16,),
+        visible_shape: tuple[int, int] = (28, 28),
+        filter_shape: tuple[tuple[int, int], ...] = ((7, 7),),
+        n_filters: tuple[int, ...] = (16,),
         n_channels: int = 1,
-        steps: Tuple[int, ...] = (1,),
-        learning_rate: Tuple[float, ...] = (0.1,),
-        momentum: Tuple[float, ...] = (0.0,),
-        decay: Tuple[float, ...] = (0.0,),
-        maxpooling: Tuple[bool,...] = (False, False),
-        pooling_kernel: Tuple[int, ...] = (2, 2,),
+        steps: tuple[int, ...] = (1,),
+        learning_rate: tuple[float, ...] = (0.1,),
+        momentum: tuple[float, ...] = (0.0,),
+        decay: tuple[float, ...] = (0.0,),
+        maxpooling: bool | tuple[bool, ...] = (False, False),
+        pooling_kernel: int | tuple[int, ...] = (2, 2),
         use_gpu: bool = False,
-    ):
-        """Initialization method.
+    ) -> None:
+        """Initialize a convolutional Deep Belief Network."""
 
-        Args:
-            model: Indicates which type of ConvRBM should be used to compose the DBN.
-            visible_shape: Shape of visible units.
-            filter_shape: Shape of filters per layer.
-            n_filters: Number of filters per layer.
-            n_channels: Number of channels.
-            steps: Number of Gibbs' sampling steps per layer.
-            learning_rate: Learning rate per layer.
-            momentum: Momentum parameter per layer.
-            decay: Weight decay used for penalization per layer.
-            use_gpu: Whether GPU should be used or not.
+        super().__init__(use_gpu=use_gpu)
 
-        """
-
-        logger.info("Overriding class: Model -> ConvDBN.")
-
-        super(ConvDBN, self).__init__(use_gpu=use_gpu)
+        if model not in MODELS:
+            raise e.ValueError(f"unknown model type: {model}")
+        if not n_filters or any(value <= 0 for value in n_filters):
+            raise e.ValueError("`n_filters` should contain positive values")
 
         self.visible_shape = visible_shape
-        self.filter_shape = filter_shape
-
-        self.n_filters = n_filters
+        self.filter_shape = tuple(filter_shape)
+        self.n_filters = tuple(n_filters)
         self.n_channels = n_channels
-        self.n_layers = len(n_filters)
+        self.n_layers = len(self.n_filters)
+        self.steps = tuple(steps)
+        self.lr = tuple(learning_rate)
+        self.momentum = tuple(momentum)
+        self.decay = tuple(decay)
 
-        self.steps = steps
-        self.lr = learning_rate
-        self.momentum = momentum
-        self.decay = decay
+        if len(self.filter_shape) != self.n_layers:
+            raise e.SizeError("`filter_shape` should match the number of layers")
 
-        self.maxpol2d = []
+        if isinstance(maxpooling, bool):
+            maxpooling = (maxpooling,) * self.n_layers
+        else:
+            maxpooling = tuple(maxpooling)[: self.n_layers]
+            maxpooling += (False,) * (self.n_layers - len(maxpooling))
 
-        if len(pooling_kernel) < self.n_layers:
-            pooling_kernel = list(pooling_kernel)
-            for _ in range(len(pooling_kernel)-1, self.n_layers):
-                pooling_kernel.append(2)
-            pooling_kernel = tuple(pooling_kernel)
-
-        if len(maxpooling) < self.n_layers:
-            maxpooling = list(maxpooling)
-            for _ in range(len(maxpooling), self.n_layers):
-                maxpooling.append(False)
-            maxpooling = tuple(maxpooling)
+        if isinstance(pooling_kernel, int):
+            pooling_kernel = (pooling_kernel,) * self.n_layers
+        else:
+            pooling_kernel = tuple(pooling_kernel)[: self.n_layers]
+            pooling_kernel += (2,) * (self.n_layers - len(pooling_kernel))
 
         self.maxpooling = maxpooling
+        self.pooling_kernel = pooling_kernel
+        self.maxpol2d = []
+        self.models = nn.ModuleList()
 
-        for i, mx in enumerate(maxpooling):
-            if mx:
-                self.maxpol2d.append(nn.MaxPool2d(kernel_size=pooling_kernel[i], stride=2, padding=1))
-            else:
-                self.maxpol2d.append(None)
-
-        self.models = nn.ModuleList([])
+        layer_shape = visible_shape
+        layer_channels = n_channels
         for i in range(self.n_layers):
-            if i == 0 and model=='gaussian' :
-                m = MODELS[model](
-                    visible_shape,
-                    self.filter_shape[i],
-                    self.n_filters[i],
-                    n_channels,
-                    self.steps[i],
-                    self.lr[i],
-                    self.momentum[i],
-                    self.decay[i],
-                    self.maxpooling[i],
-                    pooling_kernel[i],
-                    use_gpu,
-                )
-            elif i == 0 and model == 'bernoulli':
-                m = MODELS[model](
-                    visible_shape,
-                    self.filter_shape[i],
-                    self.n_filters[i],
-                    n_channels,
-                    self.steps[i],
-                    self.lr[i],
-                    self.momentum[i],
-                    self.decay[i],
-                    use_gpu,
-                )
-            if i > 0:
-                m = MODELS['gaussiandeep'](
-                    visible_shape,
-                    self.filter_shape[i],
-                    self.n_filters[i],
-                    n_channels,
-                    self.steps[i],
-                    self.lr[i],
-                    self.momentum[i],
-                    self.decay[i],
-                    self.maxpooling[i],
-                    pooling_kernel[i],
-                    use_gpu,
-                )
-
-            visible_shape = (
-                visible_shape[0] - self.filter_shape[i][0] + 1,
-                visible_shape[1] - self.filter_shape[i][1] + 1,
+            model_class = MODELS[model] if i == 0 else MODELS["gaussiandeep"]
+            layer = model_class(
+                visible_shape=layer_shape,
+                filter_shape=self.filter_shape[i],
+                n_filters=self.n_filters[i],
+                n_channels=layer_channels,
+                steps=self.steps[i],
+                learning_rate=self.lr[i],
+                momentum=self.momentum[i],
+                decay=self.decay[i],
+                maxpooling=self.maxpooling[i],
+                pooling_kernel=self.pooling_kernel[i],
+                use_gpu=use_gpu,
             )
+            self.models.append(layer)
+            self.maxpol2d.append(layer.maxpol2d)
+
+            layer_shape = layer.hidden_shape
             if self.maxpooling[i]:
-                # TODO: Needs to be adjusted to when pooling_kernel != 2
-                visible_shape = (
-                    (m.hidden_shape[0] // 2) + 1,
-                    (m.hidden_shape[1] // 2) + 1,
+                kernel = self.pooling_kernel[i]
+                layer_shape = tuple(
+                    (size + 2 - kernel) // 2 + 1 for size in layer_shape
                 )
-            
-            n_channels = self.n_filters[i]
+            layer_channels = self.n_filters[i]
 
-            self.models.append(m)
-
-        if self.device == "cuda":
-            self.cuda()
-
-        logger.info("Class overrided.")
-
-    @property
-    def visible_shape(self) -> Tuple[int, int]:
-        """Shape of visible units."""
-
-        return self._visible_shape
-
-    @visible_shape.setter
-    def visible_shape(self, visible_shape: Tuple[int, int]) -> None:
-        self._visible_shape = visible_shape
-
-    @property
-    def filter_shape(self) -> Tuple[Tuple[int, int], ...]:
-        """Shape of filters."""
-
-        return self._filter_shape
-
-    @filter_shape.setter
-    def filter_shape(self, filter_shape: Tuple[Tuple[int, int], ...]) -> None:
-        self._filter_shape = filter_shape
-
-    @property
-    def n_filters(self) -> Tuple[int, ...]:
-        """Number of filters."""
-
-        return self._n_filters
-
-    @n_filters.setter
-    def n_filters(self, n_filters: Tuple[int, ...]) -> None:
-        self._n_filters = n_filters
-
-    @property
-    def n_channels(self) -> int:
-        """Number of channels."""
-
-        return self._n_channels
-
-    @n_channels.setter
-    def n_channels(self, n_channels: int) -> None:
-        if n_channels <= 0:
-            raise e.ValueError("`n_channels` should be > 0")
-
-        self._n_channels = n_channels
-
-    @property
-    def n_layers(self) -> int:
-        """Number of layers."""
-
-        return self._n_layers
-
-    @n_layers.setter
-    def n_layers(self, n_layers: int) -> None:
-        if n_layers <= 0:
-            raise e.ValueError("`n_layers` should be > 0")
-
-        self._n_layers = n_layers
-
-    @property
-    def steps(self) -> Tuple[int, ...]:
-        """Number of steps Gibbs' sampling steps per layer."""
-
-        return self._steps
-
-    @steps.setter
-    def steps(self, steps: Tuple[int, ...]) -> None:
-        if len(steps) != self.n_layers:
-            raise e.SizeError(f"`steps` should have size equal as {self.n_layers}")
-
-        self._steps = steps
-
-    @property
-    def lr(self) -> Tuple[float, ...]:
-        """Learning rate per layer."""
-
-        return self._lr
-
-    @lr.setter
-    def lr(self, lr: Tuple[float, ...]) -> None:
-        if len(lr) != self.n_layers:
-            raise e.SizeError(f"`lr` should have size equal as {self.n_layers}")
-
-        self._lr = lr
-
-    @property
-    def momentum(self) -> Tuple[float, ...]:
-        """Momentum parameter per layer."""
-
-        return self._momentum
-
-    @momentum.setter
-    def momentum(self, momentum: Tuple[float, ...]) -> None:
-        if len(momentum) != self.n_layers:
-            raise e.SizeError(f"`momentum` should have size equal as {self.n_layers}")
-
-        self._momentum = momentum
-
-    @property
-    def decay(self) -> Tuple[float, ...]:
-        """Weight decay per layer."""
-
-        return self._decay
-
-    @decay.setter
-    def decay(self, decay: Tuple[float, ...]) -> None:
-        if len(decay) != self.n_layers:
-            raise e.SizeError(f"`decay` should have size equal as {self.n_layers}")
-
-        self._decay = decay
-
-    @property
-    def models(self) -> List[torch.nn.Module]:
-        """List of models (RBMs)."""
-
-        return self._models
-
-    @models.setter
-    def models(self, models: List[torch.nn.Module]) -> None:
-        self._models = models
+        self.to(self.device)
 
     def fit(
         self,
-        dataset: Union[torch.utils.data.Dataset, Dataset],
+        dataset: torch.utils.data.Dataset,
         batch_size: int = 128,
-        epochs: Tuple[int, ...] = (10, 10),
+        epochs: tuple[int, ...] = (10, 10),
         log: bool = True,
-    ) -> float:
-        """Fits a new ConvDBN model.
+    ) -> list[torch.Tensor]:
+        """Fit each convolutional RBM layer."""
 
-        Args:
-            dataset: A Dataset object containing the training data.
-            batch_size: Amount of samples per batch.
-            epochs: Number of training epochs per layer.
-            log: To show or not to show the training progress.
-
-        Returns:
-            (float): MSE (mean squared error) from the training step.
-
-        """
-
-        if len(epochs) != self.n_layers:
-            raise e.SizeError(("`epochs` should have size equal as %d", self.n_layers))
+        epochs = tuple(epochs)
+        if not epochs:
+            raise e.SizeError("`epochs` should contain at least one value")
+        epochs = epochs[: self.n_layers] + (epochs[-1],) * max(
+            0, self.n_layers - len(epochs)
+        )
 
         mse = []
 
-        try:
-            samples, targets, transform = (
-                dataset.data.numpy(),
-                dataset.targets.numpy(),
-                dataset.transform,
-            )
-            d = Dataset(samples, targets, transform)
-        except (AttributeError, TypeError):
-            try:
-                samples, targets, transform = (
-                    dataset.data,
-                    dataset.targets,
-                    dataset.transform,
-                )
-                d = Dataset(samples, targets, transform)
-            except (AttributeError, TypeError):
-                d = dataset
-
-        batches = DataLoader(d, batch_size=batch_size, shuffle=True)
-
         for i, model in enumerate(self.models):
-            logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
-
             if i == 0:
-                model_mse = model.fit(d, batch_size, epochs[i], log)
-                mse.append(model_mse)
+                model_mse = model.fit(
+                    dataset,
+                    batch_size=batch_size,
+                    epochs=epochs[i],
+                    **({"log": log} if isinstance(model, GaussianConvRBM) else {}),
+                )
             else:
-                disable = False
-                if not log:
-                    disable = True
-                # Creates the training phase for deeper models
-                for ep in range(epochs[i]):
-                    logger.info("Epoch %d/%d", ep + 1, epochs[i])
-
+                batches = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+                for _ in range(epochs[i]):
                     model_mse = 0
+                    for samples, labels in batches:
+                        samples = samples.reshape(
+                            len(samples),
+                            self.n_channels,
+                            self.visible_shape[0],
+                            self.visible_shape[1],
+                        ).to(self.device)
+                        with torch.no_grad():
+                            for previous_model in self.models[:i]:
+                                samples, _ = previous_model.hidden_sampling(samples)
+                                if previous_model.maxpooling:
+                                    samples = previous_model.maxpol2d(samples)
 
-                    for samples, y in tqdm(batches, disable=disable):
-                        if self.device == "cuda":
-                            samples = samples.cuda()
-
-                        for ii in range(i):
-                            samples, _ = self.models[ii].hidden_sampling(samples)
-                            if self.maxpooling[ii]:
-                                samples = self.maxpol2d[ii](samples)
-
-                        # Creating the dataset to "mini-fit" the i-th model
-                        ds = Dataset(samples, y, None, show_log=False)
-
-                        # Fiting the model with the batch
-                        model_mse += model.fit(ds, samples.size(0), 1)
+                        encoded = TensorDataset(samples.detach().cpu(), labels)
+                        batch_mse = model.fit(
+                            encoded,
+                            batch_size=len(samples),
+                            epochs=1,
+                            **(
+                                {"log": log}
+                                if isinstance(model, GaussianConvRBM)
+                                else {}
+                            ),
+                        )
+                        model_mse += batch_mse
 
                     model_mse /= len(batches)
-                    logger.info("MSE: %f", model_mse)
 
-                mse.append(model_mse)            
+            mse.append(model_mse)
 
         return mse
 
     def reconstruct(
         self, dataset: torch.utils.data.Dataset
-    ) -> Tuple[float, torch.Tensor]:
-        """Reconstructs batches of new samples.
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Reconstruct a dataset through an unpooled convolutional stack."""
 
-        Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the training data.
-
-        Returns:
-            (Tuple[float, torch.Tensor]): Reconstruction error and visible probabilities, i.e., P(v|h).
-
-        """
-
-        logger.info("Reconstructing new samples ...")
-
-        mse = 0
         batch_size = len(dataset)
-
         batches = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=0
         )
 
-        for samples, _ in tqdm(batches):
+        for samples, _ in batches:
             samples = samples.reshape(
-                len(samples),
+                batch_size,
                 self.n_channels,
                 self.visible_shape[0],
                 self.visible_shape[1],
-            )
-            if self.device == "cuda":
-                samples = samples.cuda()
+            ).to(self.device)
 
             hidden_probs = samples
             for model in self.models:
@@ -403,33 +232,16 @@ class ConvDBN(Model):
             for model in reversed(self.models):
                 visible_probs, visible_states = model.visible_sampling(visible_probs)
 
-            batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
-            )
-
-            mse += batch_mse
-
-        mse /= len(batches)
-
-        logger.info("MSE: %f", mse)
+            mse = ((samples - visible_states) ** 2).sum() / batch_size
 
         return mse, visible_probs
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Performs a forward pass over the data.
-        Args:
-            x: An input tensor for computing the forward pass.
-        Returns:
-            A tensor containing the ConvDBN's outputs.
-        """
+        """Return the representation produced by the final layer."""
 
-        i = 0
         for model in self.models:
             x, _ = model.hidden_sampling(x)
-
-            if self.maxpooling[i]:
-                x = self.maxpol2d[i](x)
-
-            i += 1
+            if model.maxpooling:
+                x = model.maxpol2d(x)
 
         return x

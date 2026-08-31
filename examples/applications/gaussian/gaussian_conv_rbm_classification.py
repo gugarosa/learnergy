@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from learnergy.models.gaussian import GaussianConvRBM
 
@@ -55,12 +54,7 @@ if model.maxpooling:
     input_fc = nf * (h1 // 2 + 1) * (h2 // 2 + 1)
 else:
     input_fc = nf * h1 * h2
-fc = nn.Linear(input_fc, n_classes)
-
-# Check if model uses GPU
-if model.device == "cuda":
-    # If yes, put fully-connected on GPU
-    fc = fc.cuda()
+fc = nn.Linear(input_fc, n_classes).to(model.device)
 
 # Cross-Entropy loss is used for the discriminative fine-tuning
 criterion = nn.CrossEntropyLoss()
@@ -83,17 +77,14 @@ for e in range(fine_tune_epochs):
     train_loss, val_acc = 0, 0
 
     # For every possible batch
-    for x_batch, y_batch in tqdm(train_batch):
+    for x_batch, y_batch in train_batch:
         # For every possible optimizer
         for opt in optimizer:
             # Resets the optimizer
             opt.zero_grad()
 
-        # Checking whether GPU is avaliable and if it should be used
-        if model.device == "cuda":
-            # Applies the GPU usage to the data and labels
-            x_batch = x_batch.cuda()
-            y_batch = y_batch.cuda()
+        x_batch = x_batch.to(model.device)
+        y_batch = y_batch.to(model.device)
 
         # Passing the batch down the model
         y = model(x_batch)
@@ -119,12 +110,9 @@ for e in range(fine_tune_epochs):
         train_loss += loss.item()
 
     # Calculate the test accuracy for the model:
-    for x_batch, y_batch in tqdm(val_batch):
-        # Checking whether GPU is avaliable and if it should be used
-        if model.device == "cuda":
-            # Applies the GPU usage to the data and labels
-            x_batch = x_batch.cuda()
-            y_batch = y_batch.cuda()
+    for x_batch, y_batch in val_batch:
+        x_batch = x_batch.to(model.device)
+        y_batch = y_batch.to(model.device)
 
         # Passing the batch down the model
         y = model(x_batch)
@@ -141,7 +129,9 @@ for e in range(fine_tune_epochs):
         # Calculating validation set accuracy
         val_acc += torch.mean((torch.sum(preds == y_batch).float()) / x_batch.size(0))
 
-    print(f"Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc / len(val_batch)}")
+    print(
+        f"Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc / len(val_batch)}"
+    )
 
 # Saving the fine-tuned model
 torch.save(model, "tuned_model.pth")

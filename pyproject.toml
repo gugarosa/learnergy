@@ -1,2 +1,71 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "learnergy"
+dynamic = ["version"]
+description = "Energy-based machine learners built with PyTorch"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Mateus Roder", email = "mateus.roder@unesp.br" },
+    { name = "Gustavo de Rosa", email = "gustavo.rosa@unesp.br" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "matplotlib>=3.10.9",
+    "numpy>=2.0",
+    "Pillow>=8.1.2",
+    "scikit-image>=0.26.0",
+    "torch>=2.13.0",
+]
+
+[project.optional-dependencies]
+dev = ["pre-commit>=4.6.0"]
+docs = ["sphinx>=9"]
+examples = ["torchvision>=0.9.0"]
+tests = [
+    "coverage>=7.10",
+    "pytest>=9.0.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/gugarosa/learnergy"
+Documentation = "https://learnergy.readthedocs.io"
+Issues = "https://github.com/gugarosa/learnergy/issues"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.2",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "learnergy.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["learnergy*"]
+
 [tool.black]
 line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+addopts = ["-v", "--durations=10"]
+norecursedirs = ["build"]
