@@ -12,15 +12,22 @@ image-quality metrics, and visualization helpers.
 
 ## Installation
 
-Learnergy requires Python 3.11 or newer.
+Learnergy requires Python 3.11 or newer. Add it to a project managed by uv with:
+
+```bash
+uv add learnergy
+```
+
+Add the optional torchvision dependency to run the examples:
+
+```bash
+uv add "learnergy[examples]"
+```
+
+For a consumer installation in an existing Python environment, pip is also supported:
 
 ```bash
 pip install learnergy
-```
-
-Install the optional torchvision dependency to run the examples:
-
-```bash
 pip install "learnergy[examples]"
 ```
 
