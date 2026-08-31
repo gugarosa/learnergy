@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pre-commit>=4.6.0"]
+dev = ["pre-commit>=4.6.2"]
 docs = ["sphinx>=9"]
 examples = ["torchvision>=0.9.0"]
 tests = [
@@ -49,7 +49,7 @@ Issues = "https://github.com/gugarosa/learnergy/issues"
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.6.0",
+    "pre-commit>=4.6.2",
     "pytest>=9.0.2",
 ]
 
