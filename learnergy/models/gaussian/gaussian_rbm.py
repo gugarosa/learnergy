@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 
 from learnergy.core.model import _validated_property
 from learnergy.models.bernoulli.rbm import RBM
+from learnergy.models.gaussian._normalization import standardize
 
 
 class GaussianRBM(RBM):
@@ -150,10 +151,7 @@ class GaussianRBM(RBM):
 
             for samples, _ in batches:
                 if self.normalize:
-                    samples = (
-                        (samples - torch.mean(samples, 0, True))
-                        / (torch.std(samples, 0, True) + torch.finfo(samples.dtype).eps)
-                    ).detach()
+                    samples = standardize(samples).detach()
 
                 samples = samples.reshape(len(samples), self.n_visible).to(self.device)
 
@@ -210,10 +208,7 @@ class GaussianRBM(RBM):
 
         for samples, _ in batches:
             if self.normalize:
-                samples = (
-                    (samples - torch.mean(samples, 0, True))
-                    / (torch.std(samples, 0, True) + torch.finfo(samples.dtype).eps)
-                ).detach()
+                samples = standardize(samples).detach()
 
             samples = samples.reshape(len(samples), self.n_visible).to(self.device)
 
@@ -241,10 +236,7 @@ class GaussianRBM(RBM):
         """
 
         if self.input_normalize:
-            x = (
-                (x - torch.mean(x, 0, True))
-                / (torch.std(x, 0, True) + torch.finfo(x.dtype).eps)
-            ).detach()
+            x = standardize(x).detach()
 
         x, _ = self.hidden_sampling(x)
 
@@ -421,8 +413,9 @@ class VarianceGaussianRBM(RBM):
     """A VarianceGaussianRBM class provides the basic implementation for
     Gaussian-Bernoulli Restricted Boltzmann Machines (without standardization).
 
-    Note that this class implements a new cost function that takes in account
-    a new learning parameter: variance (sigma).
+    The learnable scale parameter ``sigma`` defines the visible variance as
+    ``sigma**2 + torch.finfo(dtype).eps``. The same variance is used by the
+    free energy and the visible conditional distribution.
 
     Therefore, there is no need to standardize the data, as the variance
     will be trained throughout the learning procedure.
@@ -490,8 +483,8 @@ class VarianceGaussianRBM(RBM):
 
         """
 
-        sigma = torch.pow(self.sigma, 2) + torch.finfo(v.dtype).eps
-        activations = F.linear(torch.div(v, sigma), self.W.t(), self.b)
+        variance = self.sigma.square() + torch.finfo(v.dtype).eps
+        activations = F.linear(v / variance, self.W.t(), self.b)
 
         if scale:
             probs = torch.sigmoid(torch.div(activations, self.T))
@@ -512,22 +505,16 @@ class VarianceGaussianRBM(RBM):
             scale: A boolean to decide whether temperature should be used or not.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            The conditional means and sampled visible states, respectively.
 
         """
 
         activations = F.linear(h, self.W, self.a)
+        variance = self.sigma.square() + torch.finfo(activations.dtype).eps
+        std = variance.sqrt().expand_as(activations)
+        states = torch.normal(activations, std)
 
-        if self.device == "cpu":
-            # Variance needs to have size equal to (batch_size, n_visible)
-            sigma = self.sigma.unsqueeze(0).expand(activations.size(0), -1)
-        else:
-            # Variance needs to have size equal to (n_visible)
-            sigma = self.sigma
-
-        states = torch.normal(activations, torch.pow(sigma, 2))
-
-        return states, activations
+        return activations, states
 
     def energy(self, samples: torch.Tensor) -> torch.Tensor:
         """Calculates and frees the system's energy.
@@ -540,13 +527,13 @@ class VarianceGaussianRBM(RBM):
 
         """
 
-        sigma = torch.pow(self.sigma, 2) + torch.finfo(samples.dtype).eps
-        activations = F.linear(torch.div(samples, sigma), self.W.t(), self.b)
+        variance = self.sigma.square() + torch.finfo(samples.dtype).eps
+        activations = F.linear(samples / variance, self.W.t(), self.b)
 
         h = torch.sum(F.softplus(activations), dim=1)
-        v = torch.sum(torch.div(torch.pow(samples - self.a, 2), 2 * sigma), dim=1)
+        v = torch.sum((samples - self.a).square() / (2 * variance), dim=1)
 
-        energy = -v - h
+        energy = v - h
 
         return energy
 

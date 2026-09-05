@@ -5,28 +5,34 @@ import torch
 
 
 def _show(tensor: torch.Tensor) -> None:
-    image = tensor.permute(1, 2, 0) if tensor.size(0) == 3 else tensor
+    image = tensor
+    if tensor.ndim == 3:
+        image = tensor.permute(1, 2, 0) if tensor.size(0) == 3 else tensor.squeeze(0)
     plt.imshow(
         image.detach().cpu().numpy(),
-        cmap=None if tensor.size(0) == 3 else "gray",
+        cmap=None if image.ndim == 3 else "gray",
     )
     plt.xticks([])
     plt.yticks([])
 
 
 def save_tensor(tensor: torch.Tensor, output_path: str) -> None:
-    """Save a tensor as an image."""
+    """Save an (H, W), (1, H, W), or (3, H, W) image tensor."""
 
-    plt.figure()
-    _show(tensor)
-    plt.savefig(output_path)
-    plt.close()
+    figure = plt.figure()
+    try:
+        _show(tensor)
+        figure.savefig(output_path)
+    finally:
+        plt.close(figure)
 
 
 def show_tensor(tensor: torch.Tensor) -> None:
-    """Display a tensor as an image."""
+    """Display an (H, W), (1, H, W), or (3, H, W) image tensor."""
 
-    plt.figure()
-    _show(tensor)
-    plt.show()
-    plt.close()
+    figure = plt.figure()
+    try:
+        _show(tensor)
+        plt.show()
+    finally:
+        plt.close(figure)
