@@ -6,7 +6,7 @@ from learnergy.core import Model
 
 
 def test_package_version():
-    assert learnergy.__version__ == "2.0.0"
+    assert learnergy.__version__ == "2.0.1"
 
 
 def test_model_tracks_device_and_history():
