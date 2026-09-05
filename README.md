@@ -82,6 +82,25 @@ plots, image mosaics, and tensor rendering.
 See [`examples/applications`](examples/applications) for complete training and
 classification programs.
 
+### Numerical behavior
+
+When enabled, Gaussian normalization uses statistics from the current batch,
+not stored training statistics. Batches of two or more samples use sample
+standard deviation; a singleton batch is centered to zero. Representations
+therefore depend on batch composition. Disable the corresponding normalization
+flags when supplying externally standardized features.
+
+`VarianceGaussianRBM.sigma` is a learnable scale: the effective visible variance
+is `sigma**2` plus a dtype-dependent epsilon. Its `visible_sampling` method
+returns conditional means followed by sampled states, and Gibbs sampling uses
+those states.
+
+Gaussian convolutional representations support gradient-based fine-tuning.
+Use `torch.no_grad()` when extracting frozen features without an autograd graph.
+
+The corrected variance-Gaussian sampling and stabilized likelihood calculations
+can change training trajectories, including with a fixed random seed.
+
 ## Development
 
 The repository uses [uv](https://docs.astral.sh/uv/) for reproducible

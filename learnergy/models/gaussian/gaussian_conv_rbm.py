@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 
 from learnergy.core.model import _validated_property
 from learnergy.models.bernoulli.conv_rbm import ConvRBM
+from learnergy.models.gaussian._normalization import standardize
 
 
 class GaussianConvRBM(ConvRBM):
@@ -51,7 +52,7 @@ class GaussianConvRBM(ConvRBM):
         """Compute hidden probabilities and activations."""
 
         activations = F.conv2d(v, self.W, bias=self.b)
-        return F.relu6(activations).detach(), activations
+        return F.relu6(activations), activations
 
     def visible_sampling(self, h: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute visible probabilities and activations."""
@@ -86,10 +87,7 @@ class GaussianConvRBM(ConvRBM):
                 ).to(self.device)
 
                 if self.normalize:
-                    eps = torch.finfo(samples.dtype).eps
-                    samples = (samples - samples.mean(0, True)) / (
-                        samples.std(0, True) + eps
-                    )
+                    samples = standardize(samples)
 
                 _, _, _, _, visible_states = self.gibbs_sampling(samples)
                 visible_states = visible_states.detach()
@@ -110,8 +108,7 @@ class GaussianConvRBM(ConvRBM):
         """Return hidden activations, optionally pooled."""
 
         if self.normalize:
-            eps = torch.finfo(x.dtype).eps
-            x = (x - x.mean(0, True)) / (x.std(0, True) + eps)
+            x = standardize(x)
 
         x, _ = self.hidden_sampling(x)
         if self.maxpooling:

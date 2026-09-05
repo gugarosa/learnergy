@@ -1,5 +1,6 @@
 import logging as stdlib_logging
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 import torch
@@ -73,3 +74,54 @@ def test_visual_helpers(tmp_path, monkeypatch):
 
 def test_deep_sigmoid_name_remains_available():
     assert issubclass(SigmoidRBM4Deep, SigmoidRBM)
+
+
+@pytest.mark.parametrize("n_originals, n_reconstructed", [(1, 2), (2, 1)])
+def test_ssim_rejects_unequal_batch_lengths(n_originals, n_reconstructed):
+    sample = torch.arange(64, dtype=torch.float32).reshape(1, 8, 8)
+    originals = sample.repeat(n_originals, 1, 1)
+    reconstructed = sample.reshape(1, 64).repeat(n_reconstructed, 1)
+
+    with pytest.raises(ValueError):
+        calculate_ssim(reconstructed, originals)
+
+
+@pytest.fixture
+def existing_figures():
+    figures = set(plt.get_fignums())
+    yield figures
+    for number in set(plt.get_fignums()) - figures:
+        plt.close(number)
+
+
+@pytest.mark.parametrize("shape", [(3, 5), (1, 5, 7), (3, 5, 7)])
+def test_tensor_render_preserves_image_layout(shape, monkeypatch, existing_figures):
+    samples = torch.rand(shape)
+    rendered = []
+
+    def capture_image():
+        rendered.append(np.asarray(plt.gca().images[0].get_array()))
+
+    monkeypatch.setattr(plt, "show", capture_image)
+    tensor.show_tensor(samples)
+
+    expected = samples.numpy()
+    if len(shape) == 3:
+        expected = np.moveaxis(expected, 0, -1) if shape[0] == 3 else expected[0]
+    np.testing.assert_array_equal(rendered[0], expected)
+    assert set(plt.get_fignums()) == existing_figures
+
+
+@pytest.mark.parametrize("operation", ["save", "show"])
+def test_tensor_render_closes_figure_after_failure(
+    operation, tmp_path, existing_figures
+):
+    samples = torch.zeros(2, 5, 7)
+
+    with pytest.raises(TypeError):
+        if operation == "save":
+            tensor.save_tensor(samples, str(tmp_path / "invalid.png"))
+        else:
+            tensor.show_tensor(samples)
+
+    assert set(plt.get_fignums()) == existing_figures

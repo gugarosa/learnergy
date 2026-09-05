@@ -4,7 +4,6 @@ from typing import Tuple
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
 
 import learnergy.utils.exception as e
 from learnergy.core.model import _validated_property
@@ -115,35 +114,12 @@ class DropoutRBM(RBM):
 
         """
 
-        mse = 0
-        batch_size = len(dataset)
-
-        # Saving dropout rate to an auxiliary variable
-        # and temporarily disabling dropout
         p = self.p
         self.p = 0
-
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=0
-        )
-
-        for samples, _ in batches:
-            samples = samples.reshape(len(samples), self.n_visible).to(self.device)
-
-            _, pos_hidden_states = self.hidden_sampling(samples)
-            visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
-
-            batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
-            )
-            mse += batch_mse
-
-        mse /= len(batches)
-
-        # Recovering initial dropout rate
-        self.p = p
-
-        return mse, visible_probs
+        try:
+            return super().reconstruct(dataset)
+        finally:
+            self.p = p
 
 
 class DropConnectRBM(DropoutRBM):

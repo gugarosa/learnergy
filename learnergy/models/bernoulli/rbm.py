@@ -247,12 +247,7 @@ class RBM(Model):
         energy1 = self.energy(samples_binary)
 
         # Calculate the logarithm of the pseudo-likelihood
-        pl = torch.mean(
-            self.n_visible
-            * torch.log(
-                torch.sigmoid(energy1 - energy) + torch.finfo(samples.dtype).eps
-            )
-        )
+        pl = torch.mean(self.n_visible * F.logsigmoid(energy1 - energy))
 
         return pl
 

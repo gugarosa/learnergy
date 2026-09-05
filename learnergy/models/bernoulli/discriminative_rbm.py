@@ -288,8 +288,7 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         """
 
-        activations = torch.exp(F.linear(h, self.U, self.c))
-        probs = torch.div(activations, torch.sum(activations, dim=1).unsqueeze(1))
+        probs = F.softmax(F.linear(h, self.U, self.c), dim=1)
         states = torch.nn.functional.one_hot(
             torch.argmax(probs, dim=1), num_classes=self.n_classes
         ).float()
