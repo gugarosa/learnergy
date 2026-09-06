@@ -1,3 +1,6 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import pytest
 
 import learnergy
@@ -7,6 +10,11 @@ from learnergy.core import Model
 
 def test_package_version():
     assert learnergy.__version__ == "2.0.1"
+
+
+def test_model_public_attributes_have_descriptions():
+    assert Model.device.__doc__
+    assert Model.history.__doc__
 
 
 def test_model_tracks_device_and_history():

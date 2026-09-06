@@ -1,4 +1,13 @@
-"""Convolutional Deep Belief Network."""
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
+"""Provide a convolutional Deep Belief Network.
+
+Greedy training encodes later-layer minibatches under ``torch.no_grad()`` and stores detached CPU features with their
+original targets. Forward propagation chains hidden samplers directly without Gaussian input standardization and applies
+each configured pooling layer, while reconstruction deliberately traverses the stack without pooling or unpooling.
+
+"""
 
 import torch
 import torch.nn as nn
@@ -7,10 +16,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import learnergy.utils.exception as e
 from learnergy.core.model import Model, _validated_property
 from learnergy.models.bernoulli.conv_rbm import ConvRBM
-from learnergy.models.gaussian.gaussian_conv_rbm import (
-    GaussianConvRBM,
-    GaussianConvRBM4Deep,
-)
+from learnergy.models.gaussian.gaussian_conv_rbm import GaussianConvRBM, GaussianConvRBM4Deep
 
 MODELS = {
     "bernoulli": ConvRBM,
@@ -20,45 +26,54 @@ MODELS = {
 
 
 class ConvDBN(Model):
-    """Stack convolutional RBMs and train them layer by layer."""
+    """Stack convolutional RBMs for greedy layer-wise training and inference."""
 
-    visible_shape = _validated_property("visible_shape")
-    filter_shape = _validated_property("filter_shape")
-    n_filters = _validated_property("n_filters")
+    visible_shape = _validated_property("visible_shape", doc="Height and width of the input samples.")
+    filter_shape = _validated_property("filter_shape", doc="Convolutional filter shapes in layer order.")
+    n_filters = _validated_property("n_filters", doc="Filter counts in layer order.")
     n_channels = _validated_property(
         "n_channels",
         lambda _, value: value > 0,
         e.ValueError,
-        "`n_channels` should be > 0",
+        "`n_channels` should be greater than 0.",
+        doc="Number of channels in the input samples.",
     )
     n_layers = _validated_property(
-        "n_layers", lambda _, value: value > 0, e.ValueError, "`n_layers` should be > 0"
+        "n_layers",
+        lambda _, value: value > 0,
+        e.ValueError,
+        "`n_layers` should be greater than 0.",
+        doc="Number of stacked convolutional RBM layers.",
     )
     steps = _validated_property(
         "steps",
         lambda self, value: len(value) == self.n_layers,
         e.SizeError,
-        "`steps` should match the number of layers",
+        "`steps` should match the number of layers.",
+        doc="Gibbs sampling step counts in layer order.",
     )
     lr = _validated_property(
         "lr",
         lambda self, value: len(value) == self.n_layers,
         e.SizeError,
-        "`lr` should match the number of layers",
+        "`lr` should match the number of layers.",
+        doc="Learning rates used when constructing each RBM.",
     )
     momentum = _validated_property(
         "momentum",
         lambda self, value: len(value) == self.n_layers,
         e.SizeError,
-        "`momentum` should match the number of layers",
+        "`momentum` should match the number of layers.",
+        doc="Momentum settings used when constructing each RBM.",
     )
     decay = _validated_property(
         "decay",
         lambda self, value: len(value) == self.n_layers,
         e.SizeError,
-        "`decay` should match the number of layers",
+        "`decay` should match the number of layers.",
+        doc="Weight-decay settings used when constructing each RBM.",
     )
-    models = _validated_property("models")
+    models = _validated_property("models", doc="Registered convolutional RBM layers in training order.")
 
     def __init__(
         self,
@@ -75,14 +90,37 @@ class ConvDBN(Model):
         pooling_kernel: int | tuple[int, ...] = (2, 2),
         use_gpu: bool = False,
     ) -> None:
-        """Initialize a convolutional Deep Belief Network."""
+        """Initialize a convolutional Deep Belief Network.
+
+        Scalar pooling settings are repeated for every layer. Sequence settings are truncated or padded with ``False``
+        for pooling flags and ``2`` for pooling kernels. Layers after the first always use ``GaussianConvRBM4Deep``.
+
+        Args:
+            model: Model name used by the first layer.
+            visible_shape: Height and width of input samples.
+            filter_shape: Convolutional filter shapes in layer order.
+            n_filters: Filter counts in layer order.
+            n_channels: Number of channels in input samples.
+            steps: Gibbs sampling step counts in layer order.
+            learning_rate: Learning rates in layer order.
+            momentum: SGD momentum values in layer order.
+            decay: SGD weight-decay values in layer order.
+            maxpooling: Pooling flags supplied as one value or in layer order.
+            pooling_kernel: Pooling kernel sizes supplied as one value or in layer order.
+            use_gpu: Whether to select CUDA when it is available.
+
+        Raises:
+            ValueError: ``model``, ``n_filters``, or ``n_channels`` is invalid.
+            learnergy.utils.exception.SizeError: ``filter_shape`` does not contain one value per layer.
+
+        """
 
         super().__init__(use_gpu=use_gpu)
 
         if model not in MODELS:
-            raise e.ValueError(f"unknown model type: {model}")
+            raise e.ValueError(f"`model` contains unknown model type `{model}`.")
         if not n_filters or any(value <= 0 for value in n_filters):
-            raise e.ValueError("`n_filters` should contain positive values")
+            raise e.ValueError("`n_filters` should contain only positive values.")
 
         self.visible_shape = visible_shape
         self.filter_shape = tuple(filter_shape)
@@ -95,7 +133,7 @@ class ConvDBN(Model):
         self.decay = tuple(decay)
 
         if len(self.filter_shape) != self.n_layers:
-            raise e.SizeError("`filter_shape` should match the number of layers")
+            raise e.SizeError("`filter_shape` should match the number of layers.")
 
         if isinstance(maxpooling, bool):
             maxpooling = (maxpooling,) * self.n_layers
@@ -137,9 +175,7 @@ class ConvDBN(Model):
             layer_shape = layer.hidden_shape
             if self.maxpooling[i]:
                 kernel = self.pooling_kernel[i]
-                layer_shape = tuple(
-                    (size + 2 - kernel) // 2 + 1 for size in layer_shape
-                )
+                layer_shape = tuple((size + 2 - kernel) // 2 + 1 for size in layer_shape)
             layer_channels = self.n_filters[i]
 
         self.to(self.device)
@@ -151,14 +187,31 @@ class ConvDBN(Model):
         epochs: tuple[int, ...] = (10, 10),
         log: bool = True,
     ) -> list[torch.Tensor]:
-        """Fit each convolutional RBM layer."""
+        """Fit each convolutional RBM layer greedily.
+
+        ``epochs`` is truncated to the layer count or extended by repeating its final value. The first layer delegates
+        dataset access to its RBM. Later layers shuffle the original dataset, encode each minibatch through preceding
+        layers without gradients, and fit the current layer on detached CPU features for one epoch. Layer parameters,
+        optimizers, and metric histories persist after this call.
+
+        Args:
+            dataset: Dataset yielding ``(sample, target)`` pairs.
+            batch_size: Maximum number of samples in each batch.
+            epochs: Training epoch counts in layer order.
+            log: Value forwarded to Gaussian layer ``fit`` methods without changing their current logging behavior.
+
+        Returns:
+            Final scalar MSE tensors in layer order.
+
+        Raises:
+            learnergy.utils.exception.SizeError: ``epochs`` is empty.
+
+        """
 
         epochs = tuple(epochs)
         if not epochs:
-            raise e.SizeError("`epochs` should contain at least one value")
-        epochs = epochs[: self.n_layers] + (epochs[-1],) * max(
-            0, self.n_layers - len(epochs)
-        )
+            raise e.SizeError("`epochs` should contain at least one value.")
+        epochs = epochs[: self.n_layers] + (epochs[-1],) * max(0, self.n_layers - len(epochs))
 
         mse = []
 
@@ -192,11 +245,7 @@ class ConvDBN(Model):
                             encoded,
                             batch_size=len(samples),
                             epochs=1,
-                            **(
-                                {"log": log}
-                                if isinstance(model, GaussianConvRBM)
-                                else {}
-                            ),
+                            **({"log": log} if isinstance(model, GaussianConvRBM) else {}),
                         )
                         model_mse += batch_mse
 
@@ -206,15 +255,21 @@ class ConvDBN(Model):
 
         return mse
 
-    def reconstruct(
-        self, dataset: torch.utils.data.Dataset
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Reconstruct a dataset through an unpooled convolutional stack."""
+    def reconstruct(self, dataset: torch.utils.data.Dataset) -> tuple[torch.Tensor, torch.Tensor]:
+        """Reconstruct all dataset samples through the unpooled convolutional stack.
+
+        The method processes one non-shuffled batch and does not disable gradient tracking.
+
+        Args:
+            dataset: Dataset yielding ``(sample, target)`` pairs.
+
+        Returns:
+            Scalar MSE tensor then visible output shaped ``(len(dataset), n_channels, *visible_shape)``.
+
+        """
 
         batch_size = len(dataset)
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
         for samples, _ in batches:
             samples = samples.reshape(
@@ -237,8 +292,6 @@ class ConvDBN(Model):
         return mse, visible_probs
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Return the representation produced by the final layer."""
-
         for model in self.models:
             x, _ = model.hidden_sampling(x)
             if model.maxpooling:

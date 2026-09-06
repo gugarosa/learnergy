@@ -1,7 +1,23 @@
-"""Gaussian-Bernoulli Restricted Boltzmann Machine."""
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
+"""Provide dense Gaussian-visible Restricted Boltzmann Machines.
+
+``GaussianRBM`` standardizes each training batch when normalization is enabled and uses unit visible variance.
+Forward input standardization is separately controlled and detaches the standardized tensor before hidden sampling.
+The ReLU and SeLU variants replace Bernoulli hidden states with deterministic activations. ``VarianceGaussianRBM``
+instead learns a visible scale whose squared value plus machine epsilon defines the variance.
+
+References:
+    K. Cho, A. Ilin, T. Raiko. Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
+    International conference on artificial neural networks (2011).
+    G. Hinton. A practical guide to training restricted Boltzmann machines.
+    Neural networks: Tricks of the trade (2012).
+    G. Klambauer et al. Self-normalizing neural networks. Proceedings, NIPS (2017).
+
+"""
 
 import time
-from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -10,28 +26,16 @@ from torch.utils.data import DataLoader
 
 from learnergy.core.model import _validated_property
 from learnergy.models.bernoulli.rbm import RBM
-from learnergy.models.gaussian._normalization import standardize
+from learnergy.models.gaussian._normalization import _standardize
 
 
 class GaussianRBM(RBM):
-    """A GaussianRBM class provides the basic implementation for
-    Gaussian-Bernoulli Restricted Boltzmann Machines (with standardization).
+    """Implement an RBM with standardized Gaussian visible units."""
 
-    Note that this classes normalize the data
-    as it uses variance equals to one throughout its learning procedure.
-
-    This is a trick to ease the calculations of the hidden and
-    visible layer samplings, as well as the cost function.
-
-    References:
-        K. Cho, A. Ilin, T. Raiko.
-        Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
-        International conference on artificial neural networks (2011).
-
-    """
-
-    normalize = _validated_property("normalize")
-    input_normalize = _validated_property("input_normalize")
+    normalize = _validated_property("normalize", doc="Whether training and reconstruction batches are standardized.")
+    input_normalize = _validated_property(
+        "input_normalize", doc="Whether forward inputs are standardized and detached before hidden sampling."
+    )
 
     def __init__(
         self,
@@ -46,19 +50,19 @@ class GaussianRBM(RBM):
         normalize: bool = True,
         input_normalize: bool = True,
     ) -> None:
-        """Initialization method.
+        """Initialize a Gaussian-Bernoulli RBM.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            use_gpu: Whether GPU should be used or not.
-            normalize: Whether or not to use batch normalization.
-            input_normalize: Whether or not to normalize inputs.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            steps: Number of Gibbs sampling steps.
+            learning_rate: Learning rate used by SGD.
+            momentum: Momentum used by SGD.
+            decay: Weight decay used by SGD.
+            temperature: Positive temperature used by scaled sampling.
+            use_gpu: Whether to select CUDA when it is available.
+            normalize: Whether to standardize each training and reconstruction batch.
+            input_normalize: Whether to standardize and detach inputs passed through ``forward``.
 
         """
 
@@ -77,13 +81,13 @@ class GaussianRBM(RBM):
         self.input_normalize = input_normalize
 
     def energy(self, samples: torch.Tensor) -> torch.Tensor:
-        """Calculates and frees the system's energy.
+        """Calculate the free energy of visible samples.
 
         Args:
-            samples: Samples to be energy-freed.
+            samples: Visible samples shaped ``(batch_size, n_visible)``.
 
         Returns:
-            The system's energy based on input samples.
+            Free energy for each sample shaped ``(batch_size,)``.
 
         """
 
@@ -96,17 +100,15 @@ class GaussianRBM(RBM):
 
         return energy
 
-    def visible_sampling(
-        self, h: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the visible layer sampling, i.e., P(v|h).
+    def visible_sampling(self, h: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Calculate the Gaussian visible conditional values.
 
         Args:
-            h: A tensor incoming from the hidden layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            h: Hidden values shaped ``(batch_size, n_hidden)``.
+            scale: Whether to divide visible activations by the temperature.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            Sigmoid probabilities followed by deterministic visible states, each shaped ``(batch_size, n_visible)``.
 
         """
 
@@ -126,22 +128,23 @@ class GaussianRBM(RBM):
         dataset: torch.utils.data.Dataset,
         batch_size: int = 128,
         epochs: int = 10,
-    ) -> Tuple[float, float]:
-        """Fits a new GaussianRBM model.
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Fit the model with non-shuffled contrastive-divergence batches.
+
+        Each dataset item must contain a sample and an ignored target. When ``normalize`` is true, each batch is
+        standardized and detached before flattening. Float copies of each epoch's metrics are appended to history.
 
         Args:
-            dataset: A Dataset object containing the training data.
-            batch_size: Amount of samples per batch.
-            epochs: Number of training epochs.
+            dataset: Dataset yielding ``(sample, target)`` pairs.
+            batch_size: Maximum number of samples in each batch.
+            epochs: Number of training passes over the dataset.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            Final scalar MSE tensor followed by the final scalar log pseudo-likelihood tensor.
 
         """
 
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
         for _ in range(epochs):
             start = time.time()
@@ -151,17 +154,14 @@ class GaussianRBM(RBM):
 
             for samples, _ in batches:
                 if self.normalize:
-                    samples = standardize(samples).detach()
+                    samples = _standardize(samples).detach()
 
                 samples = samples.reshape(len(samples), self.n_visible).to(self.device)
 
-                # Performs the Gibbs sampling procedure
                 _, _, _, _, visible_states = self.gibbs_sampling(samples)
                 visible_states = visible_states.detach()
 
-                cost = torch.mean(self.energy(samples)) - torch.mean(
-                    self.energy(visible_states)
-                )
+                cost = torch.mean(self.energy(samples)) - torch.mean(self.energy(visible_states))
 
                 self.optimizer.zero_grad()
                 cost.backward()
@@ -169,9 +169,7 @@ class GaussianRBM(RBM):
 
                 batch_size = samples.size(0)
 
-                batch_mse = torch.div(
-                    torch.sum(torch.pow(samples - visible_states, 2)), batch_size
-                ).detach()
+                batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), batch_size).detach()
                 batch_pl = self.pseudo_likelihood(samples).detach()
 
                 mse += batch_mse
@@ -186,38 +184,35 @@ class GaussianRBM(RBM):
 
         return mse, pl
 
-    def reconstruct(
-        self, dataset: torch.utils.data.Dataset
-    ) -> Tuple[float, torch.Tensor]:
-        """Reconstructs batches of new samples.
+    def reconstruct(self, dataset: torch.utils.data.Dataset) -> tuple[torch.Tensor, torch.Tensor]:
+        """Reconstruct all dataset samples in one non-shuffled batch.
+
+        Each dataset item must contain a sample and an ignored target. Input samples are standardized and detached when
+        ``normalize`` is true.
 
         Args:
-            dataset (torch.utils.data.Dataset): A Dataset object containing the testing data.
+            dataset: Dataset yielding ``(sample, target)`` pairs.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            Scalar reconstruction MSE tensor followed by visible probabilities shaped ``(len(dataset), n_visible)``.
 
         """
 
         mse = 0
         batch_size = len(dataset)
 
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
         for samples, _ in batches:
             if self.normalize:
-                samples = standardize(samples).detach()
+                samples = _standardize(samples).detach()
 
             samples = samples.reshape(len(samples), self.n_visible).to(self.device)
 
             _, pos_hidden_states = self.hidden_sampling(samples)
             visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
-            batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), batch_size
-            )
+            batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), batch_size)
             mse += batch_mse
 
         mse /= len(batches)
@@ -225,18 +220,8 @@ class GaussianRBM(RBM):
         return mse, visible_probs
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Performs a forward pass over the data.
-
-        Args:
-            x: An input tensor for computing the forward pass.
-
-        Returns:
-            A tensor containing the RBM's outputs.
-
-        """
-
         if self.input_normalize:
-            x = standardize(x).detach()
+            x = _standardize(x).detach()
 
         x, _ = self.hidden_sampling(x)
 
@@ -244,17 +229,7 @@ class GaussianRBM(RBM):
 
 
 class GaussianReluRBM(GaussianRBM):
-    """A GaussianReluRBM class provides the basic implementation for
-    Gaussian-ReLU Restricted Boltzmann Machines (for raw pixels values).
-
-    Note that this class requires raw data (integer-valued)
-    in order to model the image covariance into a latent ReLU layer.
-
-    References:
-        G. Hinton. A practical guide to training restricted Boltzmann machines.
-        Neural networks: Tricks of the trade (2012).
-
-    """
+    """Implement a Gaussian-visible RBM with deterministic ReLU hidden units."""
 
     def __init__(
         self,
@@ -269,19 +244,19 @@ class GaussianReluRBM(GaussianRBM):
         normalize: bool = True,
         input_normalize: bool = True,
     ) -> None:
-        """Initialization method.
+        """Initialize a Gaussian-ReLU RBM.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            use_gpu: Whether GPU should be used or not.
-            normalize: Whether or not to use batch normalization.
-            input_normalize: Whether or not to normalize inputs.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            steps: Number of Gibbs sampling steps.
+            learning_rate: Learning rate used by SGD.
+            momentum: Momentum used by SGD.
+            decay: Weight decay used by SGD.
+            temperature: Positive temperature used by scaled sampling.
+            use_gpu: Whether to select CUDA when it is available.
+            normalize: Whether to standardize each training and reconstruction batch.
+            input_normalize: Whether to standardize and detach inputs passed through ``forward``.
 
         """
 
@@ -298,17 +273,15 @@ class GaussianReluRBM(GaussianRBM):
             input_normalize,
         )
 
-    def hidden_sampling(
-        self, v: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the hidden layer sampling, i.e., P(h|v).
+    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Calculate deterministic ReLU hidden values.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible values shaped ``(batch_size, n_visible)``.
+            scale: Whether to divide hidden activations by the temperature.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            ReLU activations followed by the same tensor as hidden states, shaped ``(batch_size, n_hidden)``.
 
         """
 
@@ -319,26 +292,13 @@ class GaussianReluRBM(GaussianRBM):
         else:
             probs = F.relu(activations)
 
-        # Current states equals probabilities
         states = probs
 
         return probs, states
 
 
 class GaussianSeluRBM(GaussianRBM):
-    """A GaussianSeluRBM class provides the basic implementation for
-    Gaussian-SeLU Restricted Boltzmann Machines (for raw pixels values).
-
-    Note that this class requires raw data (integer-valued)
-    in order to model the image covariance into a latent ReLU layer.
-
-    References:
-        G. Hinton. A practical guide to training restricted Boltzmann machines.
-        Neural networks: Tricks of the trade (2012).
-
-        G. Klambauer et al. Self-normalizing neural networks.
-        Proceedings, NIPS (2017).
-    """
+    """Implement a Gaussian-visible RBM with deterministic SeLU hidden units."""
 
     def __init__(
         self,
@@ -353,19 +313,19 @@ class GaussianSeluRBM(GaussianRBM):
         normalize: bool = False,
         input_normalize: bool = True,
     ) -> None:
-        """Initialization method.
+        """Initialize a Gaussian-SeLU RBM.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            use_gpu: Whether GPU should be used or not.
-            normalize: Whether or not to use batch normalization.
-            input_normalize: Whether or not to normalize inputs.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            steps: Number of Gibbs sampling steps.
+            learning_rate: Learning rate used by SGD.
+            momentum: Momentum used by SGD.
+            decay: Weight decay used by SGD.
+            temperature: Positive temperature used by scaled sampling.
+            use_gpu: Whether to select CUDA when it is available.
+            normalize: Whether to standardize each training and reconstruction batch.
+            input_normalize: Whether to standardize and detach inputs passed through ``forward``.
 
         """
 
@@ -382,17 +342,15 @@ class GaussianSeluRBM(GaussianRBM):
             input_normalize,
         )
 
-    def hidden_sampling(
-        self, v: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the hidden layer sampling, i.e., P(h|v).
+    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Calculate deterministic SeLU hidden values.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible values shaped ``(batch_size, n_visible)``.
+            scale: Whether to divide hidden activations by the temperature.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            SeLU activations followed by the same tensor as hidden states, shaped ``(batch_size, n_hidden)``.
 
         """
 
@@ -403,31 +361,15 @@ class GaussianSeluRBM(GaussianRBM):
         else:
             probs = F.selu(activations)
 
-        # Current states equals probabilities
         states = probs
 
         return probs, states
 
 
 class VarianceGaussianRBM(RBM):
-    """A VarianceGaussianRBM class provides the basic implementation for
-    Gaussian-Bernoulli Restricted Boltzmann Machines (without standardization).
+    """Implement a Gaussian-visible RBM with a learned visible scale."""
 
-    The learnable scale parameter ``sigma`` defines the visible variance as
-    ``sigma**2 + torch.finfo(dtype).eps``. The same variance is used by the
-    free energy and the visible conditional distribution.
-
-    Therefore, there is no need to standardize the data, as the variance
-    will be trained throughout the learning procedure.
-
-    References:
-        K. Cho, A. Ilin, T. Raiko.
-        Improved learning of Gaussian-Bernoulli restricted Boltzmann machines.
-        International conference on artificial neural networks (2011).
-
-    """
-
-    sigma = _validated_property("sigma")
+    sigma = _validated_property("sigma", doc="Learnable visible scale whose square determines the variance.")
 
     def __init__(
         self,
@@ -440,17 +382,17 @@ class VarianceGaussianRBM(RBM):
         temperature: float = 1.0,
         use_gpu: bool = False,
     ) -> None:
-        """Initialization method.
+        """Initialize a Gaussian-Bernoulli RBM with learned visible variance.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            use_gpu: Whether GPU should be used or not.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            steps: Number of Gibbs sampling steps.
+            learning_rate: Learning rate used by SGD.
+            momentum: Momentum used by SGD.
+            decay: Weight decay used by SGD.
+            temperature: Positive temperature used by scaled hidden sampling.
+            use_gpu: Whether to select CUDA when it is available.
 
         """
 
@@ -469,17 +411,15 @@ class VarianceGaussianRBM(RBM):
         self.to(self.device)
         self.optimizer.add_param_group({"params": self.sigma})
 
-    def hidden_sampling(
-        self, v: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the hidden layer sampling, i.e., P(h|v).
+    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample Bernoulli hidden states using the learned visible variance.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible values shaped ``(batch_size, n_visible)``.
+            scale: Whether to divide hidden activations by the temperature.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            Hidden probabilities followed by sampled states, each shaped ``(batch_size, n_hidden)``.
 
         """
 
@@ -495,17 +435,15 @@ class VarianceGaussianRBM(RBM):
 
         return probs, states
 
-    def visible_sampling(
-        self, h: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the visible layer sampling, i.e., P(v|h).
+    def visible_sampling(self, h: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample Gaussian visible states using the learned visible variance.
 
         Args:
-            h: A tensor incoming from the hidden layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            h: Hidden values shaped ``(batch_size, n_hidden)``.
+            scale: Accepted for sampling API compatibility without changing the visible distribution.
 
         Returns:
-            The conditional means and sampled visible states, respectively.
+            Conditional means followed by sampled states, each shaped ``(batch_size, n_visible)``.
 
         """
 
@@ -517,13 +455,13 @@ class VarianceGaussianRBM(RBM):
         return activations, states
 
     def energy(self, samples: torch.Tensor) -> torch.Tensor:
-        """Calculates and frees the system's energy.
+        """Calculate free energy using the learned visible variance.
 
         Args:
-            samples: Samples to be energy-freed.
+            samples: Visible samples shaped ``(batch_size, n_visible)``.
 
         Returns:
-            The system's energy based on input samples.
+            Free energy for each sample shaped ``(batch_size,)``.
 
         """
 
@@ -539,16 +477,30 @@ class VarianceGaussianRBM(RBM):
 
 
 class GaussianRBM4deep(GaussianRBM):
-    """Gaussian RBM variant used during layer-wise DBN training."""
+    """Provide the Gaussian RBM training default used by deep models."""
 
     def fit(
         self,
         dataset: torch.utils.data.Dataset,
         batch_size: int = 128,
         epochs: int = 1,
-    ) -> Tuple[float, float]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Fit the model with a one-epoch default.
+
+        Behavior, normalization, metric persistence, and return order otherwise match ``GaussianRBM.fit``.
+
+        Args:
+            dataset: Dataset yielding ``(sample, target)`` pairs.
+            batch_size: Maximum number of samples in each batch.
+            epochs: Number of training passes over the dataset.
+
+        Returns:
+            Final scalar MSE tensor followed by the final scalar log pseudo-likelihood tensor.
+
+        """
+
         return super().fit(dataset, batch_size=batch_size, epochs=epochs)
 
 
 class GaussianReluRBM4deep(GaussianReluRBM, GaussianRBM4deep):
-    """Gaussian-ReLU RBM variant used during layer-wise DBN training."""
+    """Provide the Gaussian-ReLU RBM variant used by deep models."""

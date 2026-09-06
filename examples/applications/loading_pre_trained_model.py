@@ -1,7 +1,9 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torch
 import torchvision
 
-# Creating testing dataset
 test = torchvision.datasets.MNIST(
     root="./data",
     train=False,
@@ -9,8 +11,6 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Loading pre-trained model
 model = torch.load("model.pth")
 
-# Reconstructing test set
 rec_mse, v = model.reconstruct(test)

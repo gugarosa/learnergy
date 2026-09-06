@@ -1,6 +1,16 @@
-"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout and DropConnect."""
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
 
-from typing import Tuple
+"""Bernoulli-Bernoulli Restricted Boltzmann Machines with Dropout and DropConnect.
+
+Dropout masks hidden probabilities independently for each sample, while DropConnect masks the shared
+visible-to-hidden weights. Both variants sample fresh Bernoulli masks on every hidden-sampling call.
+
+References:
+    N. Srivastava, et al. Dropout: a simple way to prevent neural networks from overfitting.
+    The journal of machine learning research (2014).
+
+"""
 
 import torch
 import torch.nn.functional as F
@@ -11,20 +21,14 @@ from learnergy.models.bernoulli.rbm import RBM
 
 
 class DropoutRBM(RBM):
-    """A DropoutRBM class provides the basic implementation for
-    Bernoulli-Bernoulli Restricted Boltzmann Machines along with a Dropout regularization.
-
-    References:
-        N. Srivastava, et al. Dropout: a simple way to prevent neural networks from overfitting.
-        The journal of machine learning research (2014).
-
-    """
+    """Implement a Bernoulli-Bernoulli RBM with hidden-unit dropout."""
 
     p = _validated_property(
         "p",
         lambda _, value: 0 <= value <= 1,
         e.ValueError,
-        "`p` should be between 0 and 1",
+        "`p` should be between 0 and 1.",
+        doc="Probability of dropping each hidden unit.",
     )
 
     def __init__(
@@ -39,18 +43,21 @@ class DropoutRBM(RBM):
         dropout: float = 0.5,
         use_gpu: bool = False,
     ) -> None:
-        """Initialization method.
+        """Initialize a Bernoulli-Bernoulli RBM with dropout.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            dropout: Dropout rate.
-            use_gpu: Whether GPU should be used or not.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            steps: Number of Contrastive Divergence sampling steps.
+            learning_rate: Learning rate used by stochastic gradient descent.
+            momentum: Momentum used by stochastic gradient descent.
+            decay: Weight decay used by stochastic gradient descent.
+            temperature: Positive temperature applied during scaled sampling.
+            dropout: Probability of dropping each hidden unit.
+            use_gpu: Whether to use CUDA when it is available.
+
+        Raises:
+            ValueError: If a unit count, step count, optimizer value, temperature, or dropout probability is invalid.
 
         """
 
@@ -67,17 +74,15 @@ class DropoutRBM(RBM):
 
         self.p = dropout
 
-    def hidden_sampling(
-        self, v: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the hidden layer sampling using a dropout mask, i.e., P(h|r,v).
+    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample dropout-masked hidden units conditioned on visible units.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
+            scale: Whether to divide activations by the sampling temperature.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            Dropout-masked hidden probabilities and states shaped ``(batch_size, n_hidden)``, in that order.
 
         """
 
@@ -101,16 +106,17 @@ class DropoutRBM(RBM):
 
         return probs, states
 
-    def reconstruct(
-        self, dataset: torch.utils.data.Dataset
-    ) -> Tuple[float, torch.Tensor]:
-        """Reconstructs batches of new samples.
+    def reconstruct(self, dataset: torch.utils.data.Dataset) -> tuple[torch.Tensor, torch.Tensor]:
+        """Reconstruct a dataset with dropout temporarily disabled and restored afterward.
 
         Args:
-            dataset: A Dataset object containing the testing data.
+            dataset: Dataset yielding visible samples and ignored targets.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            Scalar reconstruction error and visible probabilities shaped ``(len(dataset), n_visible)``.
+
+        Notes:
+            Autograd tracking is not explicitly disabled.
 
         """
 
@@ -123,26 +129,17 @@ class DropoutRBM(RBM):
 
 
 class DropConnectRBM(DropoutRBM):
-    """A DropConnectRBM class provides the basic implementation for
-    Bernoulli-Bernoulli Restricted Boltzmann Machines along with a DropConnect regularization.
+    """Implement a Bernoulli-Bernoulli RBM with visible-to-hidden DropConnect."""
 
-    References:
-        N. Srivastava, et al. Dropout: a simple way to prevent neural networks from overfitting.
-        The journal of machine learning research (2014).
-
-    """
-
-    def hidden_sampling(
-        self, v: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the hidden layer sampling using a dropconnect mask, i.e., P(h|m,v).
+    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample hidden units using dropout-masked visible-to-hidden weights.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
+            scale: Whether to divide activations by the sampling temperature.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            Hidden probabilities and Bernoulli states, each shaped ``(batch_size, n_hidden)``, in that order.
 
         """
 

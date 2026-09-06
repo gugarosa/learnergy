@@ -1,9 +1,11 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torch
 import torchvision
 
 from learnergy.models.deep import ResidualDBN
 
-# Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -17,7 +19,6 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating a ResidualDBN
 model = ResidualDBN(
     model="bernoulli",
     n_visible=784,
@@ -32,15 +33,11 @@ model = ResidualDBN(
     use_gpu=True,
 )
 
-# Training a ResidualDBN
 model.fit(train, batch_size=128, epochs=[3, 3, 3])
 
-# Reconstructing test set
 rec_mse, v = model.reconstruct(test)
 
-# Saving model
 torch.save(model, "model.pth")
 
-# Checking the model's history
 for m in model.models:
     print(m.history)

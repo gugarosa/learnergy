@@ -1,9 +1,11 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torch
 import torchvision
 
 from learnergy.models.bernoulli import HybridDiscriminativeRBM
 
-# Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -17,7 +19,6 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating a HybridDiscriminativeRBM
 model = HybridDiscriminativeRBM(
     n_visible=784,
     n_hidden=128,
@@ -31,14 +32,10 @@ model = HybridDiscriminativeRBM(
     use_gpu=True,
 )
 
-# Training a HybridDiscriminativeRBM
 loss, acc = model.fit(train, batch_size=128, epochs=5)
 
-# Predicting test set
 pred_acc, pred_probs, pred_labels = model.predict(test)
 
-# Saving model
 torch.save(model, "model.pth")
 
-# Checking the model's history
 print(model.history)

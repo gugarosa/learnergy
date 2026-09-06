@@ -1,8 +1,10 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torchvision
 
 from learnergy.models.gaussian import GaussianConvRBM
 
-# Creating training and testing dataset
 train = torchvision.datasets.CIFAR10(
     root="./data",
     train=True,
@@ -16,7 +18,6 @@ test = torchvision.datasets.CIFAR10(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating a GaussianConvRBM
 model = GaussianConvRBM(
     visible_shape=(32, 32),
     filter_shape=(9, 9),
@@ -29,8 +30,6 @@ model = GaussianConvRBM(
     use_gpu=True,
 )
 
-# Training a GaussianConvRBM
 mse = model.fit(train, batch_size=100, epochs=5)
 
-# Reconstructing test set
 _, v = model.reconstruct(test)

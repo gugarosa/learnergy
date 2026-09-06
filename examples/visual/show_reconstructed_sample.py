@@ -1,9 +1,11 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torchvision
 
 import learnergy.visual.tensor as t
 from learnergy.models.bernoulli import RBM
 
-# Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -17,7 +19,6 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating an RBM
 model = RBM(
     n_visible=784,
     n_hidden=128,
@@ -29,11 +30,8 @@ model = RBM(
     use_gpu=True,
 )
 
-# Training an RBM
 model.fit(train, epochs=1)
 
-# Reconstructing test set
 _, v = model.reconstruct(test)
 
-# Showing a reconstructed sample
 t.show_tensor(v[0].reshape(28, 28))
