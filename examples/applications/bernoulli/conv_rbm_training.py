@@ -1,8 +1,10 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torchvision
 
 from learnergy.models.bernoulli import ConvRBM
 
-# Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -16,7 +18,6 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating a ConvRBM
 model = ConvRBM(
     visible_shape=(28, 28),
     filter_shape=(7, 7),
@@ -29,8 +30,6 @@ model = ConvRBM(
     use_gpu=True,
 )
 
-# Training a ConvRBM
 mse = model.fit(train, batch_size=128, epochs=5)
 
-# Reconstructing test set
 _, v = model.reconstruct(test)

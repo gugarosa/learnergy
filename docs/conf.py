@@ -1,7 +1,10 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 from importlib.metadata import version as package_version
 
 project = "learnergy"
-copyright = "2020, Mateus Roder and Gustavo de Rosa"
+copyright = "2020-2026, Mateus Roder and Gustavo de Rosa"
 author = "Mateus Roder and Gustavo de Rosa"
 release = package_version("learnergy")
 version = release

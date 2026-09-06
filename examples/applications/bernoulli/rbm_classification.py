@@ -1,3 +1,6 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -6,12 +9,10 @@ from torch.utils.data import DataLoader
 
 from learnergy.models.bernoulli import RBM
 
-# Defining some input variables
 batch_size = 128
 n_classes = 10
 fine_tune_epochs = 20
 
-# Creating training and validation/testing dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -25,7 +26,6 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating an RBM
 model = RBM(
     n_visible=784,
     n_hidden=128,
@@ -37,91 +37,61 @@ model = RBM(
     use_gpu=True,
 )
 
-# Training an RBM
 model.fit(train, batch_size=batch_size, epochs=1)
 
-# Creating the Fully Connected layer to append on top of RBM
 fc = nn.Linear(model.n_hidden, n_classes).to(model.device)
 
-# Cross-Entropy loss is used for the discriminative fine-tuning
 criterion = nn.CrossEntropyLoss()
 
-# Creating the optimzers
 optimizer = [
     optim.Adam(model.parameters(), lr=0.001),
     optim.Adam(fc.parameters(), lr=0.001),
 ]
 
-# Creating training and validation batches
 train_batch = DataLoader(train, batch_size=batch_size, shuffle=False, num_workers=1)
 val_batch = DataLoader(test, batch_size=10000, shuffle=False, num_workers=1)
 
-# For amount of fine-tuning epochs
 for e in range(fine_tune_epochs):
     print(f"Epoch {e+1}/{fine_tune_epochs}")
 
-    # Resetting metrics
     train_loss, val_acc = 0, 0
 
-    # For every possible batch
     for x_batch, y_batch in train_batch:
-        # For every possible optimizer
         for opt in optimizer:
-            # Resets the optimizer
             opt.zero_grad()
 
-        # Flatenning the samples batch
         x_batch = x_batch.reshape(x_batch.size(0), model.n_visible)
 
         x_batch = x_batch.to(model.device)
         y_batch = y_batch.to(model.device)
 
-        # Passing the batch down the model
         y = model(x_batch)
-
-        # Calculating the fully-connected outputs
         y = fc(y)
 
-        # Calculating loss
         loss = criterion(y, y_batch)
 
-        # Propagating the loss to calculate the gradients
         loss.backward()
 
-        # For every possible optimizer
         for opt in optimizer:
-            # Performs the gradient update
             opt.step()
 
-        # Adding current batch loss
         train_loss += loss.item()
 
-    # Calculate the test accuracy for the model:
     for x_batch, y_batch in val_batch:
-        # Flatenning the testing samples batch
         x_batch = x_batch.reshape(x_batch.size(0), model.n_visible)
 
         x_batch = x_batch.to(model.device)
         y_batch = y_batch.to(model.device)
 
-        # Passing the batch down the model
         y = model(x_batch)
-
-        # Calculating the fully-connected outputs
         y = fc(y)
 
-        # Calculating predictions
         _, preds = torch.max(y, 1)
 
-        # Calculating validation set accuracy
         val_acc += torch.mean((torch.sum(preds == y_batch).float()) / x_batch.size(0))
 
-    print(
-        f"Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc / len(val_batch)}"
-    )
+    print(f"Loss: {train_loss / len(train_batch)} | Val Accuracy: {val_acc / len(val_batch)}")
 
-# Saving the fine-tuned model
 torch.save(model, "tuned_model.pth")
 
-# Checking the model's history
 print(model.history)

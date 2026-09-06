@@ -1,7 +1,18 @@
-"""Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machine."""
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
+"""Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machines.
+
+The discriminative model computes one unnormalized class logit per sample and class. The hybrid model combines
+that discriminative objective with a pseudo-likelihood generative objective and Contrastive Divergence sampling.
+
+References:
+    H. Larochelle and Y. Bengio. Classification using discriminative restricted Boltzmann machines.
+    Proceedings of the 25th international conference on Machine learning (2008).
+
+"""
 
 import time
-from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -14,24 +25,18 @@ from learnergy.models.bernoulli.rbm import RBM
 
 
 class DiscriminativeRBM(RBM):
-    """A DiscriminativeRBM class provides the basic implementation for
-    Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machines.
-
-    References:
-        H. Larochelle and Y. Bengio. Classification using discriminative restricted Boltzmann machines.
-        Proceedings of the 25th international conference on Machine learning (2008).
-
-    """
+    """Implement a discriminative Bernoulli-Bernoulli Restricted Boltzmann Machine."""
 
     n_classes = _validated_property(
         "n_classes",
         lambda _, value: value > 0,
         e.ValueError,
-        "`n_classes` should be > 0",
+        "`n_classes` should be > 0.",
+        doc="Number of target classes.",
     )
-    U = _validated_property("U")
-    c = _validated_property("c")
-    loss = _validated_property("loss")
+    U = _validated_property("U", doc="Class-to-hidden weight matrix.")
+    c = _validated_property("c", doc="Class-bias vector.")
+    loss = _validated_property("loss", doc="Cross-entropy classification loss.")
 
     def __init__(
         self,
@@ -45,18 +50,21 @@ class DiscriminativeRBM(RBM):
         temperature: float = 1.0,
         use_gpu: bool = False,
     ) -> None:
-        """Initialization method.
+        """Initialize a discriminative Bernoulli-Bernoulli RBM.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            n_classes: Amount of classes.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            use_gpu: Whether GPU should be used or not.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            n_classes: Number of target classes.
+            steps: Number of Contrastive Divergence sampling steps.
+            learning_rate: Learning rate used by stochastic gradient descent.
+            momentum: Momentum used by stochastic gradient descent.
+            decay: Weight decay used by stochastic gradient descent.
+            temperature: Positive temperature applied during scaled sampling.
+            use_gpu: Whether to use CUDA when it is available.
+
+        Raises:
+            ValueError: If a unit count, class count, step count, optimizer value, or temperature is invalid.
 
         """
 
@@ -81,51 +89,49 @@ class DiscriminativeRBM(RBM):
         self.optimizer.add_param_group({"params": self.U})
         self.optimizer.add_param_group({"params": self.c})
 
-    def labels_sampling(self, samples: torch.Tensor) -> torch.Tensor:
-        """Calculates labels probabilities by samplings, i.e., P(y|v).
+    def labels_sampling(self, samples: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Compute class logits and predicted indices for visible samples.
 
         Args:
-            samples: Samples to be labels-calculated.
+            samples: Visible tensor shaped ``(batch_size, n_visible)``.
 
         Returns:
-            Labels' probabilities based on input samples.
+            Logits shaped ``(batch_size, n_classes)`` and predicted indices shaped ``(batch_size,)``, in that order.
+
+        Notes:
+            Logits retain gradients and predicted indices are computed from a detached argmax.
 
         """
 
-        probs = torch.zeros(samples.size(0), self.n_classes, device=self.device)
+        logits = torch.zeros(samples.size(0), self.n_classes, device=self.device)
         activations = F.linear(samples, self.W.t(), self.b)
 
         for i in range(self.n_classes):
-            # Calculates the logit-probability for the particular class
-            probs[:, i] = self.c[i] + torch.sum(
-                F.softplus(activations + self.U[i, :]), dim=1
-            )
+            logits[:, i] = self.c[i] + torch.sum(F.softplus(activations + self.U[i, :]), dim=1)
 
-        preds = torch.argmax(probs.detach(), 1)
+        preds = torch.argmax(logits.detach(), 1)
 
-        return probs, preds
+        return logits, preds
 
     def fit(
         self,
         dataset: torch.utils.data.Dataset,
         batch_size: int = 128,
         epochs: int = 10,
-    ) -> Tuple[float, float]:
-        """Fits a new DRBM model.
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Update classifier parameters and metric history with shuffled mini-batches.
 
         Args:
-            dataset: A Dataset object containing the training data.
-            batch_size: Amount of samples per batch.
-            epochs: Number of training epochs.
+            dataset: Dataset yielding visible samples and integer class labels.
+            batch_size: Maximum number of samples per training batch.
+            epochs: Number of complete training passes.
 
         Returns:
-            Loss and accuracy from the training step.
+            Final-epoch detached scalar cross-entropy loss and mean batch accuracy tensors in that order.
 
         """
 
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=True, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
         for _ in range(epochs):
             start = time.time()
@@ -137,8 +143,8 @@ class DiscriminativeRBM(RBM):
                 samples = samples.reshape(len(samples), self.n_visible).to(self.device)
                 labels = labels.to(self.device)
 
-                probs, _ = self.labels_sampling(samples)
-                cost = self.loss(probs, labels)
+                logits, _ = self.labels_sampling(samples)
+                cost = self.loss(logits, labels)
 
                 self.optimizer.zero_grad()
                 cost.backward()
@@ -160,52 +166,49 @@ class DiscriminativeRBM(RBM):
 
         return loss, acc
 
-    def predict(
-        self, dataset: torch.utils.data.Dataset
-    ) -> Tuple[float, torch.Tensor, torch.Tensor]:
-        """Predicts batches of new samples.
+    def predict(self, dataset: torch.utils.data.Dataset) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Predict labels for an entire dataset in one unshuffled batch.
 
         Args:
-            dataset: A Dataset object containing the testing data.
+            dataset: Dataset yielding visible samples and integer class labels.
 
         Returns:
-            Accuracy, prediction probabilities and labels, i.e., P(y|v).
+            Scalar accuracy, unnormalized class logits, and predicted class indices in dataset order.
+
+        Notes:
+            Logits have shape ``(len(dataset), n_classes)`` and retain gradients.
+            Predicted indices have shape ``(len(dataset),)``.
 
         """
 
         acc = 0
         batch_size = len(dataset)
 
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
         for samples, labels in batches:
             samples = samples.reshape(len(samples), self.n_visible).to(self.device)
             labels = labels.to(self.device)
 
-            probs, preds = self.labels_sampling(samples)
+            logits, preds = self.labels_sampling(samples)
 
             batch_acc = (preds == labels).float().mean()
             acc += batch_acc
 
         acc /= len(batches)
 
-        return acc, probs, preds
+        return acc, logits, preds
 
 
 class HybridDiscriminativeRBM(DiscriminativeRBM):
-    """A HybridDiscriminativeRBM class provides the basic implementation for
-    Hybrid Discriminative Bernoulli-Bernoulli Restricted Boltzmann Machines.
-
-    References:
-        H. Larochelle and Y. Bengio. Classification using discriminative restricted Boltzmann machines.
-        Proceedings of the 25th international conference on Machine learning (2008).
-
-    """
+    """Implement a hybrid discriminative and generative Bernoulli-Bernoulli RBM."""
 
     alpha = _validated_property(
-        "alpha", lambda _, value: value >= 0, e.ValueError, "`alpha` should be >= 0"
+        "alpha",
+        lambda _, value: value >= 0,
+        e.ValueError,
+        "`alpha` should be >= 0.",
+        doc="Weight applied to the generative loss.",
     )
 
     def __init__(
@@ -221,19 +224,22 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         temperature: float = 1.0,
         use_gpu: bool = False,
     ) -> None:
-        """Initialization method.
+        """Initialize a hybrid discriminative and generative RBM.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            n_classes: Amount of classes.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            alpha: Amount of penalization to the generative loss.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            use_gpu: Whether GPU should be used or not.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            n_classes: Number of target classes.
+            steps: Number of Contrastive Divergence sampling steps.
+            learning_rate: Learning rate used by stochastic gradient descent.
+            alpha: Nonnegative weight applied to the generative loss.
+            momentum: Momentum used by stochastic gradient descent.
+            decay: Weight decay used by stochastic gradient descent.
+            temperature: Positive temperature applied during scaled sampling.
+            use_gpu: Whether to use CUDA when it is available.
+
+        Raises:
+            ValueError: If a unit count, class count, step count, optimizer value, temperature, or alpha is invalid.
 
         """
 
@@ -253,16 +259,16 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
     def hidden_sampling(
         self, v: torch.Tensor, y: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the hidden layer sampling, i.e., P(h|y,v).
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample hidden units conditioned on visible units and class encodings.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            y: A tensor incoming from the class layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
+            y: One-hot class tensor shaped ``(batch_size, n_classes)``.
+            scale: Whether to divide activations by the sampling temperature.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            Hidden probabilities and Bernoulli states, each shaped ``(batch_size, n_hidden)``, in that order.
 
         """
 
@@ -277,37 +283,33 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
         return probs, states
 
-    def class_sampling(self, h: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Performs the class layer sampling, i.e., P(y|h).
+    def class_sampling(self, h: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Select class states conditioned on hidden units.
 
         Args:
-            h: A tensor incoming from the hidden layer.
+            h: Hidden tensor shaped ``(batch_size, n_hidden)``.
 
         Returns:
-            The probabilities and states of the class layer sampling.
+            Class probabilities and one-hot argmax states shaped ``(batch_size, n_classes)``, in that order.
 
         """
 
         probs = F.softmax(F.linear(h, self.U, self.c), dim=1)
-        states = torch.nn.functional.one_hot(
-            torch.argmax(probs, dim=1), num_classes=self.n_classes
-        ).float()
+        states = torch.nn.functional.one_hot(torch.argmax(probs, dim=1), num_classes=self.n_classes).float()
 
         return probs, states
 
     def gibbs_sampling(
         self, v: torch.Tensor, y: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Performs the whole Gibbs sampling procedure.
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Run Contrastive Divergence sampling from visible samples and class indices.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            y: A tensor incoming from the class layer.
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
+            y: Integer class indices shaped ``(batch_size,)``.
 
         Returns:
-            The probabilities and states of the hidden layer sampling (positive),
-                the probabilities and states of the hidden layer sampling (negative)
-                and the states of the visible layer sampling (negative).
+            Positive hidden probabilities and states, negative hidden probabilities and states, and visible states.
 
         """
 
@@ -316,14 +318,11 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v, y)
         neg_hidden_states = pos_hidden_states
 
-        # Performing the Contrastive Divergence
         for _ in range(self.steps):
             _, visible_states = self.visible_sampling(neg_hidden_states, True)
             _, class_states = self.class_sampling(neg_hidden_states)
 
-            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                visible_states, class_states, True
-            )
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(visible_states, class_states, True)
 
         return (
             pos_hidden_probs,
@@ -338,22 +337,20 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
         dataset: torch.utils.data.Dataset,
         batch_size: int = 128,
         epochs: int = 10,
-    ) -> Tuple[float, float]:
-        """Fits a new DRBM model.
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Update hybrid-model parameters and metric history with shuffled mini-batches.
 
         Args:
-            dataset: A Dataset object containing the training data.
-            batch_size: Amount of samples per batch.
-            epochs: Number of training epochs.
+            dataset: Dataset yielding visible samples and integer class labels.
+            batch_size: Maximum number of samples per training batch.
+            epochs: Number of complete training passes.
 
         Returns:
-            Loss and accuracy from the training step.
+            Final-epoch detached scalar combined loss and mean batch accuracy tensors in that order.
 
         """
 
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=True, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
         for _ in range(epochs):
             start = time.time()
@@ -366,9 +363,9 @@ class HybridDiscriminativeRBM(DiscriminativeRBM):
 
                 _, _, _, _, visible_states = self.gibbs_sampling(samples, labels)
                 visible_states = visible_states.detach()
-                disc_probs, _ = self.labels_sampling(samples)
+                disc_logits, _ = self.labels_sampling(samples)
 
-                d_cost = self.loss(disc_probs, labels)
+                d_cost = self.loss(disc_logits, labels)
                 g_cost = -self.pseudo_likelihood(samples)
                 cost = d_cost + self.alpha * g_cost
 

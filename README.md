@@ -103,6 +103,8 @@ can change training trajectories, including with a fixed random seed.
 
 ## Development
 
+Follow [the coding conventions](CONVENTIONS.md) when changing the library or its examples.
+
 The repository uses [uv](https://docs.astral.sh/uv/) for reproducible
 environments and packaging:
 

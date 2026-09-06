@@ -1,3 +1,6 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import math
 
 import pytest
@@ -15,9 +18,7 @@ from learnergy.models.bernoulli import (
 )
 
 
-def vector_dataset(
-    samples: int = 12, features: int = 16, classes: int = 3
-) -> TensorDataset:
+def vector_dataset(samples: int = 12, features: int = 16, classes: int = 3) -> TensorDataset:
     return TensorDataset(
         torch.rand(samples, features),
         torch.randint(classes, (samples,)),

@@ -1,9 +1,11 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torch
 import torchvision
 
 from learnergy.models.bernoulli import DropConnectRBM
 
-# Creating training and testing dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -17,7 +19,6 @@ test = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating a DropConnectRBM
 model = DropConnectRBM(
     n_visible=784,
     n_hidden=128,
@@ -30,14 +31,10 @@ model = DropConnectRBM(
     use_gpu=True,
 )
 
-# Training an RBM
 mse, pl = model.fit(train, batch_size=128, epochs=5)
 
-# Reconstructing test set
 rec_mse, v = model.reconstruct(test)
 
-# Saving model
 torch.save(model, "model.pth")
 
-# Checking the model's history
 print(model.history)

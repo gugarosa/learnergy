@@ -1,9 +1,11 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torchvision
 
 import learnergy.visual.image as im
 from learnergy.models.bernoulli import RBM
 
-# Creating training dataset
 train = torchvision.datasets.MNIST(
     root="./data",
     train=True,
@@ -11,7 +13,6 @@ train = torchvision.datasets.MNIST(
     transform=torchvision.transforms.ToTensor(),
 )
 
-# Creating an RBM
 model = RBM(
     n_visible=784,
     n_hidden=128,
@@ -23,8 +24,6 @@ model = RBM(
     use_gpu=True,
 )
 
-# Training an RBM
 model.fit(train, epochs=5)
 
-# Creating weights' mosaic
 im.create_mosaic(model.W)

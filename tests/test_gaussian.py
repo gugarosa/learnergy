@@ -1,3 +1,6 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import pytest
 import torch
 from torch.utils.data import TensorDataset
@@ -81,9 +84,7 @@ def test_gaussian_forward_standardizes_batches(model_class, batch_size):
     if batch_size == 1:
         standardized = torch.zeros_like(samples)
     else:
-        standardized = (samples - samples.mean(0, True)) / (
-            samples.std(0) + torch.finfo(samples.dtype).eps
-        )
+        standardized = (samples - samples.mean(0, True)) / (samples.std(0) + torch.finfo(samples.dtype).eps)
     expected, _ = model.hidden_sampling(standardized)
 
     torch.testing.assert_close(model(samples), expected, rtol=0, atol=0)
@@ -109,18 +110,12 @@ def test_gaussian_handles_singleton_training_batch_and_reconstruction(model_clas
 @pytest.mark.parametrize("model_class", [GaussianConvRBM, GaussianConvRBM4Deep])
 @pytest.mark.parametrize("batch_size", [1, 3])
 def test_gaussian_conv_forward_standardizes_batches(model_class, batch_size):
-    model = model_class(
-        visible_shape=(4, 4), filter_shape=(2, 2), n_filters=2, maxpooling=True
-    )
-    samples = torch.arange(batch_size * 16, dtype=torch.float32).reshape(
-        batch_size, 1, 4, 4
-    )
+    model = model_class(visible_shape=(4, 4), filter_shape=(2, 2), n_filters=2, maxpooling=True)
+    samples = torch.arange(batch_size * 16, dtype=torch.float32).reshape(batch_size, 1, 4, 4)
     if batch_size == 1:
         standardized = torch.zeros_like(samples)
     else:
-        standardized = (samples - samples.mean(0, True)) / (
-            samples.std(0) + torch.finfo(samples.dtype).eps
-        )
+        standardized = (samples - samples.mean(0, True)) / (samples.std(0) + torch.finfo(samples.dtype).eps)
     expected, _ = model.hidden_sampling(standardized)
     expected = model.maxpol2d(expected)
 
@@ -165,16 +160,10 @@ def test_variance_energy_matches_marginalized_joint_distribution():
         model.b.copy_(torch.tensor([-0.2, 0.1]))
         model.sigma.copy_(torch.tensor([0.5, 2.0]))
     samples = torch.tensor([[0.0, 1.0], [-1.0, 2.0]], dtype=torch.float64)
-    hidden = torch.tensor(
-        [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]], dtype=torch.float64
-    )
+    hidden = torch.tensor([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]], dtype=torch.float64)
     variance = model.sigma.square() + torch.finfo(samples.dtype).eps
     quadratic = ((samples - model.a).square() / (2 * variance)).sum(1)
-    joint_energy = (
-        quadratic[:, None]
-        - hidden @ model.b
-        - (samples / variance) @ model.W @ hidden.t()
-    )
+    joint_energy = quadratic[:, None] - hidden @ model.b - (samples / variance) @ model.W @ hidden.t()
     expected = -torch.logsumexp(-joint_energy, dim=1)
 
     torch.testing.assert_close(model.energy(samples), expected)

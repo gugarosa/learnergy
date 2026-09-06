@@ -1,7 +1,18 @@
-"""Bernoulli-Bernoulli Restricted Boltzmann Machine."""
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
+"""Bernoulli-Bernoulli Restricted Boltzmann Machine.
+
+The model uses Contrastive Divergence for training. Calling the model returns hidden probabilities while still
+sampling hidden states as part of the forward operation.
+
+References:
+    G. Hinton. A practical guide to training restricted Boltzmann machines.
+    Neural networks: Tricks of the trade (2012).
+
+"""
 
 import time
-from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -14,45 +25,61 @@ from learnergy.core.model import Model, _validated_property
 
 
 class RBM(Model):
-    """An RBM class provides the basic implementation for Bernoulli-Bernoulli Restricted Boltzmann Machines.
-
-    References:
-        G. Hinton. A practical guide to training restricted Boltzmann machines.
-        Neural networks: Tricks of the trade (2012).
-
-    """
+    """Implement a Bernoulli-Bernoulli Restricted Boltzmann Machine."""
 
     n_visible = _validated_property(
         "n_visible",
         lambda _, value: value > 0,
         e.ValueError,
-        "`n_visible` should be > 0",
+        "`n_visible` should be > 0.",
+        doc="Number of visible units.",
     )
     n_hidden = _validated_property(
-        "n_hidden", lambda _, value: value > 0, e.ValueError, "`n_hidden` should be > 0"
+        "n_hidden",
+        lambda _, value: value > 0,
+        e.ValueError,
+        "`n_hidden` should be > 0.",
+        doc="Number of hidden units.",
     )
     steps = _validated_property(
-        "steps", lambda _, value: value > 0, e.ValueError, "`steps` should be > 0"
+        "steps",
+        lambda _, value: value > 0,
+        e.ValueError,
+        "`steps` should be > 0.",
+        doc="Number of Contrastive Divergence steps.",
     )
     lr = _validated_property(
-        "lr", lambda _, value: value >= 0, e.ValueError, "`lr` should be >= 0"
+        "lr",
+        lambda _, value: value >= 0,
+        e.ValueError,
+        "`lr` should be >= 0.",
+        doc="Stored learning-rate setting used at initialization.",
     )
     momentum = _validated_property(
         "momentum",
         lambda _, value: value >= 0,
         e.ValueError,
-        "`momentum` should be >= 0",
+        "`momentum` should be >= 0.",
+        doc="Stored momentum setting used at initialization.",
     )
     decay = _validated_property(
-        "decay", lambda _, value: value >= 0, e.ValueError, "`decay` should be >= 0"
+        "decay",
+        lambda _, value: value >= 0,
+        e.ValueError,
+        "`decay` should be >= 0.",
+        doc="Stored weight-decay setting used at initialization.",
     )
     T = _validated_property(
-        "T", lambda _, value: value > 0, e.ValueError, "`T` should be > 0"
+        "T",
+        lambda _, value: value > 0,
+        e.ValueError,
+        "`T` should be > 0.",
+        doc="Sampling temperature.",
     )
-    W = _validated_property("W")
-    a = _validated_property("a")
-    b = _validated_property("b")
-    optimizer = _validated_property("optimizer")
+    W = _validated_property("W", doc="Visible-to-hidden weight matrix.")
+    a = _validated_property("a", doc="Visible-unit bias vector.")
+    b = _validated_property("b", doc="Hidden-unit bias vector.")
+    optimizer = _validated_property("optimizer", doc="Stochastic gradient descent optimizer.")
 
     def __init__(
         self,
@@ -65,17 +92,20 @@ class RBM(Model):
         temperature: float = 1.0,
         use_gpu: bool = False,
     ) -> None:
-        """Initialization method.
+        """Initialize a Bernoulli-Bernoulli RBM.
 
         Args:
-            n_visible: Amount of visible units.
-            n_hidden: Amount of hidden units.
-            steps: Number of Gibbs' sampling steps.
-            learning_rate: Learning rate.
-            momentum: Momentum parameter.
-            decay: Weight decay used for penalization.
-            temperature: Temperature factor.
-            use_gpu: Whether GPU should be used or not.
+            n_visible: Number of visible units.
+            n_hidden: Number of hidden units.
+            steps: Number of Contrastive Divergence sampling steps.
+            learning_rate: Learning rate used by stochastic gradient descent.
+            momentum: Momentum used by stochastic gradient descent.
+            decay: Weight decay used by stochastic gradient descent.
+            temperature: Positive temperature applied during scaled sampling.
+            use_gpu: Whether to use CUDA when it is available.
+
+        Raises:
+            ValueError: If a unit count, step count, optimizer value, or temperature is invalid.
 
         """
 
@@ -95,19 +125,17 @@ class RBM(Model):
         self.b = nn.Parameter(torch.zeros(n_hidden))
 
         self.to(self.device)
-        self.optimizer = opt.SGD(
-            self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay
-        )
+        self.optimizer = opt.SGD(self.parameters(), lr=learning_rate, momentum=momentum, weight_decay=decay)
 
     def pre_activation(self, v: torch.Tensor, scale: bool = False) -> torch.Tensor:
-        """Performs the pre-activation over hidden neurons, i.e., Wx' + b.
+        """Compute hidden-unit pre-activations.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
+            scale: Whether to divide activations by the sampling temperature.
 
         Returns:
-            An input for any type of activation function.
+            Hidden pre-activations shaped ``(batch_size, n_hidden)`` with gradients preserved.
 
         """
 
@@ -118,15 +146,15 @@ class RBM(Model):
 
         return activations
 
-    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> torch.Tensor:
-        """Performs the hidden layer sampling, i.e., P(h|v).
+    def hidden_sampling(self, v: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample hidden units conditioned on visible units.
 
         Args:
-            v: A tensor incoming from the visible layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
+            scale: Whether to divide activations by the sampling temperature.
 
         Returns:
-            The probabilities and states of the hidden layer sampling.
+            A tuple of hidden probabilities and Bernoulli states, each shaped ``(batch_size, n_hidden)``.
 
         """
 
@@ -141,15 +169,15 @@ class RBM(Model):
 
         return probs, states
 
-    def visible_sampling(self, h: torch.Tensor, scale: bool = False) -> torch.Tensor:
-        """Performs the visible layer sampling, i.e., P(v|h).
+    def visible_sampling(self, h: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample visible units conditioned on hidden units.
 
         Args:
-            h: A tensor incoming from the hidden layer.
-            scale: A boolean to decide whether temperature should be used or not.
+            h: Hidden tensor shaped ``(batch_size, n_hidden)``.
+            scale: Whether to divide activations by the sampling temperature.
 
         Returns:
-            The probabilities and states of the visible layer sampling.
+            A tuple of visible probabilities and Bernoulli states, each shaped ``(batch_size, n_visible)``.
 
         """
 
@@ -166,28 +194,23 @@ class RBM(Model):
 
     def gibbs_sampling(
         self, v: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Performs the whole Gibbs sampling procedure.
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Run Contrastive Divergence sampling from visible units.
 
         Args:
-            v: A tensor incoming from the visible layer.
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
 
         Returns:
-            The probabilities and states of the hidden layer sampling (positive),
-                the probabilities and states of the hidden layer sampling (negative)
-                and the states of the visible layer sampling (negative).
+            Positive hidden probabilities and states, negative hidden probabilities and states, and visible states.
 
         """
 
         pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v)
         neg_hidden_states = pos_hidden_states
 
-        # Performing the Contrastive Divergence
         for _ in range(self.steps):
             _, visible_states = self.visible_sampling(neg_hidden_states, True)
-            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
-                visible_states, True
-            )
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(visible_states, True)
 
         return (
             pos_hidden_probs,
@@ -198,19 +221,19 @@ class RBM(Model):
         )
 
     def energy(self, samples: torch.Tensor) -> torch.Tensor:
-        """Calculates and frees the system's energy.
+        """Compute free energy for visible samples.
 
         Args:
-            samples: Samples to be energy-freed.
+            samples: Visible tensor shaped ``(batch_size, n_visible)``.
 
         Returns:
-            The system's energy based on input samples.
+            Free-energy tensor shaped ``(batch_size,)`` with gradients preserved.
 
         """
 
         activations = F.linear(samples, self.W.t(), self.b)
 
-        # Creates a Softplus function for numerical stability
+        # Softplus keeps the hidden contribution numerically stable
         s = nn.Softplus()
 
         h = torch.sum(s(activations), dim=1)
@@ -221,32 +244,26 @@ class RBM(Model):
         return energy
 
     def pseudo_likelihood(self, samples: torch.Tensor) -> torch.Tensor:
-        """Calculates the logarithm of the pseudo-likelihood.
+        """Estimate log pseudo-likelihood by flipping one random visible unit per sample.
 
         Args:
-            samples: Samples to be calculated.
+            samples: Visible tensor shaped ``(batch_size, n_visible)``.
 
         Returns:
-            The logarithm of the pseudo-likelihood based on input samples.
+            Scalar log pseudo-likelihood tensor with gradients preserved.
 
         """
 
-        # Calculates the energy of samples before flipping the bits
         samples_binary = torch.round(samples)
         energy = self.energy(samples_binary)
 
-        # Samples an array of indexes to flip the bits
-        indexes = torch.randint(
-            0, self.n_visible, size=(samples.size(0), 1), device=self.device
-        )
+        indexes = torch.randint(0, self.n_visible, size=(samples.size(0), 1), device=self.device)
         bits = torch.zeros(samples.size(0), samples.size(1), device=self.device)
         bits = bits.scatter_(1, indexes, 1)
 
-        # Calculates the energy after flipping the bits
         samples_binary = torch.where(bits == 0, samples_binary, 1 - samples_binary)
         energy1 = self.energy(samples_binary)
 
-        # Calculate the logarithm of the pseudo-likelihood
         pl = torch.mean(self.n_visible * F.logsigmoid(energy1 - energy))
 
         return pl
@@ -256,22 +273,20 @@ class RBM(Model):
         dataset: torch.utils.data.Dataset,
         batch_size: int = 128,
         epochs: int = 10,
-    ) -> Tuple[float, float]:
-        """Fits a new RBM model.
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Update model parameters and metric history with shuffled mini-batch Contrastive Divergence.
 
         Args:
-            dataset: A Dataset object containing the training data.
-            batch_size: Amount of samples per batch.
-            epochs: Number of training epochs.
+            dataset: Dataset yielding visible samples and ignored targets.
+            batch_size: Maximum number of samples per training batch.
+            epochs: Number of complete training passes.
 
         Returns:
-            MSE (mean squared error) and log pseudo-likelihood from the training step.
+            Final-epoch detached scalar mean squared error and log pseudo-likelihood tensors in that order.
 
         """
 
-        batches = DataLoader(
-            dataset, batch_size=batch_size, shuffle=True, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
         for _ in range(epochs):
             start = time.time()
@@ -284,17 +299,13 @@ class RBM(Model):
                 _, _, _, _, visible_states = self.gibbs_sampling(samples)
                 visible_states = visible_states.detach()
 
-                cost = torch.mean(self.energy(samples)) - torch.mean(
-                    self.energy(visible_states)
-                )
+                cost = torch.mean(self.energy(samples)) - torch.mean(self.energy(visible_states))
 
                 self.optimizer.zero_grad()
                 cost.backward()
                 self.optimizer.step()
 
-                batch_mse = torch.div(
-                    torch.sum(torch.pow(samples - visible_states, 2)), samples.size(0)
-                ).detach()
+                batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), samples.size(0)).detach()
                 batch_pl = self.pseudo_likelihood(samples).detach()
 
                 mse += batch_mse
@@ -309,24 +320,23 @@ class RBM(Model):
 
         return mse, pl
 
-    def reconstruct(
-        self, dataset: torch.utils.data.Dataset
-    ) -> Tuple[float, torch.Tensor]:
-        """Reconstructs batches of new samples.
+    def reconstruct(self, dataset: torch.utils.data.Dataset) -> tuple[torch.Tensor, torch.Tensor]:
+        """Reconstruct an entire dataset in one unshuffled batch.
 
         Args:
-            dataset: A Dataset object containing the testing data.
+            dataset: Dataset yielding visible samples and ignored targets.
 
         Returns:
-            Reconstruction error and visible probabilities, i.e., P(v|h).
+            Scalar reconstruction error and visible probabilities shaped ``(len(dataset), n_visible)``.
+
+        Notes:
+            Autograd tracking is not explicitly disabled.
 
         """
 
         mse = 0
 
-        batches = DataLoader(
-            dataset, batch_size=len(dataset), shuffle=False, num_workers=0
-        )
+        batches = DataLoader(dataset, batch_size=len(dataset), shuffle=False, num_workers=0)
 
         for samples, _ in batches:
             samples = samples.reshape(len(samples), self.n_visible).to(self.device)
@@ -334,9 +344,7 @@ class RBM(Model):
             _, pos_hidden_states = self.hidden_sampling(samples)
             visible_probs, visible_states = self.visible_sampling(pos_hidden_states)
 
-            batch_mse = torch.div(
-                torch.sum(torch.pow(samples - visible_states, 2)), samples.size(0)
-            )
+            batch_mse = torch.div(torch.sum(torch.pow(samples - visible_states, 2)), samples.size(0))
             mse += batch_mse
 
         mse /= len(batches)
@@ -344,16 +352,6 @@ class RBM(Model):
         return mse, visible_probs
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Performs a forward pass over the data.
-
-        Args:
-            x: An input tensor for computing the forward pass.
-
-        Returns:
-            A tensor containing the RBM's outputs.
-
-        """
-
         x, _ = self.hidden_sampling(x)
 
         return x

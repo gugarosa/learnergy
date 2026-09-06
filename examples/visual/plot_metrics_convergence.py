@@ -1,11 +1,12 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import torch
 
 import learnergy.visual.convergence as c
 
-# Loading pre-trained model
 model = torch.load("model.pth")
 
-# Plotting convergence per layer from pre-trained model
 c.plot(
     model.history["mse"],
     model.history["pl"],

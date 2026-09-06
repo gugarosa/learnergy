@@ -1,3 +1,6 @@
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
+
 import logging as stdlib_logging
 
 import matplotlib.pyplot as plt
@@ -37,9 +40,25 @@ def test_math_helpers():
 
 def test_exception_types_remain_builtin_compatible():
     with pytest.raises(TypeError):
-        raise exception.TypeError("invalid type")
+        raise exception.TypeError("`value` has an invalid type.")
+
     with pytest.raises(ValueError):
-        raise exception.ValueError("invalid value")
+        raise exception.ValueError("`value` is invalid.")
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["`value` is invalid", "`value` is invalid."],
+)
+def test_value_error_preserves_message_and_formats_diagnostic(message, monkeypatch):
+    diagnostics = []
+    monkeypatch.setattr(exception.logger, "error", diagnostics.append)
+
+    error = exception.ValueError(message)
+
+    assert error.args == (message,)
+    assert str(error) == message
+    assert diagnostics == ["`exception=ValueError` was raised: `value` is invalid."]
 
 
 def test_logger_does_not_duplicate_handlers():
@@ -113,9 +132,7 @@ def test_tensor_render_preserves_image_layout(shape, monkeypatch, existing_figur
 
 
 @pytest.mark.parametrize("operation", ["save", "show"])
-def test_tensor_render_closes_figure_after_failure(
-    operation, tmp_path, existing_figures
-):
+def test_tensor_render_closes_figure_after_failure(operation, tmp_path, existing_figures):
     samples = torch.zeros(2, 5, 7)
 
     with pytest.raises(TypeError):
