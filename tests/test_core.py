@@ -9,7 +9,7 @@ from learnergy.core import Model
 
 
 def test_package_version():
-    assert learnergy.__version__ == "2.0.1"
+    assert learnergy.__version__ == "2.0.2"
 
 
 def test_model_public_attributes_have_descriptions():
