@@ -124,6 +124,7 @@ class RTDBN(Model):
         """
 
         super().__init__(use_gpu=use_gpu)
+
         _validate_positive_integer("n_visible", n_visible)
         if not n_hidden:
             raise e.ValueError("`n_hidden` should contain at least one layer.")
@@ -142,13 +143,14 @@ class RTDBN(Model):
         model_names = (model,) if isinstance(model, str) else tuple(model)
         if len(model_names) != self.n_layers:
             raise e.SizeError("`model` should match the number of layers.")
+
         unknown = set(model_names) - RT_MODELS.keys()
         if unknown:
             raise e.ValueError(f"`model` contains unknown model type `{sorted(unknown)[0]}`.")
 
         self.models = nn.ModuleList()
-        for i, name in enumerate(model_names):
-            model_class = RT_MODELS[name]
+        for i, model_name in enumerate(model_names):
+            model_class = RT_MODELS[model_name]
             kwargs = {
                 "n_visible": self.n_visible if i == 0 else self.n_hidden[i - 1],
                 "n_hidden": self.n_hidden[i],
@@ -198,6 +200,7 @@ class RTDBN(Model):
         _validate_positive_integer("batch_size", batch_size)
         if len(dataset) == 0:
             raise e.ValueError("`dataset` should contain at least one sequence.")
+
         if len(epochs) != self.n_layers:
             raise e.SizeError("`epochs` should match the number of layers.")
         if len(warmup_epochs) > self.n_layers:
@@ -210,8 +213,9 @@ class RTDBN(Model):
             if value < 0:
                 raise e.ValueError("`warmup_epochs` should contain nonnegative values.")
 
-        errors = []
+        mse = []
         current_dataset = dataset
+
         for i, model in enumerate(self.models):
             logger.info("Fitting RTDBN layer %d/%d", i + 1, self.n_layers)
             warmup = min(warmup_epochs[i], epochs[i]) if i < len(warmup_epochs) else 0
@@ -227,19 +231,22 @@ class RTDBN(Model):
                     model.sigma.requires_grad_(scale_requires_grad)
             if epochs[i] > warmup:
                 model.fit(current_dataset, batch_size=batch_size, epochs=epochs[i] - warmup)
-            errors.append(model.history["mse"][-1])
+
+            mse.append(model.history["mse"][-1])
 
             if i < self.n_layers - 1:
                 batches = DataLoader(current_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
                 encoded = []
                 targets = []
+
                 with torch.no_grad():
                     for samples, labels in batches:
                         encoded.append(model(samples.to(model.W)).cpu())
                         targets.append(labels.cpu())
+
                 current_dataset = TensorDataset(torch.cat(encoded), torch.cat(targets))
 
-        return errors
+        return mse
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         """Encode complete sequences and average the final hidden probabilities over time.
@@ -252,6 +259,11 @@ class RTDBN(Model):
 
         Returns:
             Mean-pooled sequence embeddings shaped ``(batch_size, n_hidden[-1])``.
+
+        Raises:
+            TypeError: The input is not a floating-point tensor.
+            ValueError: The input contains nonfinite values.
+            learnergy.utils.exception.SizeError: The input has invalid or empty sequence dimensions.
 
         """
 

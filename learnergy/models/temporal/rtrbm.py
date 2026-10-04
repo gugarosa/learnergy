@@ -114,6 +114,7 @@ class RTRBM(RBM):
             raise e.SizeError("`h_prev` should have shape (batch_size, n_hidden).")
 
         activations = F.linear(v, self.W.t()) + F.linear(h_prev, self.W_prime, self.b)
+
         if scale:
             activations = activations / self.T
 
@@ -132,11 +133,15 @@ class RTRBM(RBM):
         Returns:
             Hidden probabilities followed by Bernoulli states, each shaped ``(batch_size, n_hidden)``.
 
+        Raises:
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
-        probabilities = torch.sigmoid(self.pre_activation(v, h_prev, scale))
+        probs = torch.sigmoid(self.pre_activation(v, h_prev, scale))
+        states = torch.bernoulli(probs)
 
-        return probabilities, torch.bernoulli(probabilities)
+        return probs, states
 
     def energy(self, samples: torch.Tensor, h_prev: torch.Tensor | None = None) -> torch.Tensor:
         """Compute Bernoulli free energy conditioned on recurrent context.
@@ -148,11 +153,18 @@ class RTRBM(RBM):
         Returns:
             Free energies shaped ``(batch_size,)`` with gradients through both arguments and model parameters.
 
+        Raises:
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
         activations = self.pre_activation(samples, h_prev)
+        v = torch.mv(samples, self.a)
+        h = F.softplus(activations).sum(dim=1)
 
-        return -torch.mv(samples, self.a) - F.softplus(activations).sum(dim=1)
+        energy = -v - h
+
+        return energy
 
     def pseudo_likelihood(self, samples: torch.Tensor, h_prev: torch.Tensor | None = None) -> torch.Tensor:
         """Estimate Bernoulli log pseudo-likelihood while holding recurrent context fixed.
@@ -167,20 +179,29 @@ class RTRBM(RBM):
         Returns:
             Scalar log pseudo-likelihood with gradients preserved.
 
+        Raises:
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
-        binary = samples.round()
-        energy = self.energy(binary, h_prev)
-        indexes = torch.randint(self.n_visible, (len(samples), 1), device=samples.device)
-        bits = torch.zeros_like(binary).scatter_(1, indexes, 1)
-        flipped = torch.where(bits == 0, binary, 1 - binary)
+        samples_binary = samples.round()
+        energy = self.energy(samples_binary, h_prev)
 
-        return (self.n_visible * F.logsigmoid(self.energy(flipped, h_prev) - energy)).mean()
+        indexes = torch.randint(self.n_visible, (len(samples), 1), device=samples.device)
+        bits = torch.zeros_like(samples_binary).scatter_(1, indexes, 1)
+        samples_binary = torch.where(bits == 0, samples_binary, 1 - samples_binary)
+        energy1 = self.energy(samples_binary, h_prev)
+
+        pl = (self.n_visible * F.logsigmoid(energy1 - energy)).mean()
+
+        return pl
 
     def gibbs_sampling(
         self, v: torch.Tensor, h_prev: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Run Contrastive Divergence at one timestep with fixed recurrent context.
+
+        Hidden results use ``(batch_size, n_hidden)`` and visible states use ``(batch_size, n_visible)``.
 
         Args:
             v: Initial visible tensor shaped ``(batch_size, n_visible)``.
@@ -189,23 +210,34 @@ class RTRBM(RBM):
         Returns:
             Positive hidden probabilities and states, negative hidden probabilities and states, and visible states.
 
+        Raises:
+            TypeError: The stored step count is not an integer.
+            ValueError: The stored step count is not positive.
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
         _validate_positive_integer("steps", self.steps)
-        positive_probabilities, positive_states = self.hidden_sampling(v, h_prev)
-        negative_states = positive_states
+        pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v, h_prev)
+        neg_hidden_states = pos_hidden_states
 
         for _ in range(self.steps):
-            _, visible_states = self.visible_sampling(negative_states, scale=True)
-            negative_probabilities, negative_states = self.hidden_sampling(visible_states, h_prev, scale=True)
+            _, visible_states = self.visible_sampling(neg_hidden_states, scale=True)
+            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(visible_states, h_prev, scale=True)
 
-        return positive_probabilities, positive_states, negative_probabilities, negative_states, visible_states
+        return (
+            pos_hidden_probs,
+            pos_hidden_states,
+            neg_hidden_probs,
+            neg_hidden_states,
+            visible_states,
+        )
 
     def cd_step(self, v: torch.Tensor, h_prev: torch.Tensor) -> torch.Tensor:
         """Update parameters with Contrastive Divergence for one timestep.
 
         Negative particles are detached before differentiation. Use ``fit_subseries`` rather than repeated updates
-        with a shared autograd graph to train across a complete sequence.
+        with a shared autograd graph to train across a complete sequence. History is not updated.
 
         Args:
             v: Visible tensor shaped ``(batch_size, n_visible)``.
@@ -214,15 +246,21 @@ class RTRBM(RBM):
         Returns:
             Detached scalar squared reconstruction error summed over features and averaged over the batch.
 
+        Raises:
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
         with torch.no_grad():
             visible_states = self.gibbs_sampling(v, h_prev)[-1]
         visible_states = visible_states.detach()
+
         cost = self.energy(v, h_prev).mean() - self.energy(visible_states, h_prev).mean()
         self._update(cost)
 
-        return ((v - visible_states).square().sum() / len(v)).detach()
+        mse = ((v - visible_states).square().sum() / len(v)).detach()
+
+        return mse
 
     def fit_subseries(self, sequence: torch.Tensor) -> torch.Tensor:
         """Update parameters with one backward pass through a complete batch of sequences.
@@ -244,18 +282,22 @@ class RTRBM(RBM):
         """
 
         self._validate_sequence(sequence)
+
         h_prev = self.h0.unsqueeze(0).expand(len(sequence), -1)
         cost = sequence.new_zeros(())
         mse = sequence.new_zeros(())
 
-        for visible in sequence.unbind(dim=1):
+        for v in sequence.unbind(dim=1):
             with torch.no_grad():
-                negative = self.gibbs_sampling(visible, h_prev)[-1]
-            negative = negative.detach()
-            step_cost = self.energy(visible, h_prev).mean() - self.energy(negative, h_prev).mean()
+                visible_states = self.gibbs_sampling(v, h_prev)[-1]
+            visible_states = visible_states.detach()
+
+            step_cost = self.energy(v, h_prev).mean() - self.energy(visible_states, h_prev).mean()
             cost = cost + step_cost
-            mse = mse + ((visible - negative).square().sum() / len(sequence)).detach()
-            h_prev, _ = self.hidden_sampling(visible, h_prev)
+            batch_mse = ((v - visible_states).square().sum() / len(sequence)).detach()
+            mse = mse + batch_mse
+
+            h_prev, _ = self.hidden_sampling(v, h_prev)
 
         self._update(cost)
 
@@ -264,6 +306,7 @@ class RTRBM(RBM):
     def fit(self, dataset: torch.utils.data.Dataset, batch_size: int = 128, epochs: int = 10) -> torch.Tensor:
         """Train with shuffled batches of complete sequences and append epoch metrics.
 
+        Each dataset sequence has shape ``(sequence_length, n_visible)``.
         Inputs are moved to the model's device and dtype. Each batch uses an independent recurrent graph, and epoch
         MSE is the mean of the per-batch errors returned by ``fit_subseries``. History stores MSE and time as floats.
 
@@ -277,7 +320,8 @@ class RTRBM(RBM):
 
         Raises:
             TypeError: A batch size or epoch count is not an integer.
-            ValueError: The dataset is empty or a batch size or epoch count is not positive.
+            ValueError: A count is invalid, the dataset is empty, or a sequence contains nonfinite values.
+            learnergy.utils.exception.SizeError: A sequence has invalid or empty dimensions.
 
         """
 
@@ -285,13 +329,16 @@ class RTRBM(RBM):
         _validate_positive_integer("epochs", epochs)
         if len(dataset) == 0:
             raise e.ValueError("`dataset` should contain at least one sequence.")
+
         batches = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
         for epoch in range(epochs):
             start = time.time()
             mse = self.W.new_zeros(())
+
             for samples, _ in batches:
                 mse += self.fit_subseries(samples.to(self.W))
+
             mse /= len(batches)
 
             self.dump(mse=mse.item(), time=time.time() - start)
@@ -309,20 +356,22 @@ class RTRBM(RBM):
             dataset: Nonempty dataset yielding ``(sequence, target)`` pairs with ignored targets.
 
         Returns:
-            Scalar sampled-state MSE followed by visible conditional values shaped ``(len(dataset), time, n_visible)``.
+            Scalar MSE followed by conditional values shaped ``(len(dataset), sequence_length, n_visible)``.
 
         Raises:
-            ValueError: The dataset is empty.
+            ValueError: The dataset is empty or a sequence contains nonfinite values.
+            learnergy.utils.exception.SizeError: A sequence has invalid or empty dimensions.
 
         """
 
         if len(dataset) == 0:
             raise e.ValueError("`dataset` should contain at least one sequence.")
+
         batches = DataLoader(dataset, batch_size=len(dataset), shuffle=False, num_workers=0)
         samples, _ = next(iter(batches))
-        mse, values, _ = self._reconstruct(samples.to(self.W))
+        mse, visible_probs, _ = self._reconstruct(samples.to(self.W))
 
-        return mse, values
+        return mse, visible_probs
 
     def sample(self, n_samples: int = 1, n_steps: int = 10, gibbs_steps: int = 100) -> torch.Tensor:
         """Generate independent sequences using Gibbs sampling at each timestep.
@@ -351,22 +400,25 @@ class RTRBM(RBM):
         with torch.no_grad():
             h_prev = self.h0.unsqueeze(0).expand(n_samples, -1)
             outputs = []
+
             for _ in range(n_steps):
-                hidden = torch.bernoulli(self.W.new_full((n_samples, self.n_hidden), 0.5))
+                hidden_states = torch.bernoulli(self.W.new_full((n_samples, self.n_hidden), 0.5))
                 for _ in range(gibbs_steps):
-                    visible = self._sample_visible(hidden)
-                    _, hidden = self.hidden_sampling(visible, h_prev)
-                outputs.append(visible)
-                h_prev, _ = self.hidden_sampling(visible, h_prev)
+                    visible_states = self._sample_visible(hidden_states)
+                    _, hidden_states = self.hidden_sampling(visible_states, h_prev)
+
+                outputs.append(visible_states)
+                h_prev, _ = self.hidden_sampling(visible_states, h_prev)
 
             return torch.stack(outputs, dim=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         self._validate_sequence(x)
+
         h_prev = self.h0.unsqueeze(0).expand(len(x), -1)
         outputs = []
-        for visible in x.unbind(dim=1):
-            h_prev, _ = self.hidden_sampling(visible, h_prev)
+        for v in x.unbind(dim=1):
+            h_prev, _ = self.hidden_sampling(v, h_prev)
             outputs.append(h_prev)
 
         return torch.stack(outputs, dim=1)
@@ -389,16 +441,17 @@ class RTRBM(RBM):
 
     def _reconstruct(self, sequence: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         self._validate_sequence(sequence)
-        h_prev = self.h0.unsqueeze(0).expand(len(sequence), -1)
-        values = []
-        states = []
-        for visible in sequence.unbind(dim=1):
-            h_prev, hidden = self.hidden_sampling(visible, h_prev)
-            visible_values, visible_states = self.visible_sampling(hidden)
-            values.append(visible_values)
-            states.append(visible_states)
 
-        reconstructed = torch.stack(states, dim=1)
+        h_prev = self.h0.unsqueeze(0).expand(len(sequence), -1)
+        visible_probs = []
+        visible_states = []
+        for v in sequence.unbind(dim=1):
+            h_prev, pos_hidden_states = self.hidden_sampling(v, h_prev)
+            probs, states = self.visible_sampling(pos_hidden_states)
+            visible_probs.append(probs)
+            visible_states.append(states)
+
+        reconstructed = torch.stack(visible_states, dim=1)
         mse = ((sequence - reconstructed).square().sum() / len(sequence)).detach()
 
-        return mse, torch.stack(values, dim=1), reconstructed
+        return mse, torch.stack(visible_probs, dim=1), reconstructed

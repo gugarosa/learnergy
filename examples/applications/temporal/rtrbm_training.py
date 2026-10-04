@@ -14,10 +14,13 @@ sequences = torch.where(torch.rand_like(sequences) < 0.03, 1 - sequences, sequen
 dataset = TensorDataset(sequences, torch.zeros(len(sequences)))
 
 model = RTRBM(n_visible=6, n_hidden=12, learning_rate=0.05)
+
 mse = model.fit(dataset, batch_size=32, epochs=20)
 reconstruction_mse, reconstructed = model.reconstruct(dataset)
+
 with torch.no_grad():
     hidden_sequences = model(sequences)
+
 generated = model.sample(n_samples=8, n_steps=8, gibbs_steps=50)
 
 print(f"Training MSE: {mse.item():.4f}")

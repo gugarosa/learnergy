@@ -71,6 +71,7 @@ def test_temporal_models_reject_noninteger_dimensions(model_class, name, value):
 
 def test_temporal_defaults_and_parameter_registration(model_class):
     instance = model_class()
+
     assert instance.n_visible == instance.n_hidden == 128
     assert instance.W_prime.shape == (128, 128)
     assert torch.equal(instance.h0, torch.zeros(128))
@@ -342,15 +343,19 @@ def test_temporal_sampling_validates_counts(model, name, value, error):
 
 def test_temporal_training_and_reconstruction_reject_empty_data(model):
     empty = TensorDataset(torch.empty(0, 3, 2), torch.empty(0))
+
     with pytest.raises(ValueError):
         model.fit(empty)
     with pytest.raises(ValueError):
         model.reconstruct(empty)
+
     dataset = TensorDataset(torch.zeros(1, 3, 2), torch.zeros(1))
+
     with pytest.raises(ValueError):
         model.fit(dataset, epochs=0)
     with pytest.raises(ValueError):
         model.fit(dataset, batch_size=0)
+
     assert model.history == {}
 
 
@@ -552,6 +557,7 @@ def test_temporal_gaussian_training_clips_gradients(model_class):
 
 def test_rtdbn_defaults_and_supported_models():
     model = RTDBN()
+
     assert model.n_visible == 78
     assert model.n_hidden == (64,)
     assert model.n_layers == len(model.models) == 1
@@ -573,9 +579,9 @@ def test_rtdbn_supports_each_advertised_family(name):
     model = RTDBN(model=name, n_visible=2, n_hidden=(2,))
     dataset = TensorDataset(torch.rand(5, 3, 2), torch.arange(5))
 
-    errors = model.fit(dataset, batch_size=2, epochs=(1,))
+    mse = model.fit(dataset, batch_size=2, epochs=(1,))
 
-    assert len(errors) == 1 and isinstance(errors[0], float)
+    assert len(mse) == 1 and isinstance(mse[0], float)
     assert len(model.models[0].history["mse"]) == 1
     assert model(dataset.tensors[0]).shape == (5, 2)
     torch.manual_seed(12)
@@ -653,12 +659,12 @@ def test_rtdbn_restores_scale_freezes_after_training_failure(monkeypatch, requir
 
     def fit(dataset, batch_size, epochs):
         assert model.models[0].sigma.requires_grad is False
-        raise RuntimeError("training interrupted")
+        raise RuntimeError("`training` was interrupted.")
 
     monkeypatch.setattr(model.models[0], "fit", fit)
     dataset = TensorDataset(torch.zeros(2, 3, 2), torch.zeros(2))
 
-    with pytest.raises(RuntimeError, match="training interrupted"):
+    with pytest.raises(RuntimeError, match=r"`training` was interrupted\."):
         model.fit(dataset, epochs=(1,))
     assert model.models[0].sigma.requires_grad is requires_grad
     assert model.training is False and model.models[0].training is False
@@ -685,11 +691,11 @@ def test_rtdbn_encodes_detached_features_and_preserves_targets_and_freezes(monke
 
     monkeypatch.setattr(model.models[1], "fit", fit)
     try:
-        errors = model.fit(dataset, batch_size=2, epochs=(1, 1), warmup_epochs=())
+        mse = model.fit(dataset, batch_size=2, epochs=(1, 1), warmup_epochs=())
     finally:
         handle.remove()
 
-    assert len(errors) == 2
+    assert len(mse) == 2
     assert len(batches) == 3
     assert all(batch.requires_grad is False for batch in batches)
     assert model.models[0].b.requires_grad is False
@@ -703,11 +709,11 @@ def test_rtdbn_trains_every_layer_and_generates_sequences(first):
     dataset = TensorDataset(torch.rand(5, 3, 4), torch.arange(5))
     before = [layer.W.detach().clone() for layer in model.models]
 
-    errors = model.fit(dataset, batch_size=2, epochs=(1, 1), warmup_epochs=())
+    mse = model.fit(dataset, batch_size=2, epochs=(1, 1), warmup_epochs=())
     generated = model.sample(n_samples=2, n_steps=3, gibbs_steps=5)
 
-    assert len(errors) == 2
-    assert all(math.isfinite(error) for error in errors)
+    assert len(mse) == 2
+    assert all(math.isfinite(value) for value in mse)
     for layer, weights in zip(model.models, before):
         assert len(layer.history["mse"]) == 1
         assert not torch.equal(layer.W, weights)

@@ -4,9 +4,9 @@
 """Provide a recurrent temporal RBM with fixed-variance Gaussian visible units.
 
 Normalization follows ``GaussianRBM`` using batch-local statistics over the combined sequence and time dimensions.
-Standardized inputs are detached. Training and reconstruction use deterministic visible conditional means, while
-generative sampling adds unit Gaussian noise. Both operations return continuous visible values rather than sigmoid
-values. Training clips the total gradient norm to one.
+Standardized inputs are detached. Training uses deterministic visible conditional means. Reconstruction returns those
+means, while generation adds unit Gaussian noise. Neither reconstruction nor generation returns sigmoid values.
+Training clips the total gradient norm to one and raises an error if that norm is nonfinite.
 
 """
 
@@ -55,6 +55,10 @@ class RTGaussianRBM(RTRBM):
             normalize: Whether to standardize training and reconstruction batches over sequences and time.
             input_normalize: Whether to standardize and detach sequence inputs passed through ``forward``.
 
+        Raises:
+            TypeError: A unit count or step count is not an integer.
+            ValueError: A unit count, step count, optimizer value, or temperature is invalid.
+
         """
 
         super().__init__(
@@ -81,12 +85,18 @@ class RTGaussianRBM(RTRBM):
         Returns:
             Free energies shaped ``(batch_size,)`` with gradients preserved.
 
+        Raises:
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
         activations = self.pre_activation(samples, h_prev)
-        quadratic = 0.5 * (samples - self.a).square().sum(dim=1)
+        v = 0.5 * (samples - self.a).square().sum(dim=1)
+        h = F.softplus(activations).sum(dim=1)
 
-        return quadratic - F.softplus(activations).sum(dim=1)
+        energy = v - h
+
+        return energy
 
     def visible_sampling(self, h: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
         """Calculate deterministic Gaussian visible conditional values.
@@ -107,7 +117,9 @@ class RTGaussianRBM(RTRBM):
         if scale:
             states = states / self.T
 
-        return torch.sigmoid(states), states
+        probs = torch.sigmoid(states)
+
+        return probs, states
 
     def fit_subseries(self, sequence: torch.Tensor) -> torch.Tensor:
         """Train one sequence batch with optional standardization and gradient clipping.
@@ -120,6 +132,12 @@ class RTGaussianRBM(RTRBM):
 
         Returns:
             Detached scalar error summed over time and features and averaged over sequences in the training space.
+
+        Raises:
+            TypeError: The input is not a floating-point tensor.
+            ValueError: The input contains nonfinite values.
+            RuntimeError: The gradient norm is nonfinite.
+            learnergy.utils.exception.SizeError: The input has invalid or empty sequence dimensions.
 
         """
 
@@ -138,23 +156,27 @@ class RTGaussianRBM(RTRBM):
             dataset: Nonempty dataset yielding ``(sequence, target)`` pairs with ignored targets.
 
         Returns:
-            Detached scalar MSE followed by continuous means shaped ``(len(dataset), time, n_visible)``.
+            Detached scalar MSE followed by means shaped ``(len(dataset), sequence_length, n_visible)``.
 
         Raises:
-            ValueError: The dataset is empty.
+            ValueError: The dataset is empty or a sequence contains nonfinite values.
+            learnergy.utils.exception.SizeError: A sequence has invalid or empty dimensions.
 
         """
 
         if len(dataset) == 0:
             raise e.ValueError("`dataset` should contain at least one sequence.")
+
         batches = DataLoader(dataset, batch_size=len(dataset), shuffle=False, num_workers=0)
         samples, _ = next(iter(batches))
         samples = samples.to(self.W)
+
         if self.normalize:
             samples = self._standardize_sequence(samples)
-        mse, _, states = self._reconstruct(samples)
 
-        return mse, states
+        mse, _, visible_states = self._reconstruct(samples)
+
+        return mse, visible_states
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.input_normalize:

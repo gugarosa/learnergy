@@ -6,6 +6,7 @@
 As in ``VarianceGaussianRBM``, effective variance is ``sigma**2`` plus dtype-dependent epsilon. Sampling returns
 conditional means before random states, and Contrastive Divergence uses those states as negative particles. Inputs are
 not standardized. Training clips the gradient norm to one and bounds trainable scales to the interval [0.1, 10].
+A nonfinite gradient norm raises an error rather than updating the parameters.
 
 """
 
@@ -45,6 +46,10 @@ class RTVarianceGaussianRBM(RTRBM):
             temperature: Positive temperature applied during scaled hidden sampling.
             use_gpu: Whether to select CUDA when it is available.
 
+        Raises:
+            TypeError: A unit count or step count is not an integer.
+            ValueError: A unit count, step count, optimizer value, or temperature is invalid.
+
         """
 
         super().__init__(
@@ -73,6 +78,9 @@ class RTVarianceGaussianRBM(RTRBM):
         Returns:
             Hidden activations shaped ``(batch_size, n_hidden)`` with gradients preserved.
 
+        Raises:
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
         variance = self.sigma.square() + torch.finfo(v.dtype).eps
@@ -91,11 +99,12 @@ class RTVarianceGaussianRBM(RTRBM):
 
         """
 
-        means = F.linear(h, self.W, self.a)
-        variance = self.sigma.square() + torch.finfo(means.dtype).eps
-        states = torch.normal(means, variance.sqrt().expand_as(means))
+        activations = F.linear(h, self.W, self.a)
+        variance = self.sigma.square() + torch.finfo(activations.dtype).eps
+        std = variance.sqrt().expand_as(activations)
+        states = torch.normal(activations, std)
 
-        return means, states
+        return activations, states
 
     def energy(self, samples: torch.Tensor, h_prev: torch.Tensor | None = None) -> torch.Tensor:
         """Compute Gaussian free energy with learned variance and recurrent context.
@@ -107,13 +116,19 @@ class RTVarianceGaussianRBM(RTRBM):
         Returns:
             Free energies shaped ``(batch_size,)`` with gradients preserved.
 
+        Raises:
+            learnergy.utils.exception.SizeError: Visible or context dimensions do not match the model.
+
         """
 
         variance = self.sigma.square() + torch.finfo(samples.dtype).eps
         activations = self.pre_activation(samples, h_prev)
-        quadratic = ((samples - self.a).square() / (2 * variance)).sum(dim=1)
+        v = ((samples - self.a).square() / (2 * variance)).sum(dim=1)
+        h = F.softplus(activations).sum(dim=1)
 
-        return quadratic - F.softplus(activations).sum(dim=1)
+        energy = v - h
+
+        return energy
 
     def _update(self, cost: torch.Tensor) -> None:
         self.optimizer.zero_grad()

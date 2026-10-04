@@ -92,11 +92,16 @@ an ignored target. Each sequence starts from a learned initial context, and
 hidden probabilities carry the recurrence between timesteps:
 
 ```python
+import torch
+from torch.utils.data import TensorDataset
+
 from learnergy.models.temporal import RTRBM
 
 sequences = torch.bernoulli(torch.rand(32, 6, 4))
 dataset = TensorDataset(sequences, torch.zeros(32))
+
 model = RTRBM(n_visible=4, n_hidden=8, learning_rate=0.01)
+
 mse = model.fit(dataset, batch_size=8, epochs=2)
 hidden_sequences = model(sequences)
 generated = model.sample(n_samples=3, n_steps=6, gibbs_steps=20)

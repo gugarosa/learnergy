@@ -101,8 +101,9 @@ Standardization pools batch and time dimensions separately for each feature.
 More than one observation uses sample standard deviation; a singleton is
 centered to zero. Standardized inputs are detached. No training statistics are
 stored, and outputs are not transformed back to the original units. Disable
-normalization when supplying externally standardized features or when input
-gradients must pass through a fixed-variance Gaussian layer.
+both flags when supplying externally standardized features. Set
+``input_normalize=False`` when input gradients must pass through a
+fixed-variance Gaussian layer during forward propagation.
 
 As in ``GaussianRBM``, ``RTGaussianRBM.visible_sampling`` returns sigmoid values
 followed by deterministic continuous means. Contrastive Divergence and
@@ -137,6 +138,9 @@ Gaussian layer.
 
 .. code-block:: python
 
+   import torch
+   from torch.utils.data import TensorDataset
+
    from learnergy.models.temporal import RTDBN
 
    dataset = TensorDataset(torch.randn(32, 6, 4), torch.arange(32))
@@ -153,7 +157,7 @@ Gaussian layer.
        input_normalize=False,
    )
 
-   errors = model.fit(dataset, batch_size=8, epochs=(2, 2), warmup_epochs=())
+   mse = model.fit(dataset, batch_size=8, epochs=(2, 2), warmup_epochs=())
    embeddings = model.encode(dataset.tensors[0])
    generated = model.sample(n_samples=3, n_steps=6, gibbs_steps=20)
 
