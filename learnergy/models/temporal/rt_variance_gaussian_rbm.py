@@ -1,23 +1,26 @@
-"""Recurrent Temporal RBM with learned per-feature variance (sigma)."""
+# Copyright (c) 2020-2026 Mateus Roder and Gustavo de Rosa.
+# Licensed under the Apache License, Version 2.0.
 
-from typing import Tuple
+"""Provide a recurrent temporal RBM with learned Gaussian visible variance.
+
+As in ``VarianceGaussianRBM``, effective variance is ``sigma**2`` plus dtype-dependent epsilon. Sampling returns
+conditional means before random states, and Contrastive Divergence uses those states as negative particles. Inputs are
+not standardized. Training clips the gradient norm to one and bounds trainable scales to the interval [0.1, 10].
+
+"""
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import learnergy.utils.constants as c
 from learnergy.core.model import _validated_property
 from learnergy.models.temporal.rtrbm import RTRBM
-from learnergy.utils import logging
-
-logger = logging.get_logger(__name__)
 
 
 class RTVarianceGaussianRBM(RTRBM):
-    """RTRBM with a learned per-feature standard deviation for its Gaussian visible units."""
+    """Implement a recurrent temporal RBM with a learned scale for each visible unit."""
 
-    sigma = _validated_property("sigma", doc="Per-feature learned standard deviation parameter.")
+    sigma = _validated_property("sigma", doc="Learnable visible scale whose square determines the variance.")
 
     def __init__(
         self,
@@ -30,10 +33,21 @@ class RTVarianceGaussianRBM(RTRBM):
         temperature: float = 1.0,
         use_gpu: bool = False,
     ) -> None:
-        """Initialize an RTVarianceGaussianRBM on top of an RTRBM."""
-        logger.info("Overriding class: RTRBM -> RTVarianceGaussianRBM.")
+        """Initialize a recurrent Gaussian-Bernoulli RBM with learned visible variance.
 
-        super(RTVarianceGaussianRBM, self).__init__(
+        Args:
+            n_visible: Number of visible units at each timestep.
+            n_hidden: Number of hidden units at each timestep.
+            steps: Number of Contrastive Divergence sampling steps.
+            learning_rate: Learning rate used by SGD.
+            momentum: Momentum used by SGD.
+            decay: Weight decay used by SGD.
+            temperature: Positive temperature applied during scaled hidden sampling.
+            use_gpu: Whether to select CUDA when it is available.
+
+        """
+
+        super().__init__(
             n_visible,
             n_hidden,
             steps,
@@ -45,188 +59,68 @@ class RTVarianceGaussianRBM(RTRBM):
         )
 
         self.sigma = nn.Parameter(torch.ones(n_visible))
+        self.to(self.W.device)
         self.optimizer.add_param_group({"params": self.sigma})
 
-        if self.device == "cuda":
-            self.cuda()
+    def pre_activation(self, v: torch.Tensor, h_prev: torch.Tensor | None = None, scale: bool = False) -> torch.Tensor:
+        """Compute hidden activations using variance-scaled visible inputs.
 
-        logger.info("Class overrided.")
+        Args:
+            v: Visible tensor shaped ``(batch_size, n_visible)``.
+            h_prev: Context shaped ``(batch_size, n_hidden)`` or None to use ``h0``.
+            scale: Whether to divide hidden activations by the sampling temperature.
 
-    def hidden_sampling(
-        self, v: torch.Tensor, h_prev: torch.Tensor, scale: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Sample hidden units conditioned on visible units scaled by variance, and the previous hidden state."""
-        sigma_sq = torch.pow(self.sigma, 2) + c.EPSILON
-        v_scaled = torch.div(v, sigma_sq)
+        Returns:
+            Hidden activations shaped ``(batch_size, n_hidden)`` with gradients preserved.
 
-        recurrent_bias = F.linear(h_prev, self.W_prime, self.b)
-        activations = F.linear(v_scaled, self.W.t()) + recurrent_bias
+        """
 
-        if scale:
-            probs = torch.sigmoid(torch.div(activations, self.T))
-        else:
-            probs = torch.sigmoid(activations)
+        variance = self.sigma.square() + torch.finfo(v.dtype).eps
 
-        probs = torch.clamp(probs, 1e-6, 1 - 1e-6)
-        states = torch.bernoulli(probs)
+        return super().pre_activation(v / variance, h_prev, scale)
 
-        return probs, states
+    def visible_sampling(self, h: torch.Tensor, scale: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample Gaussian visible states using the learned visible variance.
 
-    def visible_sampling(self, h: torch.Tensor, scale: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Sample visible units conditioned on hidden units, using the learned per-feature variance."""
-        activations = F.linear(h, self.W, self.a)
+        Args:
+            h: Hidden tensor shaped ``(batch_size, n_hidden)``.
+            scale: Accepted for sampling API compatibility without changing the visible distribution.
 
-        if self.device == "cpu":
-            sigma = self.sigma.unsqueeze(0).expand(activations.size(0), -1)
-        else:
-            sigma = self.sigma
+        Returns:
+            Conditional means followed by sampled states, each shaped ``(batch_size, n_visible)``.
 
-        states = torch.normal(activations, torch.pow(sigma, 2))
+        """
 
-        return states, activations
+        means = F.linear(h, self.W, self.a)
+        variance = self.sigma.square() + torch.finfo(means.dtype).eps
+        states = torch.normal(means, variance.sqrt().expand_as(means))
 
-    def energy(self, samples: torch.Tensor, h_prev: torch.Tensor) -> torch.Tensor:
-        """Compute free energy for visible samples, conditioned on the previous hidden state."""
-        sigma_sq = torch.pow(self.sigma, 2) + c.EPSILON
-        v_scaled = torch.div(samples, sigma_sq)
+        return means, states
 
-        recurrent_bias = F.linear(h_prev, self.W_prime, self.b)
-        activations = F.linear(v_scaled, self.W.t()) + recurrent_bias
+    def energy(self, samples: torch.Tensor, h_prev: torch.Tensor | None = None) -> torch.Tensor:
+        """Compute Gaussian free energy with learned variance and recurrent context.
 
-        s = nn.Softplus()
-        h = torch.sum(s(activations), dim=1)
+        Args:
+            samples: Visible tensor shaped ``(batch_size, n_visible)``.
+            h_prev: Context shaped ``(batch_size, n_hidden)`` or None to use ``h0``.
 
-        v = torch.sum(torch.div(torch.pow(samples - self.a, 2), 2 * sigma_sq), dim=1)
+        Returns:
+            Free energies shaped ``(batch_size,)`` with gradients preserved.
 
-        energy = -v - h
+        """
 
-        return energy
+        variance = self.sigma.square() + torch.finfo(samples.dtype).eps
+        activations = self.pre_activation(samples, h_prev)
+        quadratic = ((samples - self.a).square() / (2 * variance)).sum(dim=1)
 
-    def gibbs_sampling(
-        self, v: torch.Tensor, h_prev: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Gibbs sampling for one timestep with learned variance."""
-        pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v, h_prev)
-        neg_hidden_states = pos_hidden_states
+        return quadratic - F.softplus(activations).sum(dim=1)
 
-        for _ in range(self.steps):
-            visible_states, visible_activations = self.visible_sampling(neg_hidden_states, True)
-            neg_hidden_probs, neg_hidden_states = self.hidden_sampling(visible_activations, h_prev, True)
-
-        return (
-            pos_hidden_probs,
-            pos_hidden_states,
-            neg_hidden_probs,
-            neg_hidden_states,
-            visible_activations,
-        )
-
-    def fit_subseries(self, sequence: torch.Tensor) -> torch.Tensor:
-        """Trains on one subseries with learned variance."""
-        batch_size, seq_len, n_visible = sequence.shape
-        h_prev = self.h0.unsqueeze(0).expand(batch_size, -1)
-
+    def _update(self, cost: torch.Tensor) -> None:
         self.optimizer.zero_grad()
-
-        total_cost = torch.tensor(0.0)
-        total_mse = torch.tensor(0.0)
-
-        for t in range(seq_len):
-            v_t = sequence[:, t, :]
-            _, _, _, _, visible_activations = self.gibbs_sampling(v_t, h_prev)
-            visible_activations = visible_activations.detach()
-
-            cost_t = torch.mean(self.energy(v_t, h_prev)) - torch.mean(self.energy(visible_activations, h_prev))
-            total_cost = total_cost + cost_t
-
-            batch_mse = torch.div(torch.sum(torch.pow(v_t - visible_activations, 2)), batch_size).detach()
-            total_mse = total_mse + batch_mse
-
-            h_prev, _ = self.hidden_sampling(v_t, h_prev)
-            h_prev = torch.nan_to_num(h_prev, nan=0.5)
-            h_prev = torch.clamp(h_prev, 0.0, 1.0)
-
-        total_cost.backward()
-
-        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
-
+        cost.backward()
+        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0, error_if_nonfinite=True)
         self.optimizer.step()
 
-        # Clamp sigma to prevent gradient-driven collapse toward 0.
-        with torch.no_grad():
-            self.sigma.data.clamp_(min=0.1, max=10.0)
-
-        return total_mse
-
-    def reconstruct(self, dataset: torch.utils.data.Dataset) -> Tuple[float, torch.Tensor]:
-        from torch.utils.data import DataLoader
-        from tqdm import tqdm
-
-        logger.info("Reconstructing new samples ...")
-
-        mse = torch.tensor(0.0, device=self.device)
-        batch_size = len(dataset)
-        batches = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-        visible_probs_all = []
-
-        for samples, _ in tqdm(batches):
-            if self.device == "cuda":
-                samples = samples.cuda()
-
-            batch_size_actual = samples.size(0)
-            seq_len = samples.size(1)
-            h_prev = self.h0.unsqueeze(0).expand(batch_size_actual, -1)
-
-            recon_activations = []
-
-            for t in range(seq_len):
-                v_t = samples[:, t, :]
-                pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v_t, h_prev)
-                _, visible_activations = self.visible_sampling(pos_hidden_states)
-                recon_activations.append(visible_activations.unsqueeze(1))
-                h_prev = pos_hidden_probs
-
-            recon_seq = torch.cat(recon_activations, dim=1)
-
-            batch_mse = torch.div(torch.sum(torch.pow(samples - recon_seq, 2)), batch_size_actual).detach()
-            mse += batch_mse
-            visible_probs_all.append(recon_seq)
-
-        mse /= len(batches)
-        logger.info("MSE: %f", mse)
-
-        return mse, torch.cat(visible_probs_all, dim=0)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Run the recurrence over a batch of sequences, returning per-timestep hidden probabilities."""
-        batch_size, seq_len, n_visible = x.shape
-        h_prev = self.h0.unsqueeze(0).expand(batch_size, -1)
-
-        all_probs = []
-        for t in range(seq_len):
-            v_t = x[:, t, :]
-            probs, _ = self.hidden_sampling(v_t, h_prev)
-            all_probs.append(probs.unsqueeze(1))
-            h_prev = probs
-
-        return torch.cat(all_probs, dim=1)
-
-    def sample(self, n_samples: int = 1, n_steps: int = 10, gibbs_steps: int = 100) -> torch.Tensor:
-        """Generates sequences using the noisy visible draw (this class's tuple order is state-first)."""
-        with torch.no_grad():
-            h_prev = self.h0.unsqueeze(0).expand(n_samples, -1)
-
-            all_visible = []
-
-            for t in range(n_steps):
-                h = torch.bernoulli(torch.full((n_samples, self.n_hidden), 0.5, device=h_prev.device))
-                for _ in range(gibbs_steps):
-                    v, _ = self.visible_sampling(h)
-                    _, h = self.hidden_sampling(v, h_prev)
-                v_t = v
-
-                all_visible.append(v_t.unsqueeze(1))
-
-                h_prev, _ = self.hidden_sampling(v_t, h_prev)
-
-            return torch.cat(all_visible, dim=1)
+        if self.sigma.requires_grad:
+            with torch.no_grad():
+                self.sigma.clamp_(min=0.1, max=10.0)
