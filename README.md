@@ -7,8 +7,9 @@
 
 Learnergy provides PyTorch implementations of Restricted Boltzmann Machines
 (RBMs) and Deep Belief Networks (DBNs) for unsupervised feature learning,
-generative modeling, and classification. It also includes dataset adapters,
-image-quality metrics, and visualization helpers.
+generative modeling, and classification. Recurrent temporal variants model
+sequences with hidden-state recurrence. The package also includes dataset
+adapters, image-quality metrics, and visualization helpers.
 
 ## Installation
 
@@ -74,6 +75,7 @@ model.fit(dataset, batch_size=128, epochs=(5, 5))
 | Gaussian | `GaussianRBM`, `GaussianReluRBM`, `GaussianSeluRBM`, `VarianceGaussianRBM`, `GaussianConvRBM` |
 | Extra | `SigmoidRBM` |
 | Deep | `DBN`, `ConvDBN`, `ResidualDBN` |
+| Temporal | `RTRBM`, `RTGaussianRBM`, `RTVarianceGaussianRBM`, `RTDBN` |
 
 The `learnergy.core.Dataset`, `learnergy.math`, and `learnergy.visual` modules
 remain available for array-backed datasets, SSIM/scaling helpers, convergence
@@ -81,6 +83,35 @@ plots, image mosaics, and tensor rendering.
 
 See [`examples/applications`](examples/applications) for complete training and
 classification programs.
+
+### Temporal models
+
+Temporal RBMs consume floating-point tensors shaped
+`(batch_size, sequence_length, n_visible)`. Dataset items pair a sequence with
+an ignored target. Each sequence starts from a learned initial context, and
+hidden probabilities carry the recurrence between timesteps:
+
+```python
+import torch
+from torch.utils.data import TensorDataset
+
+from learnergy.models.temporal import RTRBM
+
+sequences = torch.bernoulli(torch.rand(32, 6, 4))
+dataset = TensorDataset(sequences, torch.zeros(32))
+
+model = RTRBM(n_visible=4, n_hidden=8, learning_rate=0.01)
+
+mse = model.fit(dataset, batch_size=8, epochs=2)
+hidden_sequences = model(sequences)
+generated = model.sample(n_samples=3, n_steps=6, gibbs_steps=20)
+```
+
+`RTDBN` supports Bernoulli, fixed-variance Gaussian, and learned-variance
+Gaussian layers, returning mean-pooled sequence embeddings. See the
+[temporal-model guide](docs/temporal.rst) for normalization, sampling, warmup,
+gradient, and checkpoint contracts, or run the
+[self-contained temporal example](examples/applications/temporal/rtrbm_training.py).
 
 ### Numerical behavior
 
@@ -100,6 +131,12 @@ Use `torch.no_grad()` when extracting frozen features without an autograd graph.
 
 The corrected variance-Gaussian sampling and stabilized likelihood calculations
 can change training trajectories, including with a fixed random seed.
+
+`RTVarianceGaussianRBM` follows the same variance and sampler tuple-order
+conventions as `VarianceGaussianRBM`. Fixed-variance `RTGaussianRBM` follows
+`GaussianRBM` for deterministic training conditionals and adds unit Gaussian
+noise during generation. Its optional normalization pools batch and time
+dimensions, handles singleton observations, and detaches standardized inputs.
 
 ## Development
 
