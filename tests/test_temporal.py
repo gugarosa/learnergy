@@ -334,6 +334,16 @@ def test_temporal_models_reject_invalid_context_shapes(model):
         model.hidden_sampling(torch.zeros(2, 2), torch.zeros(1, 2))
 
 
+@pytest.mark.parametrize("operation", ["pre_activation", "hidden_sampling", "energy", "gibbs_sampling"])
+@pytest.mark.parametrize("width", [1, 3])
+def test_temporal_samplers_reject_invalid_visible_widths(model, operation, width):
+    v = torch.zeros(2, width)
+    h_prev = torch.zeros(2, model.n_hidden)
+
+    with pytest.raises(e.SizeError):
+        getattr(model, operation)(v, h_prev)
+
+
 @pytest.mark.parametrize("name", ["n_samples", "n_steps", "gibbs_steps"])
 @pytest.mark.parametrize("value, error", [(0, ValueError), (-1, ValueError), (1.5, TypeError), (True, TypeError)])
 def test_temporal_sampling_validates_counts(model, name, value, error):

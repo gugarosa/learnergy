@@ -83,6 +83,8 @@ class RTVarianceGaussianRBM(RTRBM):
 
         """
 
+        self._validate_visible(v)
+
         variance = self.sigma.square() + torch.finfo(v.dtype).eps
 
         return super().pre_activation(v / variance, h_prev, scale)

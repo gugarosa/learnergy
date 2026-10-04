@@ -106,8 +106,8 @@ class RTRBM(RBM):
 
         """
 
-        if v.ndim != 2 or v.shape[0] == 0 or v.shape[1] != self.n_visible:
-            raise e.SizeError("`v` should have shape (batch_size, n_visible) with a nonempty batch.")
+        self._validate_visible(v)
+
         if h_prev is None:
             h_prev = self.h0.unsqueeze(0).expand(v.shape[0], -1)
         if h_prev.shape != (v.shape[0], self.n_hidden):
@@ -422,6 +422,10 @@ class RTRBM(RBM):
             outputs.append(h_prev)
 
         return torch.stack(outputs, dim=1)
+
+    def _validate_visible(self, v: torch.Tensor) -> None:
+        if v.ndim != 2 or v.shape[0] == 0 or v.shape[1] != self.n_visible:
+            raise e.SizeError("`v` should have shape (batch_size, n_visible) with a nonempty batch.")
 
     def _validate_sequence(self, sequence: torch.Tensor) -> None:
         if not isinstance(sequence, torch.Tensor) or not sequence.is_floating_point():
